@@ -1646,12 +1646,20 @@
           let usersChanged = false;
           snap.forEach((doc) => {
             const remoteU = doc.data();
-            if (!remoteU || !remoteU.email) return;
-            const idx = localUsers.findIndex(u => u.email && u.email.toLowerCase() === remoteU.email.toLowerCase());
+            if (!remoteU) return;
+            const remoteEmail = (remoteU.email || '').toLowerCase().trim();
+            const remoteUuid = remoteU.uuid || remoteU.userId;
+
+            const idx = localUsers.findIndex(u => {
+              const uEmail = (u.email || '').toLowerCase().trim();
+              const uUuid = u.uuid || u.userId;
+              return (remoteEmail && uEmail && remoteEmail === uEmail) || (remoteUuid && uUuid && remoteUuid === uUuid);
+            });
+
             if (idx >= 0) {
               localUsers[idx] = Object.assign({}, localUsers[idx], remoteU);
               usersChanged = true;
-            } else {
+            } else if (remoteEmail || remoteUuid) {
               localUsers.push(remoteU);
               usersChanged = true;
             }
