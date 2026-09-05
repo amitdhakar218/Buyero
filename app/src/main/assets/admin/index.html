@@ -1649,18 +1649,28 @@
             if (!remoteU) return;
             const remoteEmail = (remoteU.email || '').toLowerCase().trim();
             const remoteUuid = remoteU.uuid || remoteU.userId;
+            const detId = remoteEmail ? ('usr_' + remoteEmail.replace(/[^a-z0-9]/g, '_')) : null;
 
             const idx = localUsers.findIndex(u => {
               const uEmail = (u.email || '').toLowerCase().trim();
               const uUuid = u.uuid || u.userId;
-              return (remoteEmail && uEmail && remoteEmail === uEmail) || (remoteUuid && uUuid && remoteUuid === uUuid);
+              if (remoteEmail && uEmail && remoteEmail === uEmail) return true;
+              if (remoteUuid && uUuid && remoteUuid === uUuid) return true;
+              if (detId && uUuid && detId === uUuid) return true;
+              return false;
             });
 
             if (idx >= 0) {
-              localUsers[idx] = Object.assign({}, localUsers[idx], remoteU);
+              localUsers[idx] = Object.assign({}, localUsers[idx], remoteU, {
+                uuid: detId || remoteUuid || localUsers[idx].uuid,
+                userId: detId || remoteUuid || localUsers[idx].userId
+              });
               usersChanged = true;
             } else if (remoteEmail || remoteUuid) {
-              localUsers.push(remoteU);
+              localUsers.push(Object.assign({}, remoteU, {
+                uuid: detId || remoteUuid,
+                userId: detId || remoteUuid
+              }));
               usersChanged = true;
             }
           });

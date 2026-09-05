@@ -2620,8 +2620,10 @@
       if (currentUser && (currentUser.uuid || currentUser.userId || currentUser.email)) {
         const uId = currentUser.uuid || currentUser.userId;
         const uEmail = (currentUser.email || '').toLowerCase().trim();
+        const detId = uEmail ? generateDeterministicUserUuid(uEmail) : null;
         const userOrders = allOrders.filter(o => {
           if (o.userId && uId && o.userId === uId) return true;
+          if (o.userId && detId && o.userId === detId) return true;
           if (o.customerEmail && uEmail && o.customerEmail.toLowerCase().trim() === uEmail) return true;
           return false;
         });
@@ -2640,8 +2642,9 @@
       if (!targetUser || !fbFirestore) return;
       const uEmail = (targetUser.email || '').toLowerCase().trim();
       const uId = targetUser.uuid || targetUser.userId;
+      const detId = uEmail ? generateDeterministicUserUuid(uEmail) : null;
 
-      if (!uEmail && !uId) return;
+      if (!uEmail && !uId && !detId) return;
 
       fbFirestore.collection('orders').get().then((snapshot) => {
         if (!snapshot || snapshot.empty) return;
@@ -2652,8 +2655,10 @@
           const remoteOrder = doc.data();
           if (!remoteOrder || !remoteOrder.orderId) return;
 
+          const remoteOrderEmail = (remoteOrder.customerEmail || '').toLowerCase().trim();
           const matchUser = (remoteOrder.userId && uId && remoteOrder.userId === uId) ||
-                            (remoteOrder.customerEmail && uEmail && remoteOrder.customerEmail.toLowerCase().trim() === uEmail);
+                            (remoteOrder.userId && detId && remoteOrder.userId === detId) ||
+                            (remoteOrderEmail && uEmail && remoteOrderEmail === uEmail);
 
           if (matchUser) {
             const existingIdx = localAllOrders.findIndex(o => o.orderId === remoteOrder.orderId);
@@ -2669,7 +2674,8 @@
 
         if (changed) {
           saveOrders(localAllOrders);
-          renderOrdersList();
+          loadUserOrders();
+          if (typeof renderOrdersList === 'function') renderOrdersList();
           if (typeof renderUserProfile === 'function') renderUserProfile();
         }
       }).catch((err) => {
@@ -2726,14 +2732,27 @@
       // 4. Update Profile Info
       renderUserProfile();
       if (currentUser && (currentUser.email || currentUser.uuid)) {
+        if (currentUser.email) {
+          const detUuid = generateDeterministicUserUuid(currentUser.email);
+          if (!currentUser.uuid || currentUser.uuid !== detUuid) {
+            currentUser.uuid = detUuid;
+            currentUser.userId = detUuid;
+            localStorage.setItem('buyero_user', JSON.stringify(currentUser));
+          }
+        }
         // Fetch orders and ensure latest cloud profile is synchronized
         fetchCloudOrdersForUser(currentUser);
         if (currentUser.email) {
           fetchUserProfileFromFirestore(currentUser.email).then((cloudP) => {
-            if (cloudP && cloudP.name) {
-              currentUser = Object.assign({}, currentUser, cloudP);
+            if (cloudP && (cloudP.name || cloudP.email)) {
+              const detUuid = generateDeterministicUserUuid(currentUser.email);
+              currentUser = Object.assign({}, currentUser, cloudP, {
+                uuid: detUuid,
+                userId: detUuid
+              });
               localStorage.setItem('buyero_user', JSON.stringify(currentUser));
               renderUserProfile();
+              fetchCloudOrdersForUser(currentUser);
             }
           }).catch(() => {});
         }
@@ -4462,8 +4481,10 @@
       const fullAddress = `${house ? house + ', ' : ''}${street}${landmark ? ', Near ' + landmark : ''}, ${city}, ${state} - ${pincode}`;
 
       // Determine user UUID
-      const currentUuid = (currentUser && (currentUser.uuid || currentUser.userId)) ? (currentUser.uuid || currentUser.userId) : generateUuidV4();
       const currentEmail = (currentUser && currentUser.email) ? currentUser.email : '';
+      const currentUuid = (currentUser && (currentUser.uuid || currentUser.userId)) 
+        ? (currentUser.uuid || currentUser.userId) 
+        : (currentEmail ? generateDeterministicUserUuid(currentEmail) : generateUuidV4());
 
       const newOrder = {
         orderId: newOrderId,
@@ -5458,21 +5479,61 @@
           const uidSnap = await fbFirestore.collection('users').doc(fbUid).get();
           if (uidSnap && uidSnap.exists) {
             console.log("[Buyero Firestore] Found user by Firebase UID:", fbUid);
-            return uidSnap.data();
+            const uData = uidSnap.data();
+            // Automatically mirror/migrate to deterministic ID in background
+            if (deterministicId && uData) {
+              fbFirestore.collection('users').doc(deterministicId).set(Object.assign({}, uData, {
+                uuid: deterministicId,
+                userId: deterministicId
+              }), { merge: true }).catch(() => {});
+            }
+            return uData;
           }
         } catch (e) {}
       }
 
-      // 3. Query collection by 'email' field
+      // 3. Query collection by exact clean email field
       if (cleanEmail) {
         try {
           const querySnap = await fbFirestore.collection('users').where('email', '==', cleanEmail).limit(1).get();
           if (querySnap && !querySnap.empty) {
-            console.log("[Buyero Firestore] Found user by email query:", cleanEmail);
-            return querySnap.docs[0].data();
+            console.log("[Buyero Firestore] Found user by exact email query:", cleanEmail);
+            const uData = querySnap.docs[0].data();
+            if (deterministicId && uData) {
+              fbFirestore.collection('users').doc(deterministicId).set(Object.assign({}, uData, {
+                uuid: deterministicId,
+                userId: deterministicId
+              }), { merge: true }).catch(() => {});
+            }
+            return uData;
           }
         } catch (e) {
-          console.warn("[Buyero Firestore] Query by email failed:", e.message);
+          console.warn("[Buyero Firestore] Query by exact email failed:", e.message);
+        }
+      }
+
+      // 4. Fallback scan: Read users and match case-insensitively or check legacy random UUIDs
+      if (cleanEmail) {
+        try {
+          const allUsersSnap = await fbFirestore.collection('users').limit(50).get();
+          if (allUsersSnap && !allUsersSnap.empty) {
+            for (let i = 0; i < allUsersSnap.docs.length; i++) {
+              const doc = allUsersSnap.docs[i];
+              const dData = doc.data();
+              if (dData && dData.email && dData.email.toLowerCase().trim() === cleanEmail) {
+                console.log("[Buyero Firestore] Found user in scan for email:", cleanEmail, "docId:", doc.id);
+                if (deterministicId) {
+                  fbFirestore.collection('users').doc(deterministicId).set(Object.assign({}, dData, {
+                    uuid: deterministicId,
+                    userId: deterministicId
+                  }), { merge: true }).catch(() => {});
+                }
+                return dData;
+              }
+            }
+          }
+        } catch (scanErr) {
+          console.warn("[Buyero Firestore] Scan fallback failed:", scanErr.message);
         }
       }
 
@@ -5613,11 +5674,13 @@
       }
 
       // 3. Returning User check:
-      // If user has a name or has logged in before, or if cloudProfile exists, log in seamlessly!
-      // They do NOT need to enter details again if their profile exists in Firestore or local cache
+      // If user profile was found in Firestore or local cache, log in seamlessly!
+      // They do NOT need to re-enter details or claim coins repeatedly
       const isCompleteProfile = existingUser && (
-        (existingUser.name && existingUser.phone && existingUser.phone !== '9174573889') ||
-        (existingUser.authMethod === 'google_oauth_firebase' && existingUser.name)
+        Boolean(existingUser.name && existingUser.name.trim().length > 1) ||
+        Boolean(existingUser.phone && existingUser.phone.length >= 10) ||
+        Boolean(existingUser.createdAt) ||
+        (existingUser.authMethod === 'google_oauth_firebase')
       );
 
       if (isCompleteProfile) {
@@ -5838,10 +5901,14 @@
     }
 
     function loginAsAmitDhakar() {
+      const amitEmail = "amitdhakar218@gmail.com";
+      const amitUuid = generateDeterministicUserUuid(amitEmail);
       currentUser = {
+        uuid: amitUuid,
+        userId: amitUuid,
         name: "Amit Dhakar",
         phone: "9174573889",
-        email: "amitdhakar218@gmail.com",
+        email: amitEmail,
         city: "New Delhi",
         state: "Delhi",
         pincode: "110001",
@@ -5849,7 +5916,9 @@
         role: "Owner / Administrator"
       };
       localStorage.setItem('buyero_user', JSON.stringify(currentUser));
+      fetchCloudOrdersForUser(currentUser);
       renderUserProfile();
+      loadUserOrders();
       closeAuthModal();
       alert("👑 Welcome Amit Dhakar! Signed in with full account access.");
       logAppVisitorAnalytics();
@@ -5857,17 +5926,23 @@
     }
 
     function quickDemoLogin() {
+      const demoEmail = "rahul.sharma@example.com";
+      const demoUuid = generateDeterministicUserUuid(demoEmail);
       currentUser = {
+        uuid: demoUuid,
+        userId: demoUuid,
         name: "Rahul Sharma",
         phone: "9876543210",
-        email: "rahul.sharma@example.com",
+        email: demoEmail,
         city: "Mumbai",
         state: "Maharashtra",
         pincode: "400001",
         address: "Flat 402, Lotus Heights, MG Road"
       };
       localStorage.setItem('buyero_user', JSON.stringify(currentUser));
+      fetchCloudOrdersForUser(currentUser);
       renderUserProfile();
+      loadUserOrders();
       closeAuthModal();
       alert("🛍️ Logged in as Demo User: Rahul Sharma");
       logAppVisitorAnalytics();
