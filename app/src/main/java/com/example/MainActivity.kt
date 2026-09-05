@@ -259,7 +259,6 @@ fun BuyeroHostScreen() {
           .testTag("buyero_webview"),
         factory = { context ->
           WebView(context).apply {
-            clearCache(true)
             val defaultUa = settings.userAgentString
             settings.apply {
               javaScriptEnabled = true
@@ -270,7 +269,7 @@ fun BuyeroHostScreen() {
               useWideViewPort = true
               loadWithOverviewMode = true
               mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-              cacheMode = WebSettings.LOAD_NO_CACHE
+              cacheMode = WebSettings.LOAD_DEFAULT
               javaScriptCanOpenWindowsAutomatically = true
               setSupportMultipleWindows(true)
               userAgentString = defaultUa.replace("; wv", "").replace("Version/4.0 ", "")

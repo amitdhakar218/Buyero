@@ -2634,6 +2634,49 @@
       localStorage.setItem('buyero_orders', JSON.stringify(orders));
     }
 
+    // Cloud Firestore Orders Synchronizer for current user
+    function fetchCloudOrdersForUser(user) {
+      const targetUser = user || currentUser;
+      if (!targetUser || !fbFirestore) return;
+      const uEmail = (targetUser.email || '').toLowerCase().trim();
+      const uId = targetUser.uuid || targetUser.userId;
+
+      if (!uEmail && !uId) return;
+
+      fbFirestore.collection('orders').get().then((snapshot) => {
+        if (!snapshot || snapshot.empty) return;
+        let localAllOrders = getAllStoredOrders();
+        let changed = false;
+
+        snapshot.forEach((doc) => {
+          const remoteOrder = doc.data();
+          if (!remoteOrder || !remoteOrder.orderId) return;
+
+          const matchUser = (remoteOrder.userId && uId && remoteOrder.userId === uId) ||
+                            (remoteOrder.customerEmail && uEmail && remoteOrder.customerEmail.toLowerCase().trim() === uEmail);
+
+          if (matchUser) {
+            const existingIdx = localAllOrders.findIndex(o => o.orderId === remoteOrder.orderId);
+            if (existingIdx >= 0) {
+              localAllOrders[existingIdx] = Object.assign({}, localAllOrders[existingIdx], remoteOrder);
+              changed = true;
+            } else {
+              localAllOrders.unshift(remoteOrder);
+              changed = true;
+            }
+          }
+        });
+
+        if (changed) {
+          saveOrders(localAllOrders);
+          renderOrdersList();
+          if (typeof renderUserProfile === 'function') renderUserProfile();
+        }
+      }).catch((err) => {
+        console.warn("[Buyero Cloud Orders Sync]", err);
+      });
+    }
+
     function getStoredNotifications() {
       const data = localStorage.getItem('buyero_notifications');
       try {
@@ -2682,6 +2725,9 @@
 
       // 4. Update Profile Info
       renderUserProfile();
+      if (currentUser) {
+        fetchCloudOrdersForUser(currentUser);
+      }
 
       // 4b. Initialize Firebase Auth State Listener
       initFirebaseAuth();
@@ -5356,6 +5402,12 @@
       localStorage.setItem('buyero_registered_users', JSON.stringify(users));
     }
 
+    function generateDeterministicUserUuid(email) {
+      if (!email) return generateUuidV4();
+      const clean = email.toLowerCase().trim().replace(/[^a-z0-9]/g, '_');
+      return 'usr_' + clean;
+    }
+
     function generateUuidV4() {
       if (typeof crypto !== 'undefined' && crypto.randomUUID) {
         try { return crypto.randomUUID(); } catch(e) {}
@@ -5365,6 +5417,31 @@
         const v = c === 'x' ? r : (r & 0x3 | 0x8);
         return v.toString(16);
       });
+    }
+
+    // Helper: Fetch user profile directly from Firestore by email/UUID
+    async function fetchUserProfileFromFirestore(email) {
+      if (!email || !fbFirestore) return null;
+      const cleanEmail = email.toLowerCase().trim();
+      const deterministicId = generateDeterministicUserUuid(cleanEmail);
+
+      // 1. Try by deterministic ID
+      try {
+        const docSnap = await fbFirestore.collection('users').doc(deterministicId).get();
+        if (docSnap.exists) {
+          return docSnap.data();
+        }
+      } catch (e) {}
+
+      // 2. Query collection by email field
+      try {
+        const querySnap = await fbFirestore.collection('users').where('email', '==', cleanEmail).limit(1).get();
+        if (!querySnap.empty) {
+          return querySnap.docs[0].data();
+        }
+      } catch (e) {}
+
+      return null;
     }
 
     /* =========================================================
@@ -5463,23 +5540,42 @@
       }
     }
 
-    function handleAuthSuccessSession(email, fbUser) {
+    async function handleAuthSuccessSession(email, fbUser) {
       if (!email) return;
-      pendingAuthEmail = email.toLowerCase();
+      pendingAuthEmail = email.toLowerCase().trim();
       pendingGoogleAuthUser = fbUser || null;
 
-      // Check if user is already registered with complete profile
+      // 1. First check if user exists locally
       const users = getRegisteredUsers();
-      let existingUser = users.find(u => u.email && u.email.toLowerCase() === pendingAuthEmail);
+      let existingUser = users.find(u => u.email && u.email.toLowerCase().trim() === pendingAuthEmail);
 
+      // 2. If not found locally or incomplete, check Firestore Cloud Database
+      if ((!existingUser || !existingUser.phone || existingUser.phone === '9174573889') && fbFirestore) {
+        try {
+          const cloudProfile = await fetchUserProfileFromFirestore(pendingAuthEmail);
+          if (cloudProfile && cloudProfile.name && cloudProfile.phone && cloudProfile.phone !== '9174573889') {
+            existingUser = cloudProfile;
+            // Cache locally in registered users
+            const updatedUsers = users.filter(u => !u.email || u.email.toLowerCase().trim() !== pendingAuthEmail);
+            updatedUsers.push(existingUser);
+            saveRegisteredUsers(updatedUsers);
+          }
+        } catch (cloudErr) {
+          console.warn("[Buyero Auth Check] Cloud fetch error:", cloudErr);
+        }
+      }
+
+      // 3. Returning User with complete profile -> Log in directly without re-prompting!
       if (existingUser && existingUser.name && existingUser.phone && existingUser.phone !== '9174573889') {
-        // Returning User with complete profile -> Log in directly!
         currentUser = existingUser;
         currentUser.lastLogin = new Date().toISOString();
         if (fbUser && fbUser.photoURL) {
           currentUser.photoURL = fbUser.photoURL;
         }
         localStorage.setItem('buyero_user', JSON.stringify(currentUser));
+
+        // Sync cloud orders in background
+        fetchCloudOrdersForUser(currentUser);
 
         renderUserProfile();
         renderOrdersList();
@@ -5583,7 +5679,7 @@
         let existingUser = users.find(u => u.email && u.email.toLowerCase() === safeEmail);
         const userUuid = (existingUser && (existingUser.uuid || existingUser.userId)) 
           ? (existingUser.uuid || existingUser.userId) 
-          : generateUuidV4();
+          : generateDeterministicUserUuid(safeEmail);
 
         const userPhoto = (pendingGoogleAuthUser && pendingGoogleAuthUser.photoURL) || (existingUser && existingUser.photoURL) || '';
 

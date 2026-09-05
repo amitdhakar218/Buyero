@@ -1433,6 +1433,7 @@
       ensureCatalogSeeded();
       refreshAllAdminData();
       trackAdminVisit();
+      listenToFirestoreOrdersRealtime();
     });
 
     function checkAdminAuthentication() {
@@ -1591,6 +1592,80 @@
 
     function saveOrders(orders) {
       localStorage.setItem('buyero_orders', JSON.stringify(orders));
+    }
+
+    function syncOrderUpdateToFirestore(order) {
+      if (!order || !order.orderId || !fbFirestore) return;
+      try {
+        fbFirestore.collection('orders').doc(order.orderId).set(order, { merge: true }).catch(err => {
+          console.warn("[Admin Firestore Order Sync Error]", err);
+        });
+        if (order.userId) {
+          fbFirestore.collection('users').doc(order.userId).collection('orders').doc(order.orderId).set(order, { merge: true }).catch(() => {});
+        }
+      } catch (e) {}
+    }
+
+    function listenToFirestoreOrdersRealtime() {
+      if (!fbFirestore) return;
+      try {
+        fbFirestore.collection('orders').onSnapshot((snapshot) => {
+          if (!snapshot || snapshot.empty) return;
+          let localOrders = getStoredOrders();
+          let hasChange = false;
+
+          snapshot.forEach((doc) => {
+            const remote = doc.data();
+            if (!remote || !remote.orderId) return;
+            const idx = localOrders.findIndex(o => o.orderId === remote.orderId);
+            if (idx >= 0) {
+              // Merge if remote has newer or different fields
+              if (JSON.stringify(localOrders[idx]) !== JSON.stringify(remote)) {
+                localOrders[idx] = Object.assign({}, localOrders[idx], remote);
+                hasChange = true;
+              }
+            } else {
+              localOrders.unshift(remote);
+              hasChange = true;
+            }
+          });
+
+          if (hasChange) {
+            saveOrders(localOrders);
+            calculateAnalysisMetrics();
+            renderFilteredOrders();
+          }
+        }, (err) => {
+          console.warn("[Admin Firestore Orders Listener]", err);
+        });
+
+        // Also listen to users collection for customer directory
+        fbFirestore.collection('users').onSnapshot((snap) => {
+          if (!snap || snap.empty) return;
+          let localUsers = getStoredUsers();
+          let usersChanged = false;
+          snap.forEach((doc) => {
+            const remoteU = doc.data();
+            if (!remoteU || !remoteU.email) return;
+            const idx = localUsers.findIndex(u => u.email && u.email.toLowerCase() === remoteU.email.toLowerCase());
+            if (idx >= 0) {
+              localUsers[idx] = Object.assign({}, localUsers[idx], remoteU);
+              usersChanged = true;
+            } else {
+              localUsers.push(remoteU);
+              usersChanged = true;
+            }
+          });
+          if (usersChanged) {
+            localStorage.setItem('buyero_registered_users', JSON.stringify(localUsers));
+            calculateAnalysisMetrics();
+          }
+        }, (err) => {
+          console.warn("[Admin Firestore Users Listener]", err);
+        });
+      } catch (e) {
+        console.warn("[Admin Firestore Listener Error]", e);
+      }
     }
 
     function getStoredUsers() {
@@ -2348,6 +2423,7 @@
         });
 
         saveOrders(orders);
+        syncOrderUpdateToFirestore(order);
         logActivityEvent('ORDER', `Updated Order #${orderId}: ${courier} AWB ${awb}`);
 
         try {
@@ -2380,6 +2456,7 @@
           });
 
           saveOrders(orders);
+          syncOrderUpdateToFirestore(order);
           logActivityEvent('ORDER', `Order #${orderId} moved to Completed (Delivered)`);
 
           try {
