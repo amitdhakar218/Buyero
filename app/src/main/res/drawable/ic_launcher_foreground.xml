@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="0.78"
+        android:scaleY="0.78"
+        android:translateX="18.5"
+        android:translateY="6.0">
+        <!-- Teal Shopping Bag 1 (Back/Left) -->
+        <path
+            android:fillColor="#13A388"
+            android:pathData="M12,46 L22,41 L22,90 L12,88 Z" />
+        <path
+            android:fillColor="#20D5A3"
+            android:pathData="M22,41 L56,43 L56,92 L22,90 Z" />
+        <path
+            android:strokeColor="#68FFD8"
+            android:strokeWidth="3.5"
+            android:strokeLineCap="round"
+            android:fillColor="#00000000"
+            android:pathData="M 28,42 C 28,26 48,26 48,42" />
+
+        <!-- Coral/Pink Shopping Bag 2 (Front/Right) -->
+        <path
+            android:strokeColor="#FFAEC3"
+            android:strokeWidth="3.5"
+            android:strokeLineCap="round"
+            android:fillColor="#00000000"
+            android:pathData="M 47,58 C 47,44 65,44 65,58" />
+        <path
+            android:fillColor="#D84F7B"
+            android:pathData="M38,62 L48,58 L48,99 L38,96 Z" />
+        <path
+            android:fillColor="#FF8BA0"
+            android:pathData="M48,58 L78,57 L78,96 L48,99 Z" />
+    </group>
+</vector>
+

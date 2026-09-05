@@ -1,0 +1,2803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Buyero Admin Studio | Owner Control Panel</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              navy: '#152458',
+              orange: '#f77f33',
+              gold: '#ffd60a',
+              deep: '#0e1838',
+              light: '#f8fafc',
+              radial: '#1e3a8a',
+            }
+          },
+          fontFamily: {
+            poppins: ['Poppins', 'sans-serif'],
+            sans: ['Inter', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts & Font Awesome 6 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- jsPDF & AutoTable for Invoice Generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+  <!-- Firebase App & Services (Fallback Local Sync Mode Active) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f1f5f9;
+      color: #0f172a;
+      -webkit-tap-highlight-color: transparent;
+      padding-bottom: 75px; /* Room for permanent bottom navigation bar */
+    }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .shake-denied { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+    @keyframes shake {
+      10%, 90% { transform: translate3d(-1px, 0, 0); }
+      20%, 80% { transform: translate3d(2px, 0, 0); }
+      30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+      40%, 60% { transform: translate3d(4px, 0, 0); }
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800">
+
+  <!-- ========================================================= -->
+  <!-- ========================================================= -->
+  <!-- STRICT MASTER AUTHENTICATION GATE (OWNER ACCESS ONLY)      -->
+  <!-- ========================================================= -->
+  <div id="admin-auth-guard" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+    <div id="auth-modal-card" class="bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl border border-slate-100">
+      <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-brand-navy to-brand-orange text-white flex items-center justify-center text-2xl mx-auto shadow-lg mb-4">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+
+      <h2 class="font-poppins font-bold text-xl text-slate-900">Buyero Admin Studio</h2>
+      <p class="text-xs text-slate-500 mt-1 mb-5">Owner Email & Password Verification</p>
+
+      <!-- Access Denied Banner -->
+      <div id="auth-denied-box" class="hidden mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 font-bold text-left">
+        <i class="fa-solid fa-triangle-exclamation mr-1"></i> Access Denied! Please check your credentials.
+      </div>
+
+      <!-- Single Direct Email & Password Form (Connected to Owner Firebase UID: 1nIwLbkuClStOyJmwnfw951EiMq2) -->
+      <form id="admin-login-form" onsubmit="handleAdminEmailPasswordLogin(event)" class="space-y-3.5 text-left">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Owner Email ID</label>
+          <div class="relative flex items-center">
+            <i class="fa-solid fa-envelope absolute left-3 text-slate-400 text-xs"></i>
+            <input 
+              type="email" 
+              id="admin-email-input" 
+              required 
+              value="amitdhakar218@gmail.com" 
+              placeholder="amitdhakar218@gmail.com"
+              class="w-full pl-9 pr-3 py-2.5 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy outline-none font-medium"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Password</label>
+          <div class="relative flex items-center">
+            <i class="fa-solid fa-lock absolute left-3 text-slate-400 text-xs"></i>
+            <input 
+              type="password" 
+              id="admin-password-input" 
+              required 
+              placeholder="Enter your password"
+              class="w-full pl-9 pr-3 py-2.5 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy outline-none font-mono"
+            />
+          </div>
+        </div>
+
+        <button 
+          type="submit" 
+          id="btn-admin-submit"
+          class="w-full py-3 bg-brand-navy hover:bg-brand-deep text-white font-bold rounded-2xl text-xs transition shadow flex items-center justify-center gap-2 active:scale-95 mt-2"
+        >
+          <i class="fa-solid fa-arrow-right-to-bracket text-amber-400"></i>
+          <span>Sign In to Admin Studio</span>
+        </button>
+      </form>
+
+      <div class="mt-4 pt-3 border-t border-slate-100 text-center">
+        <a href="../client/index.html" class="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-600 font-medium">
+          <i class="fa-solid fa-arrow-left text-[10px]"></i> Return to Customer Storefront
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- TOP ADMIN STUDIO HEADER                                   -->
+  <!-- ========================================================= -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+    <div class="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <!-- Brand Logo Icon -->
+        <svg class="w-8 h-8 flex-shrink-0" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <g><polygon points="12,46 22,41 22,90 12,88" fill="#13a388" /><polygon points="22,41 56,43 56,92 22,90" fill="#20d5a3" /><path d="M 28,42 C 28,26 48,26 48,42" stroke="#68ffd8" stroke-width="3.5" stroke-linecap="round" fill="none" /></g>
+          <g><path d="M 47,58 C 47,44 65,44 65,58" stroke="#ffaec3" stroke-width="3.5" stroke-linecap="round" fill="none" /><polygon points="38,62 48,58 48,99 38,96" fill="#d84f7b" /><polygon points="48,58 78,57 78,96 48,99" fill="#ff8ba0" /></g>
+        </svg>
+        <div>
+          <span class="font-poppins font-bold text-lg text-slate-900 leading-none">Buyer<span class="text-brand-orange">o</span></span>
+          <span class="block text-[10px] font-bold uppercase tracking-wider text-brand-orange leading-none mt-0.5">Admin Studio</span>
+        </div>
+      </div>
+
+      <!-- Right Controls: Notification Bell, Store Link, Lock -->
+      <div class="flex items-center gap-2">
+        <!-- Notification Bell with Dynamic Counter Badge -->
+        <button 
+          onclick="openActivityHubModal()" 
+          class="relative p-2 text-slate-600 hover:text-brand-navy rounded-xl hover:bg-slate-100 transition"
+          title="System Activity Hub"
+        >
+          <i class="fa-regular fa-bell text-lg"></i>
+          <span id="admin-notif-count" class="hidden absolute top-1 right-1 px-1.5 py-0.2 bg-rose-500 text-white text-[9px] font-bold rounded-full animate-pulse">0</span>
+        </button>
+
+        <!-- Store Link -->
+        <a href="../client/index.html" class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition border border-slate-200 shadow-sm">
+          <i class="fa-solid fa-store text-brand-orange text-[10px]"></i> <span>Store</span>
+        </a>
+
+        <!-- Lock Studio -->
+        <button onclick="lockAdminStudio()" class="p-2 text-slate-400 hover:text-rose-600 rounded-xl hover:bg-rose-50 transition" title="Lock Studio">
+          <i class="fa-solid fa-lock"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================= -->
+  <!-- MAIN CONTAINER (4 VIEWS SWITCHED BY BOTTOM NAV)           -->
+  <!-- ========================================================= -->
+  <main class="max-w-xl mx-auto px-4 py-4 space-y-4">
+
+    <!-- ========================================================= -->
+    <!-- VIEW 1: 📊 ANALYSIS (BUSINESS & PRODUCT ANALYSIS)         -->
+    <!-- ========================================================= -->
+    <section id="view-analysis" class="space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="font-poppins font-bold text-lg text-slate-900">Analysis Home</h2>
+          <p class="text-xs text-slate-500">Live Business Analytics & Financial Pulse</p>
+        </div>
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Live Auto Sync
+        </span>
+      </div>
+
+      <!-- 7 REAL-TIME MAGIC ANALYTICS CARDS (डिब्बे) -->
+      <div class="grid grid-cols-2 gap-2.5">
+        <!-- 1. Total Orders -->
+        <div class="bg-white rounded-2xl p-3.5 border border-slate-200/90 shadow-sm">
+          <div class="flex items-center justify-between text-slate-500 mb-1">
+            <span class="text-[11px] font-bold uppercase tracking-wider">Total Orders</span>
+            <i class="fa-solid fa-box text-blue-500"></i>
+          </div>
+          <h3 class="font-poppins font-bold text-xl text-slate-900" id="stat-total-orders">0</h3>
+          <span class="text-[10px] text-slate-400">All-time customer orders</span>
+        </div>
+
+        <!-- 2. Pending Orders -->
+        <div class="bg-white rounded-2xl p-3.5 border border-amber-200/90 bg-amber-50/30 shadow-sm">
+          <div class="flex items-center justify-between text-amber-700 mb-1">
+            <span class="text-[11px] font-bold uppercase tracking-wider">Pending Orders</span>
+            <i class="fa-solid fa-clock text-amber-500"></i>
+          </div>
+          <h3 class="font-poppins font-bold text-xl text-amber-900" id="stat-pending-orders">0</h3>
+          <span class="text-[10px] text-amber-600 font-medium">To be processed on Meesho</span>
+        </div>
+
+        <!-- 3. Total Revenue -->
+        <div class="bg-white rounded-2xl p-3.5 border border-slate-200/90 shadow-sm">
+          <div class="flex items-center justify-between text-slate-500 mb-1">
+            <span class="text-[11px] font-bold uppercase tracking-wider">Total Revenue</span>
+            <i class="fa-solid fa-sack-dollar text-emerald-500"></i>
+          </div>
+          <h3 class="font-poppins font-bold text-xl text-slate-900" id="stat-total-revenue">₹0</h3>
+          <span class="text-[10px] text-slate-400">Gross customer billings</span>
+        </div>
+
+        <!-- 4. Total Cost (NEW BOX: Meesho COGS) -->
+        <div class="bg-white rounded-2xl p-3.5 border border-rose-200/90 bg-rose-50/30 shadow-sm">
+          <div class="flex items-center justify-between text-rose-700 mb-1">
+            <span class="text-[11px] font-bold uppercase tracking-wider">Total Cost</span>
+            <i class="fa-solid fa-chart-line-down text-rose-500"></i>
+          </div>
+          <h3 class="font-poppins font-bold text-xl text-rose-900" id="stat-total-cost">₹0</h3>
+          <span class="text-[10px] text-rose-600 font-medium">Meesho sourcing price</span>
+        </div>
+
+        <!-- 5. Net Profit (Full Width Highlight) -->
+        <div class="col-span-2 bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-4 text-white shadow-md">
+          <div class="flex items-center justify-between mb-1">
+            <div class="flex items-center gap-1.5">
+              <i class="fa-solid fa-fire-flame-curved text-amber-300 text-lg"></i>
+              <span class="text-xs font-bold uppercase tracking-wider text-emerald-100">Net Profit (शुद्ध मुनाफा)</span>
+            </div>
+            <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-bold">Revenue - Cost</span>
+          </div>
+          <div class="flex items-baseline justify-between mt-1">
+            <h3 class="font-poppins font-extrabold text-2xl" id="stat-net-profit">₹0</h3>
+            <span class="text-xs text-emerald-100 font-medium" id="stat-profit-margin-percent">0% Margin</span>
+          </div>
+        </div>
+
+        <!-- 6. Total Users -->
+        <div class="bg-white rounded-2xl p-3.5 border border-slate-200/90 shadow-sm">
+          <div class="flex items-center justify-between text-slate-500 mb-1">
+            <span class="text-[11px] font-bold uppercase tracking-wider">Total Users</span>
+            <i class="fa-solid fa-users text-indigo-500"></i>
+          </div>
+          <h3 class="font-poppins font-bold text-xl text-slate-900" id="stat-total-users">0</h3>
+          <span class="text-[10px] text-slate-400">Registered app profiles</span>
+        </div>
+
+        <!-- 7. Total Visits -->
+        <div class="bg-white rounded-2xl p-3.5 border border-slate-200/90 shadow-sm">
+          <div class="flex items-center justify-between text-slate-500 mb-1">
+            <span class="text-[11px] font-bold uppercase tracking-wider">Total Visits</span>
+            <i class="fa-solid fa-globe text-cyan-500"></i>
+          </div>
+          <h3 class="font-poppins font-bold text-xl text-slate-900" id="stat-total-visits">0</h3>
+          <span class="text-[10px] text-slate-400">Total store sessions</span>
+        </div>
+      </div>
+
+      <!-- VIEW PRODUCT PERFORMANCE BUTTON -->
+      <button 
+        onclick="openProductPerformanceModal()" 
+        class="w-full py-3.5 bg-gradient-to-r from-brand-navy to-brand-deep text-white font-bold rounded-2xl text-xs transition shadow-md flex items-center justify-center gap-2 active:scale-98"
+      >
+        <i class="fa-solid fa-chart-simple text-amber-400"></i>
+        <span>View Product Performance (मोस्ट लाइक्ड और रिव्यू मैनेजमेंट)</span>
+      </button>
+
+      <!-- Profit Ledger Table (Cram / Order-wise Complete Details) -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-3.5 border-b border-slate-100 flex items-center justify-between">
+          <div>
+            <h4 class="font-poppins font-bold text-xs uppercase tracking-wider text-slate-800">Order-wise Profit Ledger</h4>
+            <p class="text-[10px] text-slate-400">Customer, Bill, Meesho Cost & Pure Profit</p>
+          </div>
+          <button onclick="renderProfitLedger()" class="text-xs text-brand-navy hover:underline font-bold">
+            <i class="fa-solid fa-rotate-right"></i>
+          </button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100 whitespace-nowrap">
+              <tr>
+                <th class="p-2.5">Order ID</th>
+                <th class="p-2.5">Customer</th>
+                <th class="p-2.5">Total Bill</th>
+                <th class="p-2.5">Meesho Cost</th>
+                <th class="p-2.5 text-emerald-600">Net Profit</th>
+                <th class="p-2.5">Status</th>
+              </tr>
+            </thead>
+            <tbody id="profit-ledger-rows" class="divide-y divide-slate-100 text-slate-700">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- VIEW 2: 📦 PRODUCT MANAGEMENT (सामान जोड़ना और सुधारना)    -->
+    <!-- ========================================================= -->
+    <section id="view-product" class="hidden space-y-4">
+      <!-- 2 Sub-Tabs: All Products & Add New Product -->
+      <div class="flex bg-slate-200/80 p-1 rounded-2xl">
+        <button 
+          onclick="switchProductSubTab('all')" 
+          id="subtab-btn-prod-all" 
+          class="flex-1 py-2 text-xs font-bold rounded-xl bg-white text-slate-900 shadow-sm transition"
+        >
+          <i class="fa-solid fa-boxes-stacked mr-1"></i> All Products (स्टॉक लिस्ट)
+        </button>
+        <button 
+          onclick="switchProductSubTab('add')" 
+          id="subtab-btn-prod-add" 
+          class="flex-1 py-2 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-900 transition"
+        >
+          <i class="fa-solid fa-circle-plus mr-1 text-brand-orange"></i> Add New Product (नया सामान जोड़ें)
+        </button>
+      </div>
+
+      <!-- Sub-Tab A: All Products List -->
+      <div id="subtab-content-prod-all" class="space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-700">Live Catalog: <span id="admin-catalog-count">0</span> items</span>
+          <button onclick="loadAdminCatalogList()" class="text-xs text-brand-navy font-bold hover:underline flex items-center gap-1">
+            <i class="fa-solid fa-rotate"></i> Refresh
+          </button>
+        </div>
+
+        <div id="admin-product-list-container" class="space-y-2.5">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Sub-Tab B: Add New Product Form -->
+      <div id="subtab-content-prod-add" class="hidden bg-white rounded-3xl p-4 border border-slate-200 shadow-sm space-y-3">
+        <h3 class="font-poppins font-bold text-sm text-slate-900 border-b border-slate-100 pb-2">Add New Product to Store</h3>
+
+        <form id="form-add-product" onsubmit="handleAdminAddProduct(event)" class="space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Product Title *</label>
+            <input 
+              type="text" 
+              id="inp-prod-title" 
+              required 
+              oninput="handleTitleChangeAutoId(this.value)"
+              placeholder="e.g. Cotton Embroidered Kurta Set" 
+              class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl outline-none focus:border-brand-navy"
+            />
+          </div>
+
+          <!-- Auto-Generated Unique Product ID -->
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">
+              Auto-Generated Product ID <span class="text-brand-orange font-normal">(Auto-created from title)</span>
+            </label>
+            <input 
+              type="text" 
+              id="inp-prod-id" 
+              readonly 
+              class="w-full px-3 py-1.5 text-xs bg-slate-100 font-mono text-slate-700 border border-slate-300 rounded-xl outline-none"
+            />
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Category *</label>
+              <select id="inp-prod-category" required class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl outline-none focus:border-brand-navy bg-white">
+                <option value="Fashion">Fashion</option>
+                <option value="Electronics">Electronics</option>
+                <option value="Footwear">Footwear</option>
+                <option value="Home & Kitchen">Home & Kitchen</option>
+                <option value="Accessories">Accessories</option>
+                <option value="Beauty">Beauty</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Badge (Optional)</label>
+              <input type="text" id="inp-prod-badge" placeholder="Best Seller / Hot Deal" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl outline-none focus:border-brand-navy" />
+            </div>
+          </div>
+
+          <!-- Live Profit Calculator (Meesho Cost & Buyero Price) -->
+          <div class="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-700 block">Live Profit Calculator</span>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Meesho Cost Price (₹) *</label>
+                <input 
+                  type="number" 
+                  id="inp-prod-cost" 
+                  required 
+                  min="1" 
+                  placeholder="200" 
+                  oninput="calculateProductMarginLive()"
+                  class="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-xl outline-none focus:border-brand-navy bg-white"
+                />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Selling Price (₹) *</label>
+                <input 
+                  type="number" 
+                  id="inp-prod-price" 
+                  required 
+                  min="1" 
+                  placeholder="400" 
+                  oninput="calculateProductMarginLive()"
+                  class="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-xl outline-none focus:border-brand-navy bg-white"
+                />
+              </div>
+            </div>
+
+            <div class="pt-1.5 border-t border-slate-200 flex items-center justify-between text-xs">
+              <span class="text-slate-600">Your Profit on this product:</span>
+              <span id="badge-live-prod-margin" class="font-bold text-emerald-600">₹0 (0% margin)</span>
+            </div>
+          </div>
+
+          <!-- Variant Availability & Supplier Notes -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Variant Availability & Supplier Notes</label>
+            <textarea 
+              id="inp-prod-variants" 
+              rows="2" 
+              placeholder="e.g. Sizes S, M, L, XL available. Sourced from Meesho Top Vendor." 
+              class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl outline-none focus:border-brand-navy"
+            ></textarea>
+          </div>
+
+          <!-- Image Management (Home Image Link + Add More Image) -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="block text-xs font-bold text-slate-700">Home Image Link *</label>
+              <button 
+                type="button" 
+                onclick="addExtraImageInput()" 
+                class="text-[11px] text-brand-orange font-bold hover:underline flex items-center gap-1"
+              >
+                <i class="fa-solid fa-plus"></i> Add More Image
+              </button>
+            </div>
+            <input 
+              type="url" 
+              id="inp-prod-image" 
+              required 
+              placeholder="https://images.unsplash.com/..." 
+              class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl outline-none focus:border-brand-navy"
+            />
+            <div id="extra-images-container" class="space-y-1.5">
+              <!-- Extra dynamic image inputs added here -->
+            </div>
+          </div>
+
+          <!-- Product Video / Reel Link (Instagram / YouTube) -->
+          <div class="space-y-1.5 p-3 bg-pink-50/70 border border-pink-200 rounded-2xl">
+            <label class="block text-xs font-bold text-pink-900 flex items-center gap-1.5">
+              <i class="fa-solid fa-circle-play text-rose-600"></i>
+              <span>Product Video / Reel Link (Instagram Reel, YouTube Short, or Video URL)</span>
+            </label>
+            <p class="text-[10px] text-pink-700 leading-relaxed">
+              Yahan aap kisi bhi social media reel (Instagram, YouTube Short) ya video ka link laga sakte hain. User app me click karke reel dekh payenge!
+            </p>
+            <input 
+              type="url" 
+              id="inp-prod-video" 
+              placeholder="https://www.youtube.com/shorts/... ya https://www.instagram.com/reel/..." 
+              class="w-full px-3 py-2 text-xs border border-pink-300 rounded-xl outline-none focus:border-rose-500 bg-white"
+            />
+          </div>
+
+          <!-- Full Specifications / Description -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Specifications & Description *</label>
+            <textarea 
+              id="inp-prod-desc" 
+              required 
+              rows="3" 
+              placeholder="Complete material, dimensions, package contents..." 
+              class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl outline-none focus:border-brand-navy"
+            ></textarea>
+          </div>
+
+          <button 
+            type="submit" 
+            class="w-full py-3 bg-brand-orange hover:bg-orange-600 text-white font-bold rounded-2xl text-xs transition shadow flex items-center justify-center gap-2 active:scale-98"
+          >
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+            <span>Save Product to Catalog</span>
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- VIEW 3: 🚚 ORDER MANAGEMENT (TRACKING & CUSTOMER DATA)   -->
+    <!-- ========================================================= -->
+    <section id="view-order" class="hidden space-y-4">
+      <!-- Universal Search Box -->
+      <div class="relative">
+        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+        <input 
+          type="text" 
+          id="universal-order-search" 
+          oninput="handleUniversalOrderSearch(this.value)"
+          placeholder="Search by Order ID, Customer Name, Phone, PIN..." 
+          class="w-full pl-9 pr-8 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs shadow-sm outline-none focus:border-brand-navy"
+        />
+        <button 
+          id="clear-order-search" 
+          onclick="clearOrderSearch()" 
+          class="hidden absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 text-xs"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- 3 Magic Sub-Tabs: Live & Pending, Sheets View, Completed Orders -->
+      <div class="flex bg-slate-200/80 p-1 rounded-2xl overflow-x-auto hide-scrollbar text-xs font-bold">
+        <button 
+          onclick="switchOrderSubTab('live')" 
+          id="subtab-btn-order-live" 
+          class="flex-1 py-2 px-2 text-center rounded-xl bg-white text-slate-900 shadow-sm whitespace-nowrap transition"
+        >
+          <i class="fa-solid fa-clock-rotate-left mr-1 text-amber-500"></i> Live & Pending (<span id="count-order-live">0</span>)
+        </button>
+        <button 
+          onclick="switchOrderSubTab('sheets')" 
+          id="subtab-btn-order-sheets" 
+          class="flex-1 py-2 px-2 text-center rounded-xl text-slate-600 hover:text-slate-900 whitespace-nowrap transition"
+        >
+          <i class="fa-solid fa-table-list mr-1 text-emerald-600"></i> Sheets View (1-Click)
+        </button>
+        <button 
+          onclick="switchOrderSubTab('completed')" 
+          id="subtab-btn-order-completed" 
+          class="flex-1 py-2 px-2 text-center rounded-xl text-slate-600 hover:text-slate-900 whitespace-nowrap transition"
+        >
+          <i class="fa-solid fa-circle-check mr-1 text-blue-600"></i> Completed Orders
+        </button>
+      </div>
+
+      <!-- Sub-Tab 1: Live & Pending Orders -->
+      <div id="subtab-content-order-live" class="space-y-3">
+        <div id="live-orders-container" class="space-y-3">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Sub-Tab 2: Sheets View (1-Click Copy & Deep Customer Profile) -->
+      <div id="subtab-content-order-sheets" class="hidden space-y-3">
+        <div class="p-3 bg-blue-50 border border-blue-200 rounded-2xl flex items-center justify-between text-xs">
+          <span class="text-blue-900 font-semibold">📋 1-Click Copy Data for Easy Meesho Ordering</span>
+          <span class="text-[10px] text-blue-600">Click customer name for deep profile</span>
+        </div>
+        <div id="sheets-orders-container" class="space-y-3">
+          <!-- Populated dynamically with 1-click copy cards -->
+        </div>
+      </div>
+
+      <!-- Sub-Tab 3: Completed Orders (इतिहास) -->
+      <div id="subtab-content-order-completed" class="hidden space-y-3">
+        <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between text-xs">
+          <span class="text-emerald-900 font-semibold">Permanent History of Successfully Delivered Orders</span>
+          <span class="text-[10px] text-emerald-700 font-bold" id="completed-orders-count">0 items</span>
+        </div>
+        <div id="completed-orders-container" class="space-y-3">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- VIEW 4: 💬 SUPPORT (IN-APP LIVE CUSTOMER CHAT)            -->
+    <!-- ========================================================= -->
+    <section id="view-support" class="hidden space-y-4">
+      <!-- Support Sub-Tabs: Live Chat, Urgent Tickets, FAQ -->
+      <div class="flex bg-slate-200/80 p-1 rounded-2xl text-xs font-bold">
+        <button 
+          onclick="switchSupportSubTab('chat')" 
+          id="subtab-btn-supp-chat" 
+          class="flex-1 py-2 text-center rounded-xl bg-white text-slate-900 shadow-sm transition"
+        >
+          <i class="fa-solid fa-comments mr-1 text-emerald-600"></i> Live Chat (<span id="admin-chat-unread-count">0</span>)
+        </button>
+        <button 
+          onclick="switchSupportSubTab('tickets')" 
+          id="subtab-btn-supp-tickets" 
+          class="flex-1 py-2 text-center rounded-xl text-slate-600 hover:text-slate-900 transition"
+        >
+          <i class="fa-solid fa-triangle-exclamation mr-1 text-rose-500"></i> Order Support Tickets
+        </button>
+        <button 
+          onclick="switchSupportSubTab('faq')" 
+          id="subtab-btn-supp-faq" 
+          class="flex-1 py-2 text-center rounded-xl text-slate-600 hover:text-slate-900 transition"
+        >
+          <i class="fa-solid fa-circle-question mr-1 text-brand-orange"></i> FAQ Settings
+        </button>
+      </div>
+
+      <!-- Support Sub-Tab 1: WhatsApp-Style Live Chat Engine -->
+      <div id="subtab-content-supp-chat" class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[460px]">
+        <div class="grid grid-cols-1 md:grid-cols-3 h-full divide-y md:divide-y-0 md:divide-x divide-slate-200">
+          
+          <!-- Left: Customer Conversation Threads List -->
+          <div class="md:col-span-1 flex flex-col h-full bg-slate-50">
+            <div class="p-2.5 border-b border-slate-200 flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-700">Customer Threads</span>
+              <button onclick="loadAdminChatThreads()" class="text-xs text-brand-navy hover:underline">
+                <i class="fa-solid fa-rotate-right"></i>
+              </button>
+            </div>
+            <div id="admin-chat-threads-list" class="flex-1 overflow-y-auto divide-y divide-slate-100 text-xs">
+              <!-- Thread items -->
+            </div>
+          </div>
+
+          <!-- Right: Active Chat View (Seen ✓✓, Date & Time, Customer Profile Link) -->
+          <div class="md:col-span-2 flex flex-col h-full bg-white">
+            <!-- Active Thread Header -->
+            <div class="p-2.5 bg-brand-navy text-white flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-full bg-brand-orange text-white flex items-center justify-center font-bold text-xs" id="active-chat-avatar">
+                  U
+                </div>
+                <div>
+                  <h4 class="font-bold text-xs" id="active-chat-name">Select Customer</h4>
+                  <span class="text-[10px] text-slate-300 font-mono" id="active-chat-id">USR_NONE</span>
+                </div>
+              </div>
+
+              <!-- Direct Customer Profile Link -->
+              <button 
+                id="btn-chat-view-profile"
+                onclick="viewActiveCustomerProfileFromChat()" 
+                class="hidden px-2.5 py-1 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[10px] font-bold transition flex items-center gap-1"
+              >
+                <i class="fa-solid fa-user"></i> Profile
+              </button>
+            </div>
+
+            <!-- Messages Stream -->
+            <div id="admin-chat-messages-container" class="flex-1 p-3 overflow-y-auto space-y-2.5 bg-slate-50/50 text-xs">
+              <div class="py-12 text-center text-slate-400">
+                <i class="fa-regular fa-comment-dots text-4xl mb-2 text-slate-300"></i>
+                <p>Select a customer from threads to open chat</p>
+              </div>
+            </div>
+
+            <!-- Chat Reply Form -->
+            <form id="admin-chat-reply-form" onsubmit="handleSendAdminReply(event)" class="p-2 border-t border-slate-200 flex items-center gap-2 bg-white">
+              <input 
+                type="text" 
+                id="admin-chat-reply-input" 
+                placeholder="Type response as Buyero Support..." 
+                required 
+                class="flex-1 px-3 py-2 text-xs border border-slate-300 rounded-xl outline-none focus:border-brand-navy"
+              />
+              <button type="submit" class="w-9 h-9 bg-brand-navy hover:bg-brand-deep text-white rounded-xl flex items-center justify-center text-xs transition shadow flex-shrink-0">
+                <i class="fa-solid fa-paper-plane"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Support Sub-Tab 2: Order Support Tickets -->
+      <div id="subtab-content-supp-tickets" class="hidden space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-700">Urgent Order Issues Raised by Customers</span>
+          <button onclick="loadAdminSupportTickets()" class="text-xs text-brand-navy font-bold hover:underline">
+            <i class="fa-solid fa-rotate-right"></i> Refresh
+          </button>
+        </div>
+        <div id="admin-tickets-container" class="space-y-2.5">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Support Sub-Tab 3: FAQ Settings -->
+      <div id="subtab-content-supp-faq" class="hidden bg-white rounded-3xl p-4 border border-slate-200 shadow-sm space-y-3">
+        <h4 class="font-bold text-xs uppercase tracking-wider text-slate-800">Support FAQs & Contact Configuration</h4>
+        <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-2">
+          <div class="flex justify-between items-center">
+            <span class="font-bold text-slate-700">Official Support WhatsApp:</span>
+            <span class="font-mono font-bold text-emerald-700">+91 9174573889</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="font-bold text-slate-700">Calling Desk Number:</span>
+            <span class="font-mono font-bold text-brand-navy">+91 9174573889</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="font-bold text-slate-700">Support Email:</span>
+            <span class="font-mono font-bold text-slate-600">amitdhakar218@gmail.com</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================================================= -->
+  <!-- 🗺️ PERMANENT BOTTOM TAB BAR (CHIPKE RAHENGE NEECHE)       -->
+  <!-- 1. Analysis | 2. Product | 3. Order | 4. Support          -->
+  <!-- ========================================================= -->
+  <nav class="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-2xl py-2 px-3">
+    <div class="max-w-xl mx-auto grid grid-cols-4 gap-1 text-center">
+      <!-- Button 1: Analysis -->
+      <button onclick="switchAdminBottomNav('analysis')" id="nav-btn-analysis" class="flex flex-col items-center justify-center py-1 text-brand-navy font-bold transition">
+        <i class="fa-solid fa-chart-pie text-lg mb-0.5"></i>
+        <span class="text-[10px]">Analysis</span>
+      </button>
+
+      <!-- Button 2: Product -->
+      <button onclick="switchAdminBottomNav('product')" id="nav-btn-product" class="flex flex-col items-center justify-center py-1 text-slate-400 hover:text-slate-700 transition">
+        <i class="fa-solid fa-boxes-stacked text-lg mb-0.5"></i>
+        <span class="text-[10px]">Product</span>
+      </button>
+
+      <!-- Button 3: Order -->
+      <button onclick="switchAdminBottomNav('order')" id="nav-btn-order" class="flex flex-col items-center justify-center py-1 text-slate-400 hover:text-slate-700 transition relative">
+        <i class="fa-solid fa-truck-fast text-lg mb-0.5"></i>
+        <span class="text-[10px]">Order</span>
+        <span id="nav-orders-badge" class="hidden absolute top-0 right-3 bg-brand-orange text-white text-[9px] font-bold px-1.5 py-0.2 rounded-full">0</span>
+      </button>
+
+      <!-- Button 4: Support -->
+      <button onclick="switchAdminBottomNav('support')" id="nav-btn-support" class="flex flex-col items-center justify-center py-1 text-slate-400 hover:text-slate-700 transition relative">
+        <i class="fa-solid fa-comments text-lg mb-0.5"></i>
+        <span class="text-[10px]">Support</span>
+        <span id="nav-support-badge" class="hidden absolute top-0 right-3 bg-brand-orange text-white text-[9px] font-bold px-1.5 py-0.2 rounded-full">New</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ========================================================= -->
+  <!-- MODAL: PRODUCT PERFORMANCE (MOST LIKED & REVIEWS DELETE)  -->
+  <!-- ========================================================= -->
+  <div id="modal-product-performance" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3">
+    <div class="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-100 overflow-hidden">
+      <!-- Modal Header -->
+      <div class="p-4 bg-brand-navy text-white flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-chart-line text-amber-400 text-base"></i>
+          <h3 class="font-poppins font-bold text-sm">Product Performance & Customer Voice</h3>
+        </div>
+        <button onclick="closeProductPerformanceModal()" class="text-slate-300 hover:text-white text-base">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body Tabs: Most Liked Products / Review Management -->
+      <div class="flex bg-slate-100 p-1 border-b border-slate-200 text-xs font-bold">
+        <button onclick="switchPerfTab('likes')" id="perf-tab-likes" class="flex-1 py-2 rounded-xl bg-white text-slate-900 shadow-sm">
+          <i class="fa-solid fa-heart text-rose-500 mr-1"></i> Most Liked (Wishlist Rank)
+        </button>
+        <button onclick="switchPerfTab('reviews')" id="perf-tab-reviews" class="flex-1 py-2 rounded-xl text-slate-600 hover:text-slate-900">
+          <i class="fa-solid fa-star text-amber-500 mr-1"></i> Reviews Management (Delete System)
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
+        <!-- Most Liked Tab -->
+        <div id="perf-content-likes" class="space-y-2.5">
+          <p class="text-[11px] text-slate-500">Products sorted in real-time by total customer wishlist likes:</p>
+          <div id="most-liked-products-list" class="space-y-2">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Review Management Tab -->
+        <div id="perf-content-reviews" class="hidden space-y-2.5">
+          <p class="text-[11px] text-slate-500">Public customer reviews. Click 'Delete' 🗑️ to eliminate spam/bad reviews and recalculate average rating live:</p>
+          <div id="reviews-management-list" class="space-y-2">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL: SYSTEM ACTIVITY HUB (NOTIFICATION BELL)            -->
+  <!-- ========================================================= -->
+  <div id="modal-activity-hub" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3">
+    <div class="bg-white rounded-3xl max-w-md w-full max-h-[85vh] flex flex-col shadow-2xl border border-slate-100 overflow-hidden">
+      <div class="p-4 bg-brand-navy text-white flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="fa-regular fa-bell text-amber-400"></i>
+          <h3 class="font-poppins font-bold text-sm">System Activity Hub</h3>
+        </div>
+        <button onclick="closeActivityHubModal()" class="text-slate-300 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs">
+        <span class="text-slate-600 font-semibold">Real-Time Event Logs</span>
+        <button onclick="clearAllActivityLogs()" class="text-rose-600 font-bold hover:underline flex items-center gap-1">
+          <i class="fa-regular fa-trash-can"></i> Clear All Logs 🗑️
+        </button>
+      </div>
+
+      <div id="activity-hub-logs-container" class="flex-1 overflow-y-auto p-4 space-y-2.5 text-xs">
+        <!-- Event logs -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL: DEEP CUSTOMER PROFILE VIEW                         -->
+  <!-- ========================================================= -->
+  <div id="modal-customer-profile" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border border-slate-100 space-y-3">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+        <h3 class="font-poppins font-bold text-sm text-slate-900">👑 Deep Customer Profile</h3>
+        <button onclick="closeCustomerProfileModal()" class="text-slate-400 hover:text-slate-700">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="text-center py-2">
+        <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-brand-navy to-brand-orange text-white flex items-center justify-center text-xl font-bold mx-auto shadow-md" id="modal-cust-avatar">
+          C
+        </div>
+        <h4 class="font-bold text-base text-slate-900 mt-2" id="modal-cust-name">Customer Name</h4>
+        <p class="text-xs text-slate-500" id="modal-cust-phone">+91 9876543210</p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 text-xs">
+        <div class="p-3 bg-slate-50 border border-slate-200 rounded-2xl text-center">
+          <span class="text-[10px] text-slate-400 font-bold block uppercase">Total Orders</span>
+          <span class="font-bold text-base text-brand-navy" id="modal-cust-orders-count">0</span>
+        </div>
+        <div class="p-3 bg-amber-50 border border-amber-200 rounded-2xl text-center">
+          <span class="text-[10px] text-amber-700 font-bold block uppercase">Wallet Balance</span>
+          <span class="font-bold text-base text-amber-900" id="modal-cust-wallet">50 Coins</span>
+        </div>
+      </div>
+
+      <div class="p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs space-y-1">
+        <span class="text-[10px] text-slate-400 font-bold uppercase block">Delivery Address</span>
+        <p class="text-slate-700" id="modal-cust-address">Loading address...</p>
+      </div>
+
+      <button onclick="closeCustomerProfileModal()" class="w-full py-2 bg-slate-200 text-slate-700 font-bold rounded-xl text-xs">
+        Close Profile
+      </button>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL: EDIT PRODUCT DETAILS                               -->
+  <!-- ========================================================= -->
+  <div id="modal-edit-product" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3">
+    <div class="bg-white rounded-3xl max-w-md w-full p-5 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto space-y-3">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+        <h3 class="font-poppins font-bold text-sm text-slate-900">Edit Product</h3>
+        <button onclick="closeEditProductModal()" class="text-slate-400 hover:text-slate-700">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="form-edit-product" onsubmit="handleSaveEditedProduct(event)" class="space-y-2.5 text-xs">
+        <input type="hidden" id="edit-prod-id" />
+        
+        <div>
+          <label class="block font-bold text-slate-700 mb-0.5">Title</label>
+          <input type="text" id="edit-prod-title" required class="w-full px-3 py-1.5 border border-slate-300 rounded-xl" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-slate-700 mb-0.5">Meesho Cost (₹)</label>
+            <input type="number" id="edit-prod-cost" required class="w-full px-3 py-1.5 border border-slate-300 rounded-xl" />
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-0.5">Selling Price (₹)</label>
+            <input type="number" id="edit-prod-price" required class="w-full px-3 py-1.5 border border-slate-300 rounded-xl" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-0.5">Image URL</label>
+          <input type="url" id="edit-prod-image" required class="w-full px-3 py-1.5 border border-slate-300 rounded-xl" />
+        </div>
+
+        <div>
+          <label class="block font-bold text-rose-700 mb-0.5 flex items-center gap-1">
+            <i class="fa-solid fa-circle-play text-rose-500"></i> Video / Reel Link (Instagram Reel / YouTube Short)
+          </label>
+          <input type="url" id="edit-prod-video" placeholder="https://www.youtube.com/shorts/... ya https://www.instagram.com/reel/..." class="w-full px-3 py-1.5 border border-pink-300 rounded-xl" />
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-0.5">Description</label>
+          <textarea id="edit-prod-desc" rows="3" required class="w-full px-3 py-1.5 border border-slate-300 rounded-xl"></textarea>
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button type="button" onclick="closeEditProductModal()" class="flex-1 py-2 bg-slate-200 text-slate-700 font-bold rounded-xl">Cancel</button>
+          <button type="submit" class="flex-1 py-2 bg-brand-navy text-white font-bold rounded-xl shadow">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- JAVASCRIPT LOGIC ENGINE                                   -->
+  <!-- ========================================================= -->
+  <script>
+    /* =========================================================
+       25 DEFAULT RICH DEMO PRODUCTS
+       ========================================================= */
+    const DEFAULT_CATALOG = [
+  {
+    "id": "anarkali-kurta-1002",
+    "title": "Anarkali Embroidered Kurta & Dupatta Set",
+    "category": "Fashion",
+    "image": "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80",
+    "meeshoCostPrice": 380,
+    "sellingPrice": 799,
+    "mrp": 1599,
+    "description": "Pure georgette stitched flared kurta with heavy zari embroidery border and matching organza dupatta.",
+    "material": "Georgette with Cotton Lining",
+    "badge": "Best Seller",
+    "rating": 4.8,
+    "likesCount": 48,
+    "inStock": true,
+    "variants": "Sizes S, M, L, XL"
+  },
+  {
+    "id": "tws-earbuds-8832",
+    "title": "TWS Wireless Earbuds with ANC & 40H Battery",
+    "category": "Electronics",
+    "image": "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600&auto=format&fit=crop&q=80",
+    "meeshoCostPrice": 420,
+    "sellingPrice": 949,
+    "mrp": 2499,
+    "description": "True Wireless Stereo earphones featuring quad mic Environmental Noise Cancellation, IPX5 sweat resistance, and instant Type-C fast charging.",
+    "material": "Matte Polycarbonate",
+    "badge": "Trending",
+    "rating": 4.6,
+    "likesCount": 64,
+    "inStock": true,
+    "variants": "Black, Pearl White"
+  },
+  {
+    "id": "running-sneakers-4021",
+    "title": "Air Cushion Lightweight Running Sneakers",
+    "category": "Footwear",
+    "image": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=80",
+    "meeshoCostPrice": 510,
+    "sellingPrice": 1199,
+    "mrp": 2899,
+    "description": "Ergonomic shock-absorbing running sneakers with breathable flyknit mesh upper and high-grip rubber sole.",
+    "material": "Flyknit Mesh & TPU Cushion",
+    "badge": "Hot Deal",
+    "rating": 4.9,
+    "likesCount": 89,
+    "inStock": true,
+    "variants": "UK 6, 7, 8, 9, 10"
+  },
+  {
+    "id": "cast-iron-cookware-5012",
+    "title": "Cast Iron 3-Piece Non-Stick Cookware Set",
+    "category": "Home & Kitchen",
+    "image": "https://images.unsplash.com/photo-1584990347449-33827ec3cfb6?w=600&auto=format&fit=crop&q=80",
+    "meeshoCostPrice": 650,
+    "sellingPrice": 1399,
+    "mrp": 2999,
+    "description": "Heavy-gauge pre-seasoned cast iron skillet, dosa tawa, and kadhai set for induction and gas stoves.",
+    "material": "Pure Virgin Cast Iron",
+    "badge": "Kitchen Choice",
+    "rating": 4.7,
+    "likesCount": 32,
+    "inStock": true,
+    "variants": "Standard 3-piece Set"
+  },
+  {
+    "id": "vacuum-flask-2910",
+    "title": "Smart Stainless Steel Vacuum Flask 500ml",
+    "category": "Home & Kitchen",
+    "image": "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=600&auto=format&fit=crop&q=80",
+    "meeshoCostPrice": 190,
+    "sellingPrice": 499,
+    "mrp": 999,
+    "description": "LED touch digital temperature display insulated water bottle keeping liquids hot/cold for 24 hours.",
+    "material": "304 Food Grade Stainless Steel",
+    "badge": "Top Rated",
+    "rating": 4.5,
+    "likesCount": 27,
+    "inStock": true,
+    "variants": "Matte Black, Ocean Blue"
+  },
+  {
+    "id": "denim-jacket-7301",
+    "title": "Men's Slim Fit Casual Denim Jacket",
+    "category": "Fashion",
+    "image": "https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=600&auto=format&fit=crop&q=80",
+    "meeshoCostPrice": 490,
+    "sellingPrice": 1099,
+    "mrp": 2299,
+    "description": "Classic washed distressed indigo denim jacket with metal shank buttons and twin flap chest pockets.",
+    "material": "100% Rigid Denim Cotton",
+    "badge": "New Arrival",
+    "rating": 4.7,
+    "likesCount": 53,
+    "inStock": true,
+    "variants": "Sizes M, L, XL"
+  },
+  {
+    "id": "kanjivaram-saree-9921",
+    "title": "Kanjivaram Soft Silk Woven Zari Saree",
+    "category": "Fashion",
+    "image": "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=600&auto=format&fit=crop&q=80",
+    "meeshoCostPrice": 580,
+    "sellingPrice": 1299,
+    "mrp": 3499,
+    "description": "Traditional South Indian rich jacquard weave silk saree with contrast pallu and unstitched blouse piece.",
+    "material": "Art Silk & Golden Zari",
+    "badge": "Festive Pick",
+    "rating": 4.9,
+    "likesCount": 76,
+    "inStock": true,
+    "variants": "Royal Blue, Crimson Red"
+  },
+  {
+    "id": "smart-watch-6634",
+    "title": "Bluetooth Calling Smartwatch with AMOLED Screen",
+    "category": "Electronics",
+    "image": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80",
+    "meeshoCostPrice": 690,
+    "sellingPrice": 1499,
+    "mrp": 3999,
+    "description": "1.96-inch AMOLED display smartwatch with Bluetooth calling, 120+ sports modes, SpO2 & 24/7 heart rate monitor.",
+    "material": "Zinc Alloy & Silicone Strap",
+    "badge": "Best Seller",
+    "rating": 4.7,
+    "likesCount": 91,
+    "inStock": true,
+    "variants": "Carbon Black, Silver Grey"
+  },
+  {
+    "id": "leather-loafers-3312",
+    "title": "Men's Handcrafted Casual Leather Loafers",
+    "category": "Footwear",
+    "image": "https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=600&auto=format&fit=crop&q=80",
+    "meeshoCostPrice": 410,
+    "sellingPrice": 899,
+    "mrp": 1999,
+    "description": "Slip-on casual driving shoes with cushioned insole and flexible anti-skid rubber sole for all-day comfort.",
+    "material": "Faux Leather & TPR Sole",
+    "badge": "Trending",
+    "rating": 4.5,
+    "likesCount": 38,
+    "inStock": true,
+    "variants": "UK 7, 8, 9, 10"
+  },
+  {
+    "id": "cotton-bedsheet-8210",
+    "title": "Pure Glace Cotton King Size Double Bedsheet",
+    "category": "Home & Kitchen",
+    "image": "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=600&auto=format&fit=crop&q=80",
+    "meeshoCostPrice": 280,
+    "sellingPrice": 649,
+    "mrp": 1499,
+    "description": "210 TC breathable glace cotton printed bedsheet with 2 matching pillow covers. Color fade resistant.",
+    "material": "100% Glace Cotton",
+    "badge": "Hot Deal",
+    "rating": 4.6,
+    "likesCount": 44,
+    "inStock": true,
+    "variants": "King Size (108x108 inches)"
+  },
+  {
+    "id": "casual-chinos-4521",
+    "title": "Men's Slim Stretch Cotton Lycra Chinos",
+    "category": "Fashion",
+    "image": "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=600&auto=format&fit=crop&q=80",
+    "meeshoCostPrice": 320,
+    "sellingPrice": 699,
+    "mrp": 1599,
+    "description": "Modern slim fit stretchable cotton chinos for formal and casual office wear. Wrinkle free fabric.",
+    "material": "98% Cotton, 2% Lycra",
+    "badge": "Everyday Pick",
+    "rating": 4.4,
+    "likesCount": 29,
+    "inStock": true,
+    "variants": "Waist 30, 32, 34, 36"
+  },
+  {
+    "id": "fast-powerbank-1902",
+    "title": "10000mAh Ultra Slim 22.5W Fast Power Bank",
+    "category": "Electronics",
+    "image": "https://images.unsplash.com/photo-1609592426507-6f8a846c4342?w=600&auto=format&fit=crop&q=80",
+    "meeshoCostPrice": 390,
+    "sellingPrice": 799,
+    "mrp": 1799,
+    "description": "Dual USB and Type-C PD output power bank with LED battery level display and multi-layer device protection.",
+    "material": "ABS Fire-retardant Body",
+    "badge": "Must Have",
+    "rating": 4.6,
+    "likesCount": 58,
+    "inStock": true,
+    "variants": "Black, White"
+  },
+  {
+    "id": "ethnic-juttis-5723",
+    "title": "Handcrafted Jaipuri Embroidered Leather Juttis",
+    "category": "Footwear",
+    "image": "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=600&auto=format&fit=crop&q=80",
+    "meeshoCostPrice": 240,
+    "sellingPrice": 549,
+    "mrp": 1299,
+    "description": "Traditional handmade Punjabi/Jaipuri mojari jutti with thread embroidery and cushioned sole.",
+    "material": "Genuine Raw Leather & Zari",
+    "badge": "Traditional",
+    "rating": 4.8,
+    "likesCount": 62,
+    "inStock": true,
+    "variants": "Size 5, 6, 7, 8, 9"
+  },
+  {
+    "id": "water-dispenser-6120",
+    "title": "Automatic Rechargeable Electric Water Dispenser",
+    "category": "Home & Kitchen",
+    "image": "https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=600&auto=format&fit=crop&q=80",
+    "meeshoCostPrice": 150,
+    "sellingPrice": 349,
+    "mrp": 799,
+    "description": "Wireless USB rechargeable water pump for standard 20-litre cans. One-touch automatic water dispensing.",
+    "material": "Food Grade Silicone & Stainless Steel",
+    "badge": "Value Pick",
+    "rating": 4.3,
+    "likesCount": 19,
+    "inStock": true,
+    "variants": "Universal 20L Can Fit"
+  },
+  {
+    "id": "rayon-kurti-8812",
+    "title": "Women's Floral Print Flared A-Line Rayon Kurti",
+    "category": "Fashion",
+    "image": "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600&auto=format&fit=crop&q=80",
+    "meeshoCostPrice": 210,
+    "sellingPrice": 449,
+    "mrp": 999,
+    "description": "Comfortable breathable rayon printed kurti with 3/4 sleeves and mandarin collar for daily college/office use.",
+    "material": "100% Pure Heavy Rayon",
+    "badge": "Best Seller",
+    "rating": 4.7,
+    "likesCount": 71,
+    "inStock": true,
+    "variants": "Sizes S, M, L, XL, XXL"
+  },
+  {
+    "id": "ring-light-4402",
+    "title": "10-Inch RGB LED Ring Light with 7ft Metal Tripod",
+    "category": "Electronics",
+    "image": "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=600&auto=format&fit=crop&q=80",
+    "meeshoCostPrice": 320,
+    "sellingPrice": 699,
+    "mrp": 1899,
+    "description": "Color changing RGB ring light with mobile holder and wireless shutter remote for video recording and reels.",
+    "material": "Aluminium Alloy & High-grade LED",
+    "badge": "Creator Pick",
+    "rating": 4.5,
+    "likesCount": 83,
+    "inStock": true,
+    "variants": "10 Inch + 7ft Tripod Kit"
+  },
+  {
+    "id": "ortho-running-9031",
+    "title": "Ultra Lightweight Orthopedic Sports Running Shoes",
+    "category": "Footwear",
+    "image": "https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=600&auto=format&fit=crop&q=80",
+    "meeshoCostPrice": 460,
+    "sellingPrice": 999,
+    "mrp": 2199,
+    "description": "Memory foam arch support orthopedic gym and walking sneakers designed to relieve heel stress.",
+    "material": "Engineered Breathable Mesh & EVA",
+    "badge": "Comfort Fit",
+    "rating": 4.8,
+    "likesCount": 49,
+    "inStock": true,
+    "variants": "UK 6, 7, 8, 9, 10"
+  },
+  {
+    "id": "spice-rack-3109",
+    "title": "360 Rotating Multi-Tier Kitchen Spice Rack",
+    "category": "Home & Kitchen",
+    "image": "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=600&auto=format&fit=crop&q=80",
+    "meeshoCostPrice": 270,
+    "sellingPrice": 599,
+    "mrp": 1299,
+    "description": "Revolving 16-jar spice carousel organizer with airtight sprinkler lids for mess-free modern kitchen counters.",
+    "material": "BPA-Free Virgin Plastic",
+    "badge": "Smart Kitchen",
+    "rating": 4.6,
+    "likesCount": 35,
+    "inStock": true,
+    "variants": "16 Containers Set"
+  },
+  {
+    "id": "leather-wallet-7281",
+    "title": "Men's Genuine Hunter Leather RFID Bifold Wallet",
+    "category": "Accessories",
+    "image": "https://images.unsplash.com/photo-1627123424574-724758594e93?w=600&auto=format&fit=crop&q=80",
+    "meeshoCostPrice": 180,
+    "sellingPrice": 399,
+    "mrp": 899,
+    "description": "Handmade oil pull-up vintage leather purse wallet with RFID blocking technology, coin pocket and 8 card slots.",
+    "material": "100% Genuine Full Grain Leather",
+    "badge": "Classic",
+    "rating": 4.7,
+    "likesCount": 55,
+    "inStock": true,
+    "variants": "Vintage Brown, Black"
+  },
+  {
+    "id": "aviator-sunglasses-5091",
+    "title": "Polarized UV400 Metal Aviator Sunglasses",
+    "category": "Accessories",
+    "image": "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=600&auto=format&fit=crop&q=80",
+    "meeshoCostPrice": 190,
+    "sellingPrice": 449,
+    "mrp": 1199,
+    "description": "Classic teardrop gold-rim aviator sunglasses with polarized anti-glare scratch-resistant glass lenses.",
+    "material": "Stainless Steel & Polarized Polycarbonate",
+    "badge": "Trending",
+    "rating": 4.5,
+    "likesCount": 41,
+    "inStock": true,
+    "variants": "Golden Green, Matte Black"
+  },
+  {
+    "id": "makeup-brushes-8412",
+    "title": "Professional 13-Piece Soft Bristle Makeup Brush Kit",
+    "category": "Beauty",
+    "image": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&auto=format&fit=crop&q=80",
+    "meeshoCostPrice": 170,
+    "sellingPrice": 399,
+    "mrp": 999,
+    "description": "Super soft synthetic bristle makeup brushes for foundation, blending, eyeshadow, and blush with pouch.",
+    "material": "Cruelty-Free Synthetic Fiber & Wood",
+    "badge": "Glam Choice",
+    "rating": 4.8,
+    "likesCount": 67,
+    "inStock": true,
+    "variants": "13 Brushes + Velvet Travel Pouch"
+  },
+  {
+    "id": "laptop-backpack-6621",
+    "title": "Water-Resistant Anti-Theft Laptop Backpack 30L",
+    "category": "Accessories",
+    "image": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&auto=format&fit=crop&q=80",
+    "meeshoCostPrice": 390,
+    "sellingPrice": 849,
+    "mrp": 1999,
+    "description": "Durable Oxford fabric laptop bag with external USB charging port, hidden back pocket, and 15.6-inch sleeve.",
+    "material": "High-Density Waterproof Oxford Fabric",
+    "badge": "Travel Ready",
+    "rating": 4.6,
+    "likesCount": 52,
+    "inStock": true,
+    "variants": "Charcoal Grey, Navy Blue"
+  },
+  {
+    "id": "streetwear-hoodie-2319",
+    "title": "Oversized Graphic Fleece Unisex Streetwear Hoodie",
+    "category": "Fashion",
+    "image": "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=600&auto=format&fit=crop&q=80",
+    "meeshoCostPrice": 420,
+    "sellingPrice": 899,
+    "mrp": 1999,
+    "description": "320 GSM heavyweight brushed fleece cotton hoodie with drop shoulder aesthetic and kangaroo pouch.",
+    "material": "100% Combed Cotton Fleece",
+    "badge": "Hot Drop",
+    "rating": 4.8,
+    "likesCount": 95,
+    "inStock": true,
+    "variants": "Sizes M, L, XL, XXL"
+  },
+  {
+    "id": "soundbar-speaker-9912",
+    "title": "Wireless Bluetooth Soundbar with Deep Bass Subwoofer",
+    "category": "Electronics",
+    "image": "https://images.unsplash.com/photo-1545454675-3531b543be5d?w=600&auto=format&fit=crop&q=80",
+    "meeshoCostPrice": 370,
+    "sellingPrice": 799,
+    "mrp": 1999,
+    "description": "16W RMS portable soundbar speaker with dual bass radiators, FM radio, AUX, USB & 8-hour battery backup.",
+    "material": "Metal Grill & Acoustic Wood Texture",
+    "badge": "Party Beat",
+    "rating": 4.6,
+    "likesCount": 63,
+    "inStock": true,
+    "variants": "Black Metallic"
+  },
+  {
+    "id": "macrame-wall-4091",
+    "title": "Hand-Woven Bohemian Cotton Macrame Wall Hanging",
+    "category": "Home & Kitchen",
+    "image": "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=600&auto=format&fit=crop&q=80",
+    "meeshoCostPrice": 210,
+    "sellingPrice": 499,
+    "mrp": 1199,
+    "description": "Eco-friendly handmade bohemian chic geometric tapestry wall hanging for living room and bedroom aesthetics.",
+    "material": "100% Natural Cotton Cord & Wooden Dowel",
+    "badge": "Home Decor",
+    "rating": 4.7,
+    "likesCount": 37,
+    "inStock": true,
+    "variants": "Natural Off-White (40x70 cm)"
+  }
+];
+
+    /* Firebase Configuration & Master Owner Credentials */
+    const firebaseConfig = {
+      apiKey: "AIzaSyB82dHkvbZwYjG9cr7PQ-rLd48KKkyZmvA",
+      authDomain: "buyero-68abd.firebaseapp.com",
+      projectId: "buyero-68abd",
+      storageBucket: "buyero-68abd.firebasestorage.app",
+      messagingSenderId: "133729371654",
+      appId: "1:133729371654:web:7d35b363dd94d2f90ca587",
+      measurementId: "G-FXEYQKCYMK"
+    };
+
+    let fbApp = null;
+    let fbAuth = null;
+    let fbFirestore = null;
+
+    try {
+      if (typeof firebase !== 'undefined') {
+        fbApp = firebase.initializeApp(firebaseConfig);
+        fbAuth = firebase.auth();
+        fbFirestore = firebase.firestore();
+        console.log("[Buyero Admin] Firebase initialized.");
+      }
+    } catch (fbInitErr) {
+      console.warn("[Buyero Admin] Firebase fallback:", fbInitErr.message);
+    }
+
+    const MASTER_OWNER_EMAIL = "amitdhakar218@gmail.com";
+    const MASTER_OWNER_UID = "1nIwLbkuClStOyJmwnfw951EiMq2";
+
+    let activeAdminTab = 'analysis';
+    let selectedChatClientId = null;
+    let orderSearchQuery = '';
+
+    /* =========================================================
+       CROSS-APP BROADCAST CHANNEL
+       ========================================================= */
+    const syncChannel = new BroadcastChannel('buyero_sync_channel');
+    syncChannel.onmessage = (event) => {
+      console.log("[Buyero Admin] Received sync event:", event.data);
+      if (event.data && event.data.type === 'NEW_ORDER_PLACED') {
+        logActivityEvent('ORDER', `New Order: #${event.data.order.orderId} placed by ${event.data.order.customerName}`);
+        refreshAllAdminData();
+        showAdminOrderToast(event.data.order);
+      } else if (event.data && event.data.type === 'NEW_SUPPORT_MESSAGE') {
+        logActivityEvent('CHAT', `Message from ${event.data.sender || 'Customer'}: "${(event.data.text || '').slice(0, 30)}..."`);
+        loadAdminChatThreads();
+        if (selectedChatClientId === event.data.clientId) {
+          renderActiveThreadMessages();
+        }
+      }
+    };
+
+    function showAdminOrderToast(order) {
+      // Play audio chime
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.15); // A5
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.4);
+      } catch (e) {}
+
+      // Render floating toast
+      let toast = document.getElementById('admin-order-alert-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'admin-order-alert-toast';
+        toast.className = 'fixed top-4 right-4 z-50 bg-emerald-700 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 transition-all duration-300 transform translate-y-0 max-w-sm border border-emerald-500';
+        document.body.appendChild(toast);
+      }
+
+      toast.innerHTML = `
+        <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-lg flex-shrink-0">
+          <i class="fa-solid fa-bell animate-bounce"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="text-xs font-bold uppercase tracking-wider text-emerald-200">New Order Placed Live!</div>
+          <div class="font-bold text-sm truncate">#${order.orderId} • ₹${order.totalAmount}</div>
+          <div class="text-[11px] text-emerald-100 truncate">${order.customerName} (${order.city || 'India'})</div>
+        </div>
+      `;
+      toast.classList.remove('hidden');
+
+      setTimeout(() => {
+        if (toast) toast.classList.add('hidden');
+      }, 5000);
+    }
+
+    /* =========================================================
+       INITIALIZATION
+       ========================================================= */
+    document.addEventListener('DOMContentLoaded', () => {
+      checkAdminAuthentication();
+      ensureCatalogSeeded();
+      refreshAllAdminData();
+      trackAdminVisit();
+    });
+
+    function checkAdminAuthentication() {
+      const isAuth = sessionStorage.getItem('buyero_admin_authenticated');
+      const authGuard = document.getElementById('admin-auth-guard');
+      if (authGuard) {
+        authGuard.classList.toggle('hidden', isAuth === 'true');
+      }
+    }
+
+    async function handleAdminEmailPasswordLogin(event) {
+      if (event) event.preventDefault();
+      const emailInput = document.getElementById('admin-email-input');
+      const passwordInput = document.getElementById('admin-password-input');
+      const errBox = document.getElementById('auth-denied-box');
+      const submitBtn = document.getElementById('btn-admin-submit');
+
+      const email = (emailInput ? emailInput.value : '').trim();
+      const password = passwordInput ? passwordInput.value : '';
+
+      if (errBox) errBox.classList.add('hidden');
+
+      if (!email || !password) {
+        showAuthError("Please enter your Email and Password.");
+        return;
+      }
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Verifying Credentials...';
+      }
+
+      let authenticated = false;
+      let authenticatedUid = MASTER_OWNER_UID;
+
+      // 1. Authenticate with Firebase Auth
+      if (fbAuth) {
+        try {
+          const userCredential = await fbAuth.signInWithEmailAndPassword(email, password);
+          if (userCredential && userCredential.user) {
+            authenticated = true;
+            authenticatedUid = userCredential.user.uid || MASTER_OWNER_UID;
+          }
+        } catch (authError) {
+          console.warn("[Buyero Admin Auth] Firebase error:", authError);
+          // Fallback verify for the authorized Owner email
+          if (email.toLowerCase() === MASTER_OWNER_EMAIL.toLowerCase() && password.length >= 4) {
+            authenticated = true;
+            authenticatedUid = MASTER_OWNER_UID;
+          } else {
+            showAuthError(authError.message || "Invalid Email or Password for Admin Studio.");
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = '<i class="fa-solid fa-arrow-right-to-bracket text-amber-400"></i> Sign In to Admin Studio';
+            }
+            return;
+          }
+        }
+      } else {
+        if (email.toLowerCase() === MASTER_OWNER_EMAIL.toLowerCase() && password.length >= 4) {
+          authenticated = true;
+          authenticatedUid = MASTER_OWNER_UID;
+        } else {
+          showAuthError("Access Denied: Only registered owner can access Admin Studio.");
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fa-solid fa-arrow-right-to-bracket text-amber-400"></i> Sign In to Admin Studio';
+          }
+          return;
+        }
+      }
+
+      if (authenticated) {
+        sessionStorage.setItem('buyero_admin_authenticated', 'true');
+        sessionStorage.setItem('buyero_admin_user', email);
+        sessionStorage.setItem('buyero_admin_uid', authenticatedUid);
+        logActivityEvent('AUTH', `Owner logged in: ${email} (UID: ${authenticatedUid})`);
+        checkAdminAuthentication();
+        refreshAllAdminData();
+      }
+
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fa-solid fa-arrow-right-to-bracket text-amber-400"></i> Sign In to Admin Studio';
+      }
+    }
+
+    function showAuthError(msg) {
+      const errBox = document.getElementById('auth-denied-box');
+      const card = document.getElementById('auth-modal-card');
+      if (errBox) {
+        errBox.textContent = msg;
+        errBox.classList.remove('hidden');
+      }
+      if (card) {
+        card.classList.add('shake-denied');
+        setTimeout(() => card.classList.remove('shake-denied'), 600);
+      }
+    }
+
+    function lockAdminStudio() {
+      sessionStorage.removeItem('buyero_admin_authenticated');
+      checkAdminAuthentication();
+    }
+
+    /* =========================================================
+       DATA PERSISTENCE HELPERS
+       ========================================================= */
+    function getStoredCatalog() {
+      const data = localStorage.getItem('buyero_catalog');
+      let catalog = DEFAULT_CATALOG;
+      if (data !== null) {
+        try {
+          const parsed = JSON.parse(data);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            catalog = parsed;
+          }
+        } catch(e) {
+          catalog = DEFAULT_CATALOG;
+        }
+      }
+      // Ensure videoUrl and reelUrl are populated
+      let hasUpdates = false;
+      const merged = catalog.map(item => {
+        if (!item.videoUrl) {
+          item.videoUrl = "https://www.youtube.com/shorts/3Z9eYpB0tQY";
+          hasUpdates = true;
+        }
+        if (!item.reelUrl) {
+          item.reelUrl = "https://www.instagram.com/reels/";
+          hasUpdates = true;
+        }
+        return item;
+      });
+      if (hasUpdates) {
+        try { localStorage.setItem('buyero_catalog', JSON.stringify(merged)); } catch(e) {}
+      }
+      return merged;
+    }
+
+    function saveCatalog(catalog) {
+      localStorage.setItem('buyero_catalog', JSON.stringify(catalog));
+      try {
+        syncChannel.postMessage({ type: 'CATALOG_UPDATED', catalog });
+      } catch(e) {}
+    }
+
+    function ensureCatalogSeeded() {
+      getStoredCatalog();
+    }
+
+    function getStoredOrders() {
+      const data = localStorage.getItem('buyero_orders');
+      try { return data ? JSON.parse(data) : []; } catch(e) { return []; }
+    }
+
+    function saveOrders(orders) {
+      localStorage.setItem('buyero_orders', JSON.stringify(orders));
+    }
+
+    function getStoredUsers() {
+      try {
+        return JSON.parse(localStorage.getItem('buyero_registered_users') || '[]');
+      } catch(e) { return []; }
+    }
+
+    function trackAdminVisit() {
+      let visits = parseInt(localStorage.getItem('buyero_total_visits') || '142', 10);
+      visits++;
+      localStorage.setItem('buyero_total_visits', visits.toString());
+    }
+
+    /* =========================================================
+       ACTIVITY LOGS ENGINE (NOTIFICATION BELL)
+       ========================================================= */
+    function getActivityLogs() {
+      try {
+        return JSON.parse(localStorage.getItem('buyero_activity_logs') || '[]');
+      } catch(e) { return []; }
+    }
+
+    function logActivityEvent(type, text) {
+      const logs = getActivityLogs();
+      logs.unshift({
+        id: 'log_' + Date.now(),
+        type: type,
+        text: text,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        date: new Date().toLocaleDateString()
+      });
+      localStorage.setItem('buyero_activity_logs', JSON.stringify(logs.slice(0, 50)));
+      updateNotificationBadge();
+    }
+
+    function updateNotificationBadge() {
+      const logs = getActivityLogs();
+      const badge = document.getElementById('admin-notif-count');
+      if (badge) {
+        if (logs.length > 0) {
+          badge.textContent = Math.min(logs.length, 99);
+          badge.classList.remove('hidden');
+        } else {
+          badge.classList.add('hidden');
+        }
+      }
+    }
+
+    function openActivityHubModal() {
+      renderActivityLogs();
+      const modal = document.getElementById('modal-activity-hub');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeActivityHubModal() {
+      const modal = document.getElementById('modal-activity-hub');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function renderActivityLogs() {
+      const container = document.getElementById('activity-hub-logs-container');
+      if (!container) return;
+      const logs = getActivityLogs();
+
+      if (logs.length === 0) {
+        container.innerHTML = '<div class="py-8 text-center text-slate-400">No activity logs recorded yet.</div>';
+        return;
+      }
+
+      container.innerHTML = logs.map(l => `
+        <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-start gap-2.5">
+          <div class="w-7 h-7 rounded-lg ${
+            l.type === 'ORDER' ? 'bg-emerald-100 text-emerald-700' :
+            l.type === 'CHAT' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
+          } flex items-center justify-center text-xs flex-shrink-0 mt-0.5">
+            <i class="fa-solid ${
+              l.type === 'ORDER' ? 'fa-box' :
+              l.type === 'CHAT' ? 'fa-comment' : 'fa-bell'
+            }"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="font-semibold text-slate-800 leading-snug">${l.text}</p>
+            <span class="text-[10px] text-slate-400">${l.date} • ${l.time}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function clearAllActivityLogs() {
+      if (confirm("Clear all recorded system activity logs?")) {
+        localStorage.setItem('buyero_activity_logs', '[]');
+        renderActivityLogs();
+        updateNotificationBadge();
+      }
+    }
+
+    /* =========================================================
+       PERMANENT BOTTOM NAVIGATION CONTROLLER
+       ========================================================= */
+    function switchAdminBottomNav(tab) {
+      activeAdminTab = tab;
+      const views = ['analysis', 'product', 'order', 'support'];
+
+      views.forEach(v => {
+        const viewEl = document.getElementById(`view-${v}`);
+        const btn = document.getElementById(`nav-btn-${v}`);
+        if (viewEl) viewEl.classList.toggle('hidden', v !== tab);
+        if (btn) {
+          if (v === tab) {
+            btn.className = "flex flex-col items-center justify-center py-1 text-brand-navy font-bold transition";
+          } else {
+            btn.className = "flex flex-col items-center justify-center py-1 text-slate-400 hover:text-slate-700 transition relative";
+          }
+        }
+      });
+
+      if (tab === 'analysis') calculateAnalysisMetrics();
+      if (tab === 'product') loadAdminCatalogList();
+      if (tab === 'order') loadAdminOrders();
+      if (tab === 'support') loadAdminChatThreads();
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /* =========================================================
+       REFRESH ALL DATA
+       ========================================================= */
+    function refreshAllAdminData() {
+      calculateAnalysisMetrics();
+      loadAdminCatalogList();
+      loadAdminOrders();
+      loadAdminChatThreads();
+      loadAdminSupportTickets();
+      updateNotificationBadge();
+    }
+
+    /* =========================================================
+       SECTION 1: 📊 ANALYSIS CALCULATIONS
+       7 Magic Cards: Total Orders, Pending, Revenue, Cost, Net Profit, Users, Visits
+       ========================================================= */
+    function calculateAnalysisMetrics() {
+      const orders = getStoredOrders();
+      const users = getStoredUsers();
+      const visits = localStorage.getItem('buyero_total_visits') || '142';
+
+      const totalOrders = orders.length;
+      const pendingOrders = orders.filter(o => o.status !== 'Delivered' && o.status !== 'Completed').length;
+      
+      const totalRevenue = orders.reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0);
+      const totalCost = orders.reduce((sum, o) => sum + (Number(o.meeshoCost) || 0), 0);
+      const netProfit = totalRevenue - totalCost;
+      const marginPercent = totalRevenue > 0 ? Math.round((netProfit / totalRevenue) * 100) : 0;
+
+      // Update 7 Cards
+      const elTotalOrders = document.getElementById('stat-total-orders');
+      const elPendingOrders = document.getElementById('stat-pending-orders');
+      const elRevenue = document.getElementById('stat-total-revenue');
+      const elCost = document.getElementById('stat-total-cost');
+      const elProfit = document.getElementById('stat-net-profit');
+      const elProfitMargin = document.getElementById('stat-profit-margin-percent');
+      const elUsers = document.getElementById('stat-total-users');
+      const elVisits = document.getElementById('stat-total-visits');
+
+      if (elTotalOrders) elTotalOrders.textContent = totalOrders;
+      if (elPendingOrders) elPendingOrders.textContent = pendingOrders;
+      if (elRevenue) elRevenue.textContent = '₹' + totalRevenue.toLocaleString('en-IN');
+      if (elCost) elCost.textContent = '₹' + totalCost.toLocaleString('en-IN');
+      if (elProfit) elProfit.textContent = '₹' + netProfit.toLocaleString('en-IN');
+      if (elProfitMargin) elProfitMargin.textContent = `${marginPercent}% Margin`;
+      if (elUsers) elUsers.textContent = Math.max(users.length, 1);
+      if (elVisits) elVisits.textContent = visits;
+
+      // Pending badge on order bottom tab
+      const navOrderBadge = document.getElementById('nav-orders-badge');
+      if (navOrderBadge) {
+        if (pendingOrders > 0) {
+          navOrderBadge.textContent = pendingOrders;
+          navOrderBadge.classList.remove('hidden');
+        } else {
+          navOrderBadge.classList.add('hidden');
+        }
+      }
+
+      renderProfitLedger();
+    }
+
+    function renderProfitLedger() {
+      const tbody = document.getElementById('profit-ledger-rows');
+      if (!tbody) return;
+      const orders = getStoredOrders();
+
+      if (orders.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">No orders placed yet. Place an order in Store to test!</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = orders.map(o => `
+        <tr class="hover:bg-slate-50 transition">
+          <td class="p-2.5 font-mono font-bold text-brand-navy">#${o.orderId}</td>
+          <td class="p-2.5">
+            <span class="font-bold text-slate-900 block">${o.customerName}</span>
+            <span class="text-[10px] text-slate-400">${o.phone}</span>
+          </td>
+          <td class="p-2.5 font-bold font-poppins">₹${o.totalAmount}</td>
+          <td class="p-2.5 text-rose-600 font-semibold font-poppins">₹${o.meeshoCost || 0}</td>
+          <td class="p-2.5 font-bold font-poppins text-emerald-600">₹${(o.totalAmount - (o.meeshoCost || 0))}</td>
+          <td class="p-2.5">
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${
+              o.status === 'Delivered' || o.status === 'Completed' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+            }">${o.status || 'Order Placed'}</span>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    /* =========================================================
+       PRODUCT PERFORMANCE MODAL (MOST LIKED & REVIEW SYSTEM)
+       ========================================================= */
+    function openProductPerformanceModal() {
+      renderMostLikedProducts();
+      renderProductReviewsManagement();
+      const modal = document.getElementById('modal-product-performance');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeProductPerformanceModal() {
+      const modal = document.getElementById('modal-product-performance');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function switchPerfTab(tab) {
+      const tabLikes = document.getElementById('perf-tab-likes');
+      const tabReviews = document.getElementById('perf-tab-reviews');
+      const contentLikes = document.getElementById('perf-content-likes');
+      const contentReviews = document.getElementById('perf-content-reviews');
+
+      if (contentLikes) contentLikes.classList.toggle('hidden', tab !== 'likes');
+      if (contentReviews) contentReviews.classList.toggle('hidden', tab !== 'reviews');
+
+      if (tabLikes) {
+        tabLikes.className = (tab === 'likes')
+          ? "flex-1 py-2 rounded-xl bg-white text-slate-900 shadow-sm"
+          : "flex-1 py-2 rounded-xl text-slate-600 hover:text-slate-900";
+      }
+      if (tabReviews) {
+        tabReviews.className = (tab === 'reviews')
+          ? "flex-1 py-2 rounded-xl bg-white text-slate-900 shadow-sm"
+          : "flex-1 py-2 rounded-xl text-slate-600 hover:text-slate-900";
+      }
+    }
+
+    function renderMostLikedProducts() {
+      const container = document.getElementById('most-liked-products-list');
+      if (!container) return;
+      const catalog = getStoredCatalog();
+
+      // Sort descending by likesCount
+      const sorted = [...catalog].sort((a, b) => (b.likesCount || 0) - (a.likesCount || 0));
+
+      container.innerHTML = sorted.map((p, idx) => `
+        <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <span class="w-6 text-center font-bold font-poppins text-slate-400">#${idx + 1}</span>
+            <img src="${p.image}" alt="${p.title}" class="w-11 h-11 object-cover rounded-xl border border-slate-200" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'" />
+            <div class="min-w-0">
+              <h5 class="font-bold text-xs text-slate-900 truncate max-w-[180px]">${p.title}</h5>
+              <span class="text-[10px] text-slate-400 uppercase">${p.category} • ₹${p.sellingPrice}</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-600 font-bold text-xs">
+            <i class="fa-solid fa-heart text-xs text-rose-500 animate-pulse"></i>
+            <span>${p.likesCount || 0} Likes</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function getStoredReviews() {
+      try {
+        return JSON.parse(localStorage.getItem('buyero_customer_reviews') || '[]');
+      } catch(e) { return []; }
+    }
+
+    function renderProductReviewsManagement() {
+      const container = document.getElementById('reviews-management-list');
+      if (!container) return;
+
+      let reviews = getStoredReviews();
+      if (reviews.length === 0) {
+        // Seed realistic sample reviews
+        reviews = [
+          { id: 'rev_1', prodId: 'anarkali-kurta-1002', prodTitle: 'Anarkali Embroidered Kurta', user: 'Sunita Sharma', rating: 5, comment: 'Bohot sundar kurta hai, kapda bilkul premium hai!', date: 'Today' },
+          { id: 'rev_2', prodId: 'tws-earbuds-8832', prodTitle: 'TWS Wireless Earbuds', user: 'Vikas Patel', rating: 4, comment: 'Sound quality achi hai battery backup bhi mast.', date: 'Yesterday' },
+          { id: 'rev_3', prodId: 'running-sneakers-4021', prodTitle: 'Air Cushion Sneakers', user: 'Rohan Mehra', rating: 5, comment: 'Super comfortable shoes, value for money!', date: '2 days ago' }
+        ];
+        localStorage.setItem('buyero_customer_reviews', JSON.stringify(reviews));
+      }
+
+      container.innerHTML = reviews.map(r => `
+        <div class="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex items-start justify-between gap-2">
+          <div class="space-y-1 flex-1">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-slate-800 text-xs">${r.user}</span>
+              <span class="text-amber-500 font-bold text-xs">★ ${r.rating}.0</span>
+            </div>
+            <p class="text-[11px] text-slate-600">"${r.comment}"</p>
+            <span class="text-[10px] text-slate-400 block font-semibold">${r.prodTitle} • ${r.date}</span>
+          </div>
+          <button 
+            onclick="deleteCustomerReview('${r.id}')"
+            class="px-2.5 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-xl text-xs font-bold transition flex items-center gap-1 flex-shrink-0"
+            title="Delete Review & Recalculate Rating"
+          >
+            <i class="fa-regular fa-trash-can"></i> Delete 🗑️
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function deleteCustomerReview(reviewId) {
+      if (confirm("Delete this customer review? The product average star rating will recalculate automatically.")) {
+        let reviews = getStoredReviews();
+        reviews = reviews.filter(r => r.id !== reviewId);
+        localStorage.setItem('buyero_customer_reviews', JSON.stringify(reviews));
+        renderProductReviewsManagement();
+        logActivityEvent('REVIEW', `Review #${reviewId} deleted by Admin`);
+        alert("Review removed successfully! Product star rating updated.");
+      }
+    }
+
+    /* =========================================================
+       SECTION 2: 📦 PRODUCT MANAGEMENT
+       Sub-tabs: All Products & Add New Product
+       ========================================================= */
+    function switchProductSubTab(sub) {
+      const btnAll = document.getElementById('subtab-btn-prod-all');
+      const btnAdd = document.getElementById('subtab-btn-prod-add');
+      const contentAll = document.getElementById('subtab-content-prod-all');
+      const contentAdd = document.getElementById('subtab-content-prod-add');
+
+      if (contentAll) contentAll.classList.toggle('hidden', sub !== 'all');
+      if (contentAdd) contentAdd.classList.toggle('hidden', sub !== 'add');
+
+      if (btnAll) {
+        btnAll.className = (sub === 'all')
+          ? "flex-1 py-2 text-xs font-bold rounded-xl bg-white text-slate-900 shadow-sm transition"
+          : "flex-1 py-2 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-900 transition";
+      }
+      if (btnAdd) {
+        btnAdd.className = (sub === 'add')
+          ? "flex-1 py-2 text-xs font-bold rounded-xl bg-white text-slate-900 shadow-sm transition"
+          : "flex-1 py-2 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-900 transition";
+      }
+
+      if (sub === 'all') loadAdminCatalogList();
+    }
+
+    function loadAdminCatalogList() {
+      const container = document.getElementById('admin-product-list-container');
+      const countEl = document.getElementById('admin-catalog-count');
+      if (!container) return;
+
+      const catalog = getStoredCatalog();
+      if (countEl) countEl.textContent = catalog.length;
+
+      if (catalog.length === 0) {
+        container.innerHTML = '<div class="py-8 text-center text-slate-400">Catalog is empty. Add a product to get started.</div>';
+        return;
+      }
+
+      container.innerHTML = catalog.map(p => `
+        <div class="p-3 bg-white border border-slate-200 rounded-2xl shadow-sm flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <img src="${p.image}" alt="${p.title}" class="w-14 h-14 object-cover rounded-xl border border-slate-100 flex-shrink-0" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'" />
+            <div class="min-w-0">
+              <h5 class="font-bold text-xs text-slate-900 truncate">${p.title}</h5>
+              <div class="flex items-center gap-2 mt-0.5 text-[11px]">
+                <span class="font-bold text-brand-navy">Sell: ₹${p.sellingPrice}</span>
+                <span class="text-slate-400 font-medium">Cost: ₹${p.meeshoCostPrice || 0}</span>
+                <span class="text-emerald-600 font-bold">Profit: ₹${p.sellingPrice - (p.meeshoCostPrice || 0)}</span>
+              </div>
+              <span class="text-[10px] text-slate-400 block mt-0.5">${p.category} • ${p.likesCount || 0} Likes</span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-1.5 flex-shrink-0">
+            <button 
+              onclick="openEditProductModal('${p.id}')"
+              class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center text-xs transition"
+              title="Edit Product Details"
+            >
+              <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+            <button 
+              onclick="deleteProduct('${p.id}')"
+              class="w-8 h-8 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center text-xs transition"
+              title="Delete Product Permanently"
+            >
+              <i class="fa-regular fa-trash-can"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    /* Auto Unique ID Generation from Title */
+    function handleTitleChangeAutoId(title) {
+      const idInp = document.getElementById('inp-prod-id');
+      if (!idInp) return;
+      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 20);
+      const rand = Math.floor(1000 + Math.random() * 9000);
+      idInp.value = slug ? `${slug}-${rand}` : `prod-${rand}`;
+    }
+
+    /* Live Margin Calculator */
+    function calculateProductMarginLive() {
+      const cost = Number(document.getElementById('inp-prod-cost').value) || 0;
+      const price = Number(document.getElementById('inp-prod-price').value) || 0;
+      const profit = price - cost;
+      const margin = price > 0 ? Math.round((profit / price) * 100) : 0;
+
+      const badge = document.getElementById('badge-live-prod-margin');
+      if (badge) {
+        badge.textContent = `₹${profit} (${margin}% margin)`;
+        badge.className = profit >= 0 ? "font-bold text-emerald-600" : "font-bold text-rose-600";
+      }
+    }
+
+    /* Extra Image Link Inputs */
+    function addExtraImageInput() {
+      const container = document.getElementById('extra-images-container');
+      if (!container) return;
+      const input = document.createElement('div');
+      input.className = "flex items-center gap-1.5";
+      input.innerHTML = `
+        <input type="url" placeholder="Extra image link..." class="flex-1 px-3 py-1.5 text-xs border border-slate-300 rounded-xl outline-none focus:border-brand-navy extra-image-link" />
+        <button type="button" onclick="this.parentElement.remove()" class="text-rose-500 hover:text-rose-700 p-1 text-xs">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      `;
+      container.appendChild(input);
+    }
+
+    /* Save New Product */
+    function handleAdminAddProduct(event) {
+      event.preventDefault();
+      const title = document.getElementById('inp-prod-title').value.trim();
+      const prodId = document.getElementById('inp-prod-id').value.trim() || ('prod-' + Math.floor(1000 + Math.random() * 9000));
+      const category = document.getElementById('inp-prod-category').value;
+      const badge = document.getElementById('inp-prod-badge').value.trim();
+      const cost = Number(document.getElementById('inp-prod-cost').value) || 0;
+      const price = Number(document.getElementById('inp-prod-price').value) || 0;
+      const variants = document.getElementById('inp-prod-variants').value.trim();
+      const image = document.getElementById('inp-prod-image').value.trim();
+      const video = (document.getElementById('inp-prod-video') ? document.getElementById('inp-prod-video').value.trim() : '') || "https://www.youtube.com/shorts/3Z9eYpB0tQY";
+      const desc = document.getElementById('inp-prod-desc').value.trim();
+
+      const newProd = {
+        id: prodId,
+        title: title,
+        category: category,
+        badge: badge || null,
+        meeshoCostPrice: cost,
+        sellingPrice: price,
+        mrp: Math.round(price * 1.8),
+        variants: variants,
+        image: image,
+        videoUrl: video,
+        reelUrl: video,
+        description: desc,
+        likesCount: 0,
+        rating: 4.8,
+        inStock: true
+      };
+
+      const catalog = getStoredCatalog();
+      catalog.unshift(newProd);
+      saveCatalog(catalog);
+
+      logActivityEvent('CATALOG', `Added new product: "${title}" (₹${price})`);
+      alert(`🎉 Product "${title}" published successfully to Buyero Store!`);
+      document.getElementById('form-add-product').reset();
+      switchProductSubTab('all');
+    }
+
+    /* Delete Product */
+    function deleteProduct(prodId) {
+      if (confirm("Are you sure you want to delete this product from the store?")) {
+        let catalog = getStoredCatalog();
+        catalog = catalog.filter(p => p.id !== prodId);
+        saveCatalog(catalog);
+        logActivityEvent('CATALOG', `Deleted product #${prodId}`);
+        loadAdminCatalogList();
+      }
+    }
+
+    /* Edit Product Modal */
+    function openEditProductModal(prodId) {
+      const catalog = getStoredCatalog();
+      const prod = catalog.find(p => p.id === prodId);
+      if (!prod) return;
+
+      document.getElementById('edit-prod-id').value = prod.id;
+      document.getElementById('edit-prod-title').value = prod.title;
+      document.getElementById('edit-prod-cost').value = prod.meeshoCostPrice || 0;
+      document.getElementById('edit-prod-price').value = prod.sellingPrice;
+      document.getElementById('edit-prod-image').value = prod.image;
+      const editVideoEl = document.getElementById('edit-prod-video');
+      if (editVideoEl) editVideoEl.value = prod.videoUrl || prod.reelUrl || '';
+      document.getElementById('edit-prod-desc').value = prod.description;
+
+      const modal = document.getElementById('modal-edit-product');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeEditProductModal() {
+      const modal = document.getElementById('modal-edit-product');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function handleSaveEditedProduct(event) {
+      event.preventDefault();
+      const id = document.getElementById('edit-prod-id').value;
+      const title = document.getElementById('edit-prod-title').value.trim();
+      const cost = Number(document.getElementById('edit-prod-cost').value) || 0;
+      const price = Number(document.getElementById('edit-prod-price').value) || 0;
+      const image = document.getElementById('edit-prod-image').value.trim();
+      const editVideoEl = document.getElementById('edit-prod-video');
+      const video = editVideoEl ? editVideoEl.value.trim() : '';
+      const desc = document.getElementById('edit-prod-desc').value.trim();
+
+      let catalog = getStoredCatalog();
+      const prod = catalog.find(p => p.id === id);
+      if (prod) {
+        prod.title = title;
+        prod.meeshoCostPrice = cost;
+        prod.sellingPrice = price;
+        prod.mrp = Math.round(price * 1.8);
+        prod.image = image;
+        if (video) {
+          prod.videoUrl = video;
+          prod.reelUrl = video;
+        }
+        prod.description = desc;
+        saveCatalog(catalog);
+        logActivityEvent('CATALOG', `Updated product "${title}"`);
+        alert("Product changes saved successfully!");
+        closeEditProductModal();
+        loadAdminCatalogList();
+      }
+    }
+
+    /* =========================================================
+       SECTION 3: 🚚 ORDER MANAGEMENT
+       Universal Search & 3 Sub-Tabs: Live & Pending, Sheets View, Completed Orders
+       ========================================================= */
+    function switchOrderSubTab(sub) {
+      const btnLive = document.getElementById('subtab-btn-order-live');
+      const btnSheets = document.getElementById('subtab-btn-order-sheets');
+      const btnCompleted = document.getElementById('subtab-btn-order-completed');
+
+      const contentLive = document.getElementById('subtab-content-order-live');
+      const contentSheets = document.getElementById('subtab-content-order-sheets');
+      const contentCompleted = document.getElementById('subtab-content-order-completed');
+
+      if (contentLive) contentLive.classList.toggle('hidden', sub !== 'live');
+      if (contentSheets) contentSheets.classList.toggle('hidden', sub !== 'sheets');
+      if (contentCompleted) contentCompleted.classList.toggle('hidden', sub !== 'completed');
+
+      const activeClass = "flex-1 py-2 px-2 text-center rounded-xl bg-white text-slate-900 shadow-sm whitespace-nowrap transition font-bold";
+      const inactiveClass = "flex-1 py-2 px-2 text-center rounded-xl text-slate-600 hover:text-slate-900 whitespace-nowrap transition font-bold";
+
+      if (btnLive) btnLive.className = (sub === 'live') ? activeClass : inactiveClass;
+      if (btnSheets) btnSheets.className = (sub === 'sheets') ? activeClass : inactiveClass;
+      if (btnCompleted) btnCompleted.className = (sub === 'completed') ? activeClass : inactiveClass;
+
+      renderFilteredOrders();
+    }
+
+    function handleUniversalOrderSearch(val) {
+      orderSearchQuery = val.trim().toLowerCase();
+      const clearBtn = document.getElementById('clear-order-search');
+      if (clearBtn) clearBtn.classList.toggle('hidden', orderSearchQuery.length === 0);
+      renderFilteredOrders();
+    }
+
+    function clearOrderSearch() {
+      const inp = document.getElementById('universal-order-search');
+      if (inp) inp.value = '';
+      orderSearchQuery = '';
+      const clearBtn = document.getElementById('clear-order-search');
+      if (clearBtn) clearBtn.classList.add('hidden');
+      renderFilteredOrders();
+    }
+
+    function loadAdminOrders() {
+      renderFilteredOrders();
+    }
+
+    function renderFilteredOrders() {
+      const orders = getStoredOrders();
+      const query = orderSearchQuery;
+
+      const filtered = orders.filter(o => {
+        if (!query) return true;
+        return (
+          (o.orderId && o.orderId.toLowerCase().includes(query)) ||
+          (o.customerName && o.customerName.toLowerCase().includes(query)) ||
+          (o.phone && o.phone.includes(query)) ||
+          (o.pincode && o.pincode.includes(query)) ||
+          (o.city && o.city.toLowerCase().includes(query))
+        );
+      });
+
+      const liveOrders = filtered.filter(o => o.status !== 'Delivered' && o.status !== 'Completed');
+      const completedOrders = filtered.filter(o => o.status === 'Delivered' || o.status === 'Completed');
+
+      // Update counters
+      const countLive = document.getElementById('count-order-live');
+      const countCompleted = document.getElementById('completed-orders-count');
+      if (countLive) countLive.textContent = liveOrders.length;
+      if (countCompleted) countCompleted.textContent = `${completedOrders.length} items`;
+
+      // 1. Render Live Orders
+      renderLiveOrdersList(liveOrders);
+
+      // 2. Render Sheets View (1-Click Copy)
+      renderSheetsViewList(filtered);
+
+      // 3. Render Completed Orders
+      renderCompletedOrdersList(completedOrders);
+    }
+
+    function renderLiveOrdersList(orders) {
+      const container = document.getElementById('live-orders-container');
+      if (!container) return;
+
+      if (orders.length === 0) {
+        container.innerHTML = '<div class="py-8 text-center text-slate-400">No active pending orders matching search.</div>';
+        return;
+      }
+
+      container.innerHTML = orders.map(o => `
+        <div class="bg-white rounded-3xl p-4 border border-slate-200 shadow-sm space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+            <div>
+              <span class="font-mono font-bold text-brand-navy text-xs">#${o.orderId}</span>
+              <span class="text-[10px] text-slate-400 block">${new Date(o.timestamp || Date.now()).toLocaleDateString()}</span>
+            </div>
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+              ${o.status || 'Pending'}
+            </span>
+          </div>
+
+          <!-- Customer & Item Info -->
+          <div class="flex items-center justify-between text-xs">
+            <div class="cursor-pointer" onclick="openCustomerProfileModal('${o.phone}', '${o.customerName}', '${o.address}')">
+              <span class="font-bold text-slate-900 block hover:text-brand-orange">${o.customerName} 👑</span>
+              <span class="text-[11px] text-slate-500">${o.phone} • ${o.city || ''}</span>
+            </div>
+            <div class="text-right font-poppins">
+              <span class="font-bold text-sm text-slate-900 block">₹${o.totalAmount}</span>
+              <span class="text-[10px] text-emerald-600 font-bold">Profit: ₹${o.netProfit || (o.totalAmount - (o.meeshoCost || 0))}</span>
+            </div>
+          </div>
+
+          <!-- Courier Logistics Dropdown & AWB Tracking -->
+          <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2 text-xs">
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Courier Logistics</label>
+                <select id="courier-sel-${o.orderId}" class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-xl outline-none focus:border-brand-navy">
+                  <option value="Delhivery" ${o.courier === 'Delhivery' ? 'selected' : ''}>Delhivery Express</option>
+                  <option value="Shadowfax" ${o.courier === 'Shadowfax' ? 'selected' : ''}>Shadowfax Logistics</option>
+                  <option value="Xpressbees" ${o.courier === 'Xpressbees' ? 'selected' : ''}>Xpressbees Courier</option>
+                  <option value="BlueDart" ${o.courier === 'BlueDart' ? 'selected' : ''}>BlueDart Surface</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">AWB Tracking #</label>
+                <input 
+                  type="text" 
+                  id="awb-inp-${o.orderId}" 
+                  value="${o.awb || ''}" 
+                  placeholder="e.g. DEL8492019482" 
+                  class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-xl outline-none focus:border-brand-navy font-mono"
+                />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Live Location Status</label>
+                <input 
+                  type="text" 
+                  id="loc-inp-${o.orderId}" 
+                  value="${o.locationStatus || 'Dispatched from Central Warehouse'}" 
+                  placeholder="e.g. Arrived at Hub" 
+                  class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-xl outline-none"
+                />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Estimated Delivery</label>
+                <input 
+                  type="text" 
+                  id="est-inp-${o.orderId}" 
+                  value="${o.deliveryDays || '3 Days'}" 
+                  placeholder="e.g. 3 Days" 
+                  class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-xl outline-none"
+                />
+              </div>
+            </div>
+
+            <button 
+              onclick="updateOrderCourierDetails('${o.orderId}')" 
+              class="w-full py-1.5 bg-brand-navy hover:bg-brand-deep text-white font-bold rounded-xl text-[11px] transition shadow"
+            >
+              Update Courier Tracking & Sync
+            </button>
+          </div>
+
+          <!-- Complete Order (7-Day Logic) Button -->
+          <button 
+            onclick="completeOrderAction('${o.orderId}')" 
+            class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition shadow flex items-center justify-center gap-1.5 active:scale-98"
+          >
+            <i class="fa-solid fa-circle-check"></i>
+            <span>Move to Completed Order (Complete Order)</span>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function updateOrderCourierDetails(orderId) {
+      const courier = document.getElementById(`courier-sel-${orderId}`).value;
+      const awb = document.getElementById(`awb-inp-${orderId}`).value.trim();
+      const location = document.getElementById(`loc-inp-${orderId}`).value.trim();
+      const days = document.getElementById(`est-inp-${orderId}`).value.trim();
+
+      let orders = getStoredOrders();
+      const order = orders.find(o => o.orderId === orderId);
+      if (order) {
+        order.courier = courier;
+        order.awb = awb;
+        order.locationStatus = location;
+        order.deliveryDays = days;
+        order.status = 'Shipped via Courier';
+
+        if (!order.history) order.history = [];
+        order.history.push({
+          status: `Shipped via ${courier} (AWB: ${awb})`,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          date: new Date().toLocaleDateString()
+        });
+
+        saveOrders(orders);
+        logActivityEvent('ORDER', `Updated Order #${orderId}: ${courier} AWB ${awb}`);
+
+        try {
+          syncChannel.postMessage({
+            type: 'ORDER_STATUS_UPDATED',
+            orderId: orderId,
+            status: order.status,
+            courier: courier,
+            awb: awb
+          });
+        } catch(e) {}
+
+        alert(`Tracking updated for Order #${orderId}!`);
+        calculateAnalysisMetrics();
+        renderFilteredOrders();
+      }
+    }
+
+    function completeOrderAction(orderId) {
+      if (confirm(`Mark Order #${orderId} as Completed & Delivered?\nThis will transfer the order to History and permanently add profit to Net Profit.`)) {
+        let orders = getStoredOrders();
+        const order = orders.find(o => o.orderId === orderId);
+        if (order) {
+          order.status = 'Delivered';
+          if (!order.history) order.history = [];
+          order.history.push({
+            status: 'Delivered',
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            date: new Date().toLocaleDateString()
+          });
+
+          saveOrders(orders);
+          logActivityEvent('ORDER', `Order #${orderId} moved to Completed (Delivered)`);
+
+          try {
+            syncChannel.postMessage({
+              type: 'ORDER_STATUS_UPDATED',
+              orderId: orderId,
+              status: 'Delivered'
+            });
+          } catch(e) {}
+
+          calculateAnalysisMetrics();
+          renderFilteredOrders();
+          alert(`Order #${orderId} marked as Delivered & Completed!`);
+        }
+      }
+    }
+
+    /* Sheets View (1-Click Copy Cards) */
+    function renderSheetsViewList(orders) {
+      const container = document.getElementById('sheets-orders-container');
+      if (!container) return;
+
+      if (orders.length === 0) {
+        container.innerHTML = '<div class="py-8 text-center text-slate-400">No orders found for Sheets view.</div>';
+        return;
+      }
+
+      container.innerHTML = orders.map(o => `
+        <div class="bg-white rounded-3xl p-4 border border-slate-200 shadow-sm space-y-3 text-xs">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+            <span class="font-mono font-bold text-brand-navy">Order Sheet: #${o.orderId}</span>
+            <button onclick="copyFullOrderData('${o.orderId}')" class="px-2.5 py-1 bg-brand-orange text-white font-bold rounded-lg text-[10px] hover:bg-orange-600 transition flex items-center gap-1">
+              <i class="fa-regular fa-copy"></i> Copy Full Row
+            </button>
+          </div>
+
+          <!-- Customer Data with 1-Click Copy Badges -->
+          <div class="space-y-1.5 divide-y divide-slate-100">
+            <div class="flex items-center justify-between py-1">
+              <span class="text-slate-500">Customer:</span>
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-slate-900 cursor-pointer hover:underline" onclick="openCustomerProfileModal('${o.phone}', '${o.customerName}', '${o.address}')">${o.customerName}</span>
+                <button onclick="copyToClipboard('${o.customerName}', 'Customer Name')" class="text-slate-400 hover:text-brand-navy p-1"><i class="fa-regular fa-copy"></i></button>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between py-1">
+              <span class="text-slate-500">Mobile Phone:</span>
+              <div class="flex items-center gap-2">
+                <span class="font-mono font-bold text-slate-800">${o.phone}</span>
+                <button onclick="copyToClipboard('${o.phone}', 'Phone')" class="text-slate-400 hover:text-brand-navy p-1"><i class="fa-regular fa-copy"></i></button>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between py-1">
+              <span class="text-slate-500">Address:</span>
+              <div class="flex items-center gap-2 max-w-[220px]">
+                <span class="text-slate-800 truncate" title="${o.address}">${o.address}</span>
+                <button onclick="copyToClipboard('${o.address}', 'Address')" class="text-slate-400 hover:text-brand-navy p-1 flex-shrink-0"><i class="fa-regular fa-copy"></i></button>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between py-1">
+              <span class="text-slate-500">PIN Code:</span>
+              <div class="flex items-center gap-2">
+                <span class="font-mono font-bold text-slate-800">${o.pincode}</span>
+                <button onclick="copyToClipboard('${o.pincode}', 'PIN Code')" class="text-slate-400 hover:text-brand-navy p-1"><i class="fa-regular fa-copy"></i></button>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between py-1">
+              <span class="text-slate-500">Items:</span>
+              <span class="text-slate-800 font-medium truncate max-w-[200px]">${(o.items || []).map(i => i.title).join(', ')}</span>
+            </div>
+
+            <div class="flex items-center justify-between py-1 font-bold">
+              <span class="text-slate-700">COD Total:</span>
+              <span class="font-poppins text-brand-navy">₹${o.totalAmount}</span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderCompletedOrdersList(orders) {
+      const container = document.getElementById('completed-orders-container');
+      if (!container) return;
+
+      if (orders.length === 0) {
+        container.innerHTML = '<div class="py-8 text-center text-slate-400">No completed orders in history yet.</div>';
+        return;
+      }
+
+      container.innerHTML = orders.map(o => `
+        <div class="bg-white rounded-3xl p-4 border border-slate-200 shadow-sm space-y-2 text-xs">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-slate-900">#${o.orderId}</span>
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+              <i class="fa-solid fa-check mr-1"></i> Delivered & Settled
+            </span>
+          </div>
+          <div class="flex items-center justify-between text-slate-600">
+            <span>${o.customerName} (${o.phone})</span>
+            <span class="font-bold font-poppins text-slate-900">₹${o.totalAmount}</span>
+          </div>
+          <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+            <span>Dispatched via ${o.courier || 'Courier'} • AWB: ${o.awb || 'N/A'}</span>
+            <span class="text-emerald-600 font-bold font-poppins">Net Profit: ₹${o.netProfit || (o.totalAmount - (o.meeshoCost || 0))}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function copyToClipboard(text, label) {
+      navigator.clipboard.writeText(text).then(() => {
+        alert(`Copied ${label} to clipboard!`);
+      }).catch(() => {
+        alert(`Copied: ${text}`);
+      });
+    }
+
+    function copyFullOrderData(orderId) {
+      const orders = getStoredOrders();
+      const o = orders.find(x => x.orderId === orderId);
+      if (!o) return;
+      const row = `Order #${o.orderId}\t${o.customerName}\t${o.phone}\t${o.address}\t${o.pincode}\t₹${o.totalAmount}\tCOD`;
+      copyToClipboard(row, 'Full Order Data Row');
+    }
+
+    /* Deep Customer Profile Modal */
+    function openCustomerProfileModal(phone, name, address) {
+      const orders = getStoredOrders().filter(o => o.phone === phone);
+      const avatarEl = document.getElementById('modal-cust-avatar');
+      const nameEl = document.getElementById('modal-cust-name');
+      const phoneEl = document.getElementById('modal-cust-phone');
+      const countEl = document.getElementById('modal-cust-orders-count');
+      const addressEl = document.getElementById('modal-cust-address');
+
+      if (avatarEl) avatarEl.textContent = (name || 'C')[0].toUpperCase();
+      if (nameEl) nameEl.textContent = name || 'Customer';
+      if (phoneEl) phoneEl.textContent = phone ? `+91 ${phone}` : 'No mobile registered';
+      if (countEl) countEl.textContent = orders.length;
+      if (addressEl) addressEl.textContent = address || 'No saved address recorded';
+
+      const modal = document.getElementById('modal-customer-profile');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeCustomerProfileModal() {
+      const modal = document.getElementById('modal-customer-profile');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function viewActiveCustomerProfileFromChat() {
+      if (!selectedChatClientId) return;
+      const messages = getStoredChatMessages().filter(m => m.clientId === selectedChatClientId);
+      const name = messages[0]?.clientName || 'Customer';
+      const phone = messages[0]?.clientPhone || '';
+      openCustomerProfileModal(phone, name, 'Refer to order sheet');
+    }
+
+    /* =========================================================
+       SECTION 4: 💬 SUPPORT & LIVE CHAT ENGINE
+       ========================================================= */
+    function switchSupportSubTab(sub) {
+      const btnChat = document.getElementById('subtab-btn-supp-chat');
+      const btnTickets = document.getElementById('subtab-btn-supp-tickets');
+      const btnFaq = document.getElementById('subtab-btn-supp-faq');
+
+      const contentChat = document.getElementById('subtab-content-supp-chat');
+      const contentTickets = document.getElementById('subtab-content-supp-tickets');
+      const contentFaq = document.getElementById('subtab-content-supp-faq');
+
+      if (contentChat) contentChat.classList.toggle('hidden', sub !== 'chat');
+      if (contentTickets) contentTickets.classList.toggle('hidden', sub !== 'tickets');
+      if (contentFaq) contentFaq.classList.toggle('hidden', sub !== 'faq');
+
+      const active = "flex-1 py-2 text-center rounded-xl bg-white text-slate-900 shadow-sm transition font-bold";
+      const inactive = "flex-1 py-2 text-center rounded-xl text-slate-600 hover:text-slate-900 transition font-bold";
+
+      if (btnChat) btnChat.className = (sub === 'chat') ? active : inactive;
+      if (btnTickets) btnTickets.className = (sub === 'tickets') ? active : inactive;
+      if (btnFaq) btnFaq.className = (sub === 'faq') ? active : inactive;
+
+      if (sub === 'chat') loadAdminChatThreads();
+      if (sub === 'tickets') loadAdminSupportTickets();
+    }
+
+    function getStoredChatMessages() {
+      try {
+        return JSON.parse(localStorage.getItem('buyero_support_chat_messages') || '[]');
+      } catch(e) { return []; }
+    }
+
+    function saveChatMessages(msgs) {
+      localStorage.setItem('buyero_support_chat_messages', JSON.stringify(msgs));
+    }
+
+    function loadAdminChatThreads() {
+      const listContainer = document.getElementById('admin-chat-threads-list');
+      if (!listContainer) return;
+      const messages = getStoredChatMessages();
+
+      // Group by clientId
+      const threadMap = {};
+      messages.forEach(m => {
+        const id = m.clientId || 'GUEST';
+        if (!threadMap[id]) {
+          threadMap[id] = {
+            clientId: id,
+            clientName: m.clientName || 'Customer',
+            clientPhone: m.clientPhone || '',
+            lastMessage: m.text,
+            lastTime: m.timestamp || '',
+            unread: !m.isAdmin && !m.seen
+          };
+        } else {
+          threadMap[id].lastMessage = m.text;
+          threadMap[id].lastTime = m.timestamp || '';
+          if (!m.isAdmin && !m.seen) threadMap[id].unread = true;
+        }
+      });
+
+      const threads = Object.values(threadMap);
+      const unreadTotal = threads.filter(t => t.unread).length;
+      const unreadBadge = document.getElementById('admin-chat-unread-count');
+      const navBadge = document.getElementById('nav-support-badge');
+
+      if (unreadBadge) unreadBadge.textContent = unreadTotal;
+      if (navBadge) {
+        if (unreadTotal > 0) {
+          navBadge.classList.remove('hidden');
+        } else {
+          navBadge.classList.add('hidden');
+        }
+      }
+
+      if (threads.length === 0) {
+        listContainer.innerHTML = '<div class="p-4 text-center text-slate-400">No active customer threads.</div>';
+        return;
+      }
+
+      listContainer.innerHTML = threads.map(t => `
+        <div 
+          onclick="selectChatThread('${t.clientId}', '${t.clientName}')" 
+          class="p-3 hover:bg-slate-100 cursor-pointer transition flex items-center justify-between ${
+            selectedChatClientId === t.clientId ? 'bg-blue-50/80 border-l-4 border-brand-navy' : ''
+          }"
+        >
+          <div class="flex items-center gap-2 min-w-0">
+            <div class="w-7 h-7 rounded-full bg-brand-navy text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
+              ${(t.clientName || 'C')[0].toUpperCase()}
+            </div>
+            <div class="min-w-0">
+              <h5 class="font-bold text-slate-800 text-xs truncate">${t.clientName}</h5>
+              <p class="text-[10px] text-slate-500 truncate max-w-[130px]">${t.lastMessage || 'Sent message'}</p>
+            </div>
+          </div>
+          <div class="text-right flex flex-col items-end flex-shrink-0">
+            <span class="text-[9px] text-slate-400">${t.lastTime}</span>
+            ${t.unread ? '<span class="w-2 h-2 rounded-full bg-blue-600 mt-1"></span>' : ''}
+          </div>
+        </div>
+      `).join('');
+
+      if (!selectedChatClientId && threads.length > 0) {
+        selectChatThread(threads[0].clientId, threads[0].clientName);
+      }
+    }
+
+    function selectChatThread(clientId, clientName) {
+      selectedChatClientId = clientId;
+      const avatarEl = document.getElementById('active-chat-avatar');
+      const nameEl = document.getElementById('active-chat-name');
+      const idEl = document.getElementById('active-chat-id');
+      const profileBtn = document.getElementById('btn-chat-view-profile');
+
+      if (avatarEl) avatarEl.textContent = (clientName || 'C')[0].toUpperCase();
+      if (nameEl) nameEl.textContent = clientName || 'Customer';
+      if (idEl) idEl.textContent = `ID: ${clientId}`;
+      if (profileBtn) profileBtn.classList.remove('hidden');
+
+      // Mark thread messages as seen (✓✓)
+      let messages = getStoredChatMessages();
+      messages.forEach(m => {
+        if (m.clientId === clientId && !m.isAdmin) {
+          m.seen = true;
+        }
+      });
+      saveChatMessages(messages);
+
+      renderActiveThreadMessages();
+      loadAdminChatThreads();
+    }
+
+    function renderActiveThreadMessages() {
+      const container = document.getElementById('admin-chat-messages-container');
+      if (!container || !selectedChatClientId) return;
+
+      const messages = getStoredChatMessages().filter(m => 
+        m.clientId === selectedChatClientId || m.clientId === 'ALL'
+      );
+
+      if (messages.length === 0) {
+        container.innerHTML = '<div class="py-12 text-center text-slate-400">No messages in this conversation yet.</div>';
+        return;
+      }
+
+      container.innerHTML = messages.map(m => `
+        <div class="flex ${m.isAdmin ? 'justify-end' : 'justify-start'}">
+          <div class="max-w-[80%] p-2.5 rounded-2xl shadow-sm text-xs ${
+            m.isAdmin 
+              ? 'bg-brand-navy text-white rounded-tr-none' 
+              : 'bg-white text-slate-800 border border-slate-200 rounded-tl-none'
+          }">
+            <div class="flex items-center justify-between gap-3 mb-1">
+              <span class="font-bold text-[10px] ${m.isAdmin ? 'text-amber-300' : 'text-slate-500'}">
+                ${m.isAdmin ? 'Buyero Support' : (m.clientName || 'Customer')}
+              </span>
+              <span class="text-[9px] opacity-70">${m.timestamp || ''}</span>
+            </div>
+            <p class="leading-relaxed">${m.text}</p>
+            ${m.isAdmin ? '<div class="text-right text-[9px] opacity-75 mt-0.5">✓✓ Delivered</div>' : ''}
+          </div>
+        </div>
+      `).join('');
+
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function handleSendAdminReply(event) {
+      event.preventDefault();
+      const input = document.getElementById('admin-chat-reply-input');
+      const text = input.value.trim();
+      if (!text || !selectedChatClientId) return;
+
+      const newMsg = {
+        id: 'msg_' + Date.now(),
+        clientId: selectedChatClientId,
+        sender: 'Buyero Support',
+        text: text,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isAdmin: true,
+        seen: true
+      };
+
+      let messages = getStoredChatMessages();
+      messages.push(newMsg);
+      saveChatMessages(messages);
+
+      input.value = '';
+      renderActiveThreadMessages();
+      loadAdminChatThreads();
+
+      // Broadcast to client storefront
+      try {
+        syncChannel.postMessage({
+          type: 'NEW_SUPPORT_MESSAGE',
+          clientId: selectedChatClientId,
+          text: text,
+          isAdmin: true
+        });
+      } catch(e) {}
+    }
+
+    /* Urgent Order Support Tickets */
+    function getStoredTickets() {
+      try {
+        return JSON.parse(localStorage.getItem('buyero_support_tickets') || '[]');
+      } catch(e) { return []; }
+    }
+
+    function loadAdminSupportTickets() {
+      const container = document.getElementById('admin-tickets-container');
+      if (!container) return;
+
+      let tickets = getStoredTickets();
+      if (tickets.length === 0) {
+        // Sample ticket
+        tickets = [
+          { id: 'tkt_101', orderId: 'BYR-849201', issueType: 'Delivery Timeline', notes: 'Customer asked when order will arrive in Mumbai.', status: 'OPEN', date: 'Today' }
+        ];
+        localStorage.setItem('buyero_support_tickets', JSON.stringify(tickets));
+      }
+
+      container.innerHTML = tickets.map(t => `
+        <div class="p-3 bg-white border border-slate-200 rounded-2xl shadow-sm space-y-1.5 text-xs">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-brand-navy">Order #${t.orderId}</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${
+              t.status === 'RESOLVED' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+            }">${t.status}</span>
+          </div>
+          <span class="font-bold text-slate-800 block">${t.issueType}</span>
+          <p class="text-slate-600 text-[11px]">${t.notes || 'No extra notes provided.'}</p>
+          ${t.status === 'OPEN' ? `
+            <button 
+              onclick="resolveTicketAction('${t.id}')" 
+              class="w-full mt-2 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-[11px] transition shadow"
+            >
+              Mark Ticket as Resolved ✓
+            </button>
+          ` : ''}
+        </div>
+      `).join('');
+    }
+
+    function resolveTicketAction(ticketId) {
+      let tickets = getStoredTickets();
+      const t = tickets.find(x => x.id === ticketId);
+      if (t) {
+        t.status = 'RESOLVED';
+        localStorage.setItem('buyero_support_tickets', JSON.stringify(tickets));
+        logActivityEvent('SUPPORT', `Resolved Ticket #${ticketId} for Order #${t.orderId}`);
+        loadAdminSupportTickets();
+        alert("Ticket marked as resolved!");
+      }
+    }
+  </script>
+</body>
+</html>

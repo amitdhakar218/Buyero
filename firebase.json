@@ -1,0 +1,26 @@
+{
+  "hosting": {
+    "public": "app/src/main/assets",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "cleanUrls": true,
+    "trailingSlash": false,
+    "rewrites": [
+      {
+        "source": "/admin/**",
+        "destination": "/admin/index.html"
+      },
+      {
+        "source": "/assets/**",
+        "destination": "/assets/**"
+      },
+      {
+        "source": "**",
+        "destination": "/client/index.html"
+      }
+    ]
+  }
+}

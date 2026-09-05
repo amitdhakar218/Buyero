@@ -1,0 +1,6 @@
+{
+  "name": "Buyero",
+  "description": "Comprehensive E-commerce shopping platform featuring Buyero Client Store and Buyero Admin Studio with live order synchronization, tracking, and analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
