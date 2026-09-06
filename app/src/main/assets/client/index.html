@@ -97,6 +97,29 @@
       -ms-overflow-style: none;
       scrollbar-width: none;
     }
+
+    /* Global tactile feedback / click feel for all buttons and interactive elements */
+    button, a, [role="button"], .btn-tap, .clickable-card, input[type="button"], input[type="submit"] {
+      transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.12s ease, box-shadow 0.12s ease;
+      cursor: pointer;
+      -webkit-tap-highlight-color: rgba(247, 127, 51, 0.15);
+      touch-action: manipulation;
+    }
+    button:active, a:active, [role="button"]:active, .btn-tap:active, .clickable-card:active, input[type="button"]:active, input[type="submit"]:active {
+      transform: scale(0.96) translateY(1px);
+      filter: brightness(0.94);
+    }
+    /* Snappy responsive press feel for primary action buttons */
+    .bg-brand-orange:active, .bg-brand-navy:active, #btn-save-profile:active {
+      transform: scale(0.95) translateY(1.5px) !important;
+      filter: brightness(0.92) !important;
+    }
+    button:disabled, button[disabled], button:disabled:active {
+      transform: none !important;
+      filter: none !important;
+      cursor: not-allowed;
+      opacity: 0.65;
+    }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-900 pb-20 antialiased">
@@ -369,6 +392,26 @@
           <i class="fa-solid fa-chevron-right text-xs text-slate-400 group-hover:translate-x-0.5 transition"></i>
         </button>
 
+        <!-- App Language Selector Button -->
+        <button onclick="openLanguageModal()" class="w-full p-3.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl shadow-sm flex items-center justify-between transition group">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center text-lg">
+              <i class="fa-solid fa-language"></i>
+            </div>
+            <div class="text-left">
+              <h4 class="font-bold text-xs text-slate-900 group-hover:text-brand-navy transition flex items-center gap-1.5">
+                <span>Language / भाषा</span>
+                <span id="profile-current-lang-pill" class="text-[10px] font-bold bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full">English</span>
+              </h4>
+              <p class="text-[11px] text-slate-500" id="profile-lang-subtitle">Switch system language (English / हिंदी)</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs font-semibold text-purple-600">Change</span>
+            <i class="fa-solid fa-chevron-right text-xs text-slate-400 group-hover:translate-x-0.5 transition"></i>
+          </div>
+        </button>
+
         <!-- Contact Support & Return Rules -->
         <div class="grid grid-cols-2 gap-2.5">
           <button onclick="switchClientView('support')" class="p-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl shadow-sm flex items-center gap-2.5 transition text-left">
@@ -468,9 +511,9 @@
       </div>
 
       <!-- 3. Big Bright Green WhatsApp Button (Click-to-WhatsApp) -->
-      <a href="https://wa.me/919174573889?text=Hello%20Buyero%20Support,%20मुझे%20अपने%20ऑर्डर%20के%20बारे%20में%20मदद%20चाहिए" target="_blank" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl text-xs flex items-center justify-center gap-2 shadow-md transition active:scale-98">
+      <a href="https://wa.me/919174573889?text=Hello%20Buyero%20Support,%20I%20need%20help%20with%20my%20order" target="_blank" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl text-xs flex items-center justify-center gap-2 shadow-md transition active:scale-98">
         <i class="fa-brands fa-whatsapp text-xl"></i>
-        <span>Chat with Us on WhatsApp (तुरंत व्हाट्सएप सहायता)</span>
+        <span>Chat with Us on WhatsApp (Instant Support)</span>
       </a>
 
       <!-- 4. Direct Executive Call Button -->
@@ -496,11 +539,11 @@
         <div>
           <label class="block text-[11px] font-semibold text-slate-600 mb-1">What issue are you facing?</label>
           <select id="support-issue-type" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl bg-white focus:outline-none focus:border-brand-navy">
-            <option value="Delivery Date">डिलीवरी कब होगी? (Delivery Timeline)</option>
-            <option value="Size Exchange">साइज़ बदलना है (Size Exchange)</option>
-            <option value="Return Request">सामान रिटर्न करना है (Return Request)</option>
-            <option value="Quality Assistance">क्वालिटी सहायता (Quality Assistance)</option>
-            <option value="Cancel Order">ऑर्डर कैंसिल करना है (Cancel Order)</option>
+            <option value="Delivery Date">When will my order be delivered? (Delivery Timeline)</option>
+            <option value="Size Exchange">I want to exchange size (Size Exchange)</option>
+            <option value="Return Request">I want to return item (Return Request)</option>
+            <option value="Quality Assistance">Quality assistance & inspection</option>
+            <option value="Cancel Order">Cancel my order</option>
           </select>
         </div>
 
@@ -509,7 +552,7 @@
         </div>
 
         <button onclick="submitUrgentSupportTicket()" class="w-full py-2.5 bg-brand-orange hover:bg-orange-600 text-white font-bold rounded-xl text-xs transition shadow flex items-center justify-center gap-1.5">
-          <i class="fa-solid fa-paper-plane"></i> Submit Urgent Ticket (तुरंत टिकट दर्ज करें)
+          <i class="fa-solid fa-paper-plane"></i> Submit Urgent Ticket
         </button>
       </div>
 
@@ -523,44 +566,44 @@
           <!-- Q1 -->
           <details class="group border border-slate-100 rounded-xl p-2.5 bg-slate-50/70 [&_summary::-webkit-details-marker]:hidden">
             <summary class="flex items-center justify-between font-bold text-slate-800 cursor-pointer">
-              <span>क्या Buyero के प्रोडक्ट्स की क्वालिटी अच्छी होती है?</span>
+              <span>Is Buyero product quality verified?</span>
               <span class="text-slate-400 group-open:rotate-180 transition-transform">▾</span>
             </summary>
             <p class="text-slate-600 mt-2 leading-relaxed text-[11px]">
-              हाँ, Buyero अपने सभी प्रोडक्ट्स को कड़े क्वालिटी चेक के बाद खुद डिस्पैच करता है। हम सिर्फ वेरिफाइड निर्माताओं से ही सामान मंगाते हैं।
+              Yes, Buyero conducts strict multi-point quality inspections on all apparel and products directly before dispatch from verified manufacturing partners.
             </p>
           </details>
 
           <!-- Q2 -->
           <details class="group border border-slate-100 rounded-xl p-2.5 bg-slate-50/70 [&_summary::-webkit-details-marker]:hidden">
             <summary class="flex items-center justify-between font-bold text-slate-800 cursor-pointer">
-              <span>सामान पसंद न आने पर रिप्लेसमेंट कैसे होगा?</span>
+              <span>How do size exchanges and replacements work?</span>
               <span class="text-slate-400 group-open:rotate-180 transition-transform">▾</span>
             </summary>
             <p class="text-slate-600 mt-2 leading-relaxed text-[11px]">
-              हमारी Buyero कूरियर टीम खुद आपके घर आकर सामान पिक-अप कर लेगी और आपको दूसरा साइज़ या रिप्लेसमेंट दे देगी।
+              Our express courier team will visit your delivery address to pick up the item and hand over your replacement size with zero extra shipping charges.
             </p>
           </details>
 
           <!-- Q3 -->
           <details class="group border border-slate-100 rounded-xl p-2.5 bg-slate-50/70 [&_summary::-webkit-details-marker]:hidden">
             <summary class="flex items-center justify-between font-bold text-slate-800 cursor-pointer">
-              <span>ऑर्डर कितने दिन में डिलीवर होता है?</span>
+              <span>How many days does delivery take?</span>
               <span class="text-slate-400 group-open:rotate-180 transition-transform">▾</span>
             </summary>
             <p class="text-slate-600 mt-2 leading-relaxed text-[11px]">
-              Buyero एक्सप्रेस कूरियर पार्टनर्स द्वारा 3-5 दिनों में आपके घर सुरक्षित होम डिलीवरी की जाती है।
+              Orders are dispatched within 24 hours and delivered safely to your doorstep within 3-5 business days across India.
             </p>
           </details>
 
           <!-- Q4 -->
           <details class="group border border-slate-100 rounded-xl p-2.5 bg-slate-50/70 [&_summary::-webkit-details-marker]:hidden">
             <summary class="flex items-center justify-between font-bold text-slate-800 cursor-pointer">
-              <span>क्या रिटर्न पर पूरा रिफंड मिलता है?</span>
+              <span>Do I get a 100% refund on returns?</span>
               <span class="text-slate-400 group-open:rotate-180 transition-transform">▾</span>
             </summary>
             <p class="text-slate-600 mt-2 leading-relaxed text-[11px]">
-              हाँ! सामान पिकअप होते ही 24 घंटे के अंदर आपके UPI (GPay/PhonePe/Paytm) या बैंक खाते में 100% पूरा रिफंड क्रेडिट कर दिया जाता है।
+              Yes! As soon as your return package is picked up by our courier partner, your 100% refund is credited within 24 hours directly to your UPI or bank account.
             </p>
           </details>
         </div>
@@ -660,7 +703,7 @@
             class="py-2.5 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center gap-2 transition active:scale-95 border border-emerald-200 shadow-2xs"
           >
             <i class="fa-solid fa-share-nodes text-emerald-600 text-sm"></i>
-            <span>Share Product (शेयर)</span>
+            <span>Share Product</span>
           </button>
           <button 
             type="button"
@@ -668,15 +711,15 @@
             class="py-2.5 px-3 rounded-xl bg-gradient-to-r from-purple-50 via-pink-50 to-rose-50 hover:from-purple-100 hover:to-pink-100 text-rose-800 font-bold text-xs flex items-center justify-center gap-2 transition active:scale-95 border border-pink-200 shadow-2xs"
           >
             <i class="fa-solid fa-circle-play text-rose-600 text-sm"></i>
-            <span>Watch Reel (रील देखें)</span>
+            <span>Watch Video Reel</span>
           </button>
         </div>
       </div>
 
-      <!-- Select Size (साइज़ चुनें) -->
+      <!-- Select Size -->
       <div class="p-4 bg-white border-b border-slate-200 space-y-2.5">
         <div class="flex items-center justify-between">
-          <label class="text-xs font-bold text-slate-800 uppercase tracking-wider">Select Size (साइज़ चुनें) *</label>
+          <label class="text-xs font-bold text-slate-800 uppercase tracking-wider">Select Size *</label>
           <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">In Stock</span>
         </div>
         <div class="flex flex-wrap gap-2.5" id="pdetail-size-selector">
@@ -707,7 +750,7 @@
 
       <!-- Product Specifications & Brand Details -->
       <div class="p-4 bg-white border-b border-slate-200 space-y-2">
-        <h3 class="font-bold text-xs uppercase tracking-wider text-slate-800">Product Specifications (प्रोडक्ट विवरण)</h3>
+        <h3 class="font-bold text-xs uppercase tracking-wider text-slate-800">Product Specifications</h3>
         <div class="bg-slate-50 rounded-xl p-3 border border-slate-200 space-y-2 text-xs">
           <div class="flex justify-between py-1 border-b border-slate-200">
             <span class="text-slate-500 font-medium">Brand</span>
@@ -734,11 +777,11 @@
         <p id="pdetail-description" class="text-xs text-slate-600 leading-relaxed"></p>
       </div>
 
-      <!-- Similar Products ("You May Also Like" / समान प्रोडक्ट्स) -->
+      <!-- Similar Products ("You May Also Like") -->
       <div class="p-4 bg-white border-b border-slate-200 space-y-3">
         <div class="flex items-center justify-between">
           <h3 class="font-bold text-xs uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
-            <i class="fa-solid fa-sparkles text-brand-orange"></i> Similar Products (समान प्रोडक्ट्स)
+            <i class="fa-solid fa-sparkles text-brand-orange"></i> Similar Products
           </h3>
           <span class="text-[10px] text-slate-400 font-semibold">You May Also Like</span>
         </div>
@@ -755,7 +798,7 @@
         </button>
         <button onclick="directBuyNowFromDetail()" class="flex-1 py-3 px-3 bg-brand-orange hover:bg-orange-600 text-white font-bold rounded-xl text-xs transition shadow-md flex items-center justify-center gap-1.5 active:scale-98">
           <i class="fa-solid fa-bolt text-sm"></i>
-          <span>BUY NOW (सीधे खरीदें)</span>
+          <span>BUY NOW</span>
         </button>
       </div>
     </section>
@@ -791,19 +834,19 @@
         <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
           <div class="flex items-center justify-between border-b border-slate-100 pb-2">
             <h4 class="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-              <i class="fa-solid fa-location-dot text-brand-orange"></i> Delivery Address (डिलीवरी पता) *
+              <i class="fa-solid fa-location-dot text-brand-orange"></i> Delivery Address *
             </h4>
             <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Free Delivery</span>
           </div>
 
           <div class="space-y-3 text-xs">
             <div>
-              <label class="block font-semibold text-slate-700 mb-1">Full Customer Name (ग्राहक का पूरा नाम) *</label>
+              <label class="block font-semibold text-slate-700 mb-1">Full Customer Name *</label>
               <input type="text" id="chk-cust-name" required placeholder="e.g. Amit Dhakar" class="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy outline-none bg-slate-50/50 focus:bg-white text-xs transition">
             </div>
 
             <div>
-              <label class="block font-semibold text-slate-700 mb-1">10-Digit Mobile Number (मोबाइल नंबर) *</label>
+              <label class="block font-semibold text-slate-700 mb-1">10-Digit Mobile Number *</label>
               <div class="relative flex items-center">
                 <span class="absolute left-3 font-bold text-slate-500 text-xs">+91</span>
                 <input type="tel" id="chk-cust-phone" required maxlength="10" placeholder="9174573889" class="w-full pl-12 pr-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy outline-none bg-slate-50/50 focus:bg-white text-xs transition font-semibold">
@@ -822,7 +865,7 @@
             </div>
 
             <div>
-              <label class="block font-semibold text-slate-700 mb-1">Nearby Landmark (नज़दीकी पहचान - Optional)</label>
+              <label class="block font-semibold text-slate-700 mb-1">Nearby Landmark (Optional)</label>
               <input type="text" id="chk-cust-landmark" placeholder="Near Shiv Mandir / Water Tank" class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy outline-none bg-slate-50/50 focus:bg-white text-xs transition">
             </div>
 
@@ -860,7 +903,7 @@
         <!-- 3. Payment Method (Meesho Style) -->
         <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
           <h4 class="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-2">
-            <i class="fa-solid fa-credit-card text-brand-orange"></i> Payment Mode (भुगतान का तरीका)
+            <i class="fa-solid fa-credit-card text-brand-orange"></i> Payment Mode
           </h4>
           <div class="space-y-2">
             <!-- Cash on Delivery (Preselected) -->
@@ -903,7 +946,7 @@
 
         <!-- 4. Price Details Card -->
         <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-2 text-xs">
-          <h4 class="font-bold text-xs text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-2">Price Details (कीमत का विवरण)</h4>
+          <h4 class="font-bold text-xs text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-2">Price Details</h4>
           <div class="flex justify-between text-slate-600">
             <span>Total Product Price (MRP)</span>
             <span id="chk-total-mrp">₹799</span>
@@ -917,7 +960,7 @@
             <span class="text-emerald-600 font-bold"><span class="line-through text-slate-400 mr-1">₹70</span> FREE</span>
           </div>
           <div class="flex justify-between font-bold text-sm text-slate-900 border-t border-slate-200 pt-2">
-            <span>Order Total (कुल राशि)</span>
+            <span>Order Total</span>
             <span id="chk-final-total" class="text-brand-orange font-poppins text-base">₹399</span>
           </div>
         </div>
@@ -930,7 +973,7 @@
           <span id="chk-bottom-total" class="font-poppins font-bold text-lg text-slate-900">₹399</span>
         </div>
         <button onclick="submitCheckoutOrder()" id="btn-submit-order" class="py-3 px-6 bg-brand-orange hover:bg-orange-600 text-white font-bold rounded-xl text-xs transition shadow-lg flex items-center gap-2 active:scale-98">
-          <span>Place Order • ऑर्डर कन्फर्म करें</span>
+          <span>Place Order</span>
           <i class="fa-solid fa-arrow-right text-xs"></i>
         </button>
       </div>
@@ -945,7 +988,7 @@
         <div>
           <span class="text-[11px] font-bold text-emerald-600 uppercase tracking-wider bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">Order Confirmed</span>
           <h2 class="font-poppins font-bold text-xl text-slate-900 mt-2">Order Placed Successfully!</h2>
-          <p class="text-xs text-slate-500 mt-1">आपका ऑर्डर सफलतापूर्वक प्राप्त हो गया है।</p>
+          <p class="text-xs text-slate-500 mt-1">Your order has been placed and received by Buyero.</p>
         </div>
 
         <!-- Order Info Card -->
@@ -971,18 +1014,18 @@
         <!-- Live Sync Alert -->
         <div class="p-2.5 bg-blue-50 border border-blue-200 rounded-xl text-[11px] text-blue-800 flex items-center gap-2 text-left">
           <i class="fa-solid fa-bolt text-brand-orange text-sm flex-shrink-0"></i>
-          <span>ऑर्डर विवरण आपके My Orders में और एडमिन स्टूडियो में लाइव पहुंच चुका है।</span>
+          <span>Live order updates have been synced to My Orders and the Admin Studio.</span>
         </div>
 
         <!-- Actions -->
         <div class="space-y-2 pt-1">
           <button onclick="switchClientView('orders')" class="w-full py-3 bg-brand-navy hover:bg-brand-deep text-white font-bold rounded-xl text-xs transition shadow flex items-center justify-center gap-2 active:scale-98">
             <i class="fa-solid fa-truck-fast"></i>
-            <span>Track Order in My Orders (ऑर्डर ट्रैक करें)</span>
+            <span>Track Order in My Orders</span>
           </button>
           <button onclick="switchClientView('shop')" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition flex items-center justify-center gap-2 active:scale-98">
             <i class="fa-solid fa-store"></i>
-            <span>Continue Shopping (और शॉपिंग करें)</span>
+            <span>Continue Shopping</span>
           </button>
         </div>
       </div>
@@ -1114,17 +1157,17 @@
           <!-- ================= STEP 1: NAME & MOBILE ================= -->
           <div id="checkout-step-1" class="space-y-3.5">
             <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Full Customer Name (ग्राहक का पूरा नाम) *</label>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Full Customer Name *</label>
               <input type="text" id="cust-name" required placeholder="e.g. Amit Dhakar" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy outline-none">
             </div>
 
             <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">10-Digit Mobile Number (डिलीवरी के लिए मोबाइल नंबर) *</label>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">10-Digit Mobile Number *</label>
               <div class="flex">
                 <span class="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-slate-300 bg-slate-50 text-slate-600 text-xs font-semibold">+91</span>
                 <input type="tel" id="cust-phone" required maxlength="10" pattern="[0-9]{10}" placeholder="Enter 10-digit mobile number" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-r-xl focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy outline-none font-mono">
               </div>
-              <p class="text-[10px] text-slate-500 mt-1">Our courier boy will call this number at the time of delivery.</p>
+              <p class="text-[10px] text-slate-500 mt-1">Our courier executive will call this number at the time of delivery.</p>
             </div>
 
             <!-- Quick Auto-Fill Hint if profile exists -->
@@ -1134,7 +1177,7 @@
             </div>
 
             <button type="button" onclick="goToCheckoutStep2()" class="w-full mt-2 py-3 bg-brand-navy hover:bg-brand-deep text-white font-bold rounded-xl text-xs transition shadow flex items-center justify-center gap-2">
-              <span>Next: Address & Payment (अगला चरण)</span>
+              <span>Next: Address & Payment</span>
               <i class="fa-solid fa-arrow-right"></i>
             </button>
           </div>
@@ -1230,7 +1273,7 @@
                 <i class="fa-solid fa-arrow-left"></i> Step 1: Back
               </button>
               <button type="submit" id="btn-submit-order" class="py-3 bg-brand-orange hover:bg-orange-600 text-white font-bold rounded-xl text-xs transition shadow-lg flex items-center justify-center gap-1.5">
-                <i class="fa-solid fa-lock text-xs"></i> Place Order (ऑर्डर करें)
+                <i class="fa-solid fa-lock text-xs"></i> Place Order
               </button>
             </div>
           </div>
@@ -1333,7 +1376,7 @@
         <!-- 5. Select Size (S, M, L, XL, Free Size) with Variant Availability -->
         <div class="space-y-2">
           <div class="flex items-center justify-between">
-            <label class="text-xs font-bold text-slate-800 uppercase tracking-wider">Select Size (साइज़ चुनें)</label>
+            <label class="text-xs font-bold text-slate-800 uppercase tracking-wider">Select Size</label>
             <span id="modal-stock-status-hint" class="text-[10px] font-semibold text-emerald-600">In Stock</span>
           </div>
           <div class="flex flex-wrap gap-2" id="modal-size-selector">
@@ -1452,7 +1495,7 @@
         </button>
         <button onclick="directBuyNowFromModal()" class="py-3 bg-brand-orange hover:bg-orange-600 text-white font-bold rounded-xl text-xs transition shadow flex items-center justify-center gap-1.5 active:scale-98">
           <i class="fa-solid fa-bolt"></i>
-          <span>BUY NOW ⚡ (सीधे खरीदें)</span>
+          <span>BUY NOW ⚡</span>
         </button>
       </div>
 
@@ -1476,7 +1519,7 @@
 
       <form onsubmit="handleSaveProfileDetails(event)" class="p-4 space-y-3">
         <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Your Full Name (पूरा नाम) *</label>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Your Full Name *</label>
           <input type="text" id="edit-profile-name-input" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl outline-none focus:border-brand-navy">
         </div>
 
@@ -1496,7 +1539,7 @@
         </div>
 
         <button type="submit" class="w-full py-2.5 bg-brand-orange hover:bg-orange-600 text-white font-bold rounded-xl text-xs transition shadow">
-          Save Profile Details (सुरक्षित करें)
+          Save Profile Details
         </button>
       </form>
     </div>
@@ -1561,7 +1604,7 @@
         </ul>
 
         <button onclick="closeReturnRulesModal()" class="w-full py-2.5 bg-brand-navy text-white font-bold rounded-xl text-xs transition">
-          I Understand (ठीक है)
+          I Understand
         </button>
       </div>
     </div>
@@ -1586,6 +1629,66 @@
         <p>Your contact information is strictly used for order dispatch, courier coordination, and live support updates. We never sell or share user data with third parties.</p>
         <button onclick="closePrivacyPolicyModal()" class="w-full py-2.5 bg-brand-navy text-white font-bold rounded-xl text-xs transition">
           Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- SYSTEM LANGUAGE SELECTOR MODAL -->
+  <!-- ========================================== -->
+  <div id="language-modal" class="hidden fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-3" onclick="if(event.target === this) closeLanguageModal();">
+    <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 border border-slate-200" onclick="event.stopPropagation();">
+      <div class="p-4 bg-gradient-to-r from-brand-navy to-slate-900 text-white flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-300 flex items-center justify-center text-sm">
+            <i class="fa-solid fa-language"></i>
+          </div>
+          <div>
+            <h3 class="font-poppins font-bold text-sm">Choose App Language</h3>
+            <p class="text-[10px] text-slate-300">Select system interface language</p>
+          </div>
+        </div>
+        <button onclick="closeLanguageModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-xs transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      
+      <div class="p-4 space-y-3">
+        <!-- English Option -->
+        <button onclick="setAppLanguage('en')" id="lang-opt-en" class="w-full p-3.5 rounded-2xl border-2 border-brand-orange bg-orange-50/50 flex items-center justify-between transition group">
+          <div class="flex items-center gap-3">
+            <span class="text-2xl">🇬🇧</span>
+            <div class="text-left">
+              <h4 class="font-bold text-xs text-slate-900">English (Recommended)</h4>
+              <p class="text-[10px] text-slate-500">Standard clean English interface</p>
+            </div>
+          </div>
+          <span id="lang-check-en" class="w-6 h-6 rounded-full bg-brand-orange text-white flex items-center justify-center text-xs">
+            <i class="fa-solid fa-check"></i>
+          </span>
+        </button>
+
+        <!-- Hindi Option -->
+        <button onclick="setAppLanguage('hi')" id="lang-opt-hi" class="w-full p-3.5 rounded-2xl border border-slate-200 hover:border-slate-300 bg-white flex items-center justify-between transition group">
+          <div class="flex items-center gap-3">
+            <span class="text-2xl">🇮🇳</span>
+            <div class="text-left">
+              <h4 class="font-bold text-xs text-slate-900">Hindi (हिंदी)</h4>
+              <p class="text-[10px] text-slate-500">Use system with Hindi labels</p>
+            </div>
+          </div>
+          <span id="lang-check-hi" class="w-6 h-6 rounded-full bg-slate-200 text-slate-400 flex items-center justify-center text-xs hidden">
+            <i class="fa-solid fa-check"></i>
+          </span>
+        </button>
+
+        <p class="text-[10px] text-slate-400 text-center pt-1">
+          Language selection is saved instantly to your device.
+        </p>
+
+        <button onclick="closeLanguageModal()" class="w-full py-2.5 bg-brand-navy hover:bg-brand-deep text-white font-bold rounded-xl text-xs transition">
+          Done
         </button>
       </div>
     </div>
@@ -1823,7 +1926,7 @@
 
           <div>
             <label class="block text-xs font-bold text-slate-700 mb-1">
-              Mobile Number <span class="text-brand-orange">*</span>
+              Mobile Number (Optional)
             </label>
             <div class="flex items-center">
               <span class="inline-flex items-center px-3 py-2.5 rounded-l-xl border border-r-0 border-slate-300 bg-slate-50 text-slate-600 text-xs font-bold font-mono">+91</span>
@@ -1835,7 +1938,7 @@
                 class="w-full px-3 py-2.5 text-xs border border-slate-300 rounded-r-xl focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/20 outline-none font-mono text-xs" 
               />
             </div>
-            <p class="text-[10px] text-slate-400 mt-1">Required for delivery notifications and order tracking</p>
+            <p class="text-[10px] text-slate-400 mt-1">Can be added now or later during order checkout</p>
           </div>
 
           <div>
@@ -1851,11 +1954,17 @@
             </div>
           </div>
 
+          <!-- Error Alert Banner (Shows prominently if validation fails) -->
+          <div id="new-user-profile-error" class="hidden p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs flex items-center gap-2">
+            <i class="fa-solid fa-circle-exclamation text-rose-500 flex-shrink-0"></i>
+            <span id="new-user-profile-error-text">Please fill all required fields.</span>
+          </div>
+
           <button 
             type="button" 
             onclick="submitNewUserProfile()" 
             id="btn-save-profile"
-            class="w-full py-3.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold rounded-2xl text-xs sm:text-sm transition shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2 active:scale-98"
+            class="w-full py-3.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold rounded-2xl text-xs sm:text-sm transition shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
           >
             <i class="fa-solid fa-coins text-yellow-200"></i>
             <span>Confirm & Claim ₹50 Welcome Coins 🪙</span>
@@ -1889,8 +1998,8 @@
             <i class="fa-solid fa-share-nodes"></i>
           </div>
           <div>
-            <h3 class="font-poppins font-bold text-sm">Share Product (शेयर करें)</h3>
-            <p class="text-[10px] text-slate-300">Dost ko link bhejein - direct wahi product open hoga</p>
+            <h3 class="font-poppins font-bold text-sm">Share Product</h3>
+            <p class="text-[10px] text-slate-300">Send direct link to friends - opens this exact product</p>
           </div>
         </div>
         <button onclick="closeShareModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-xs transition" title="Close">
@@ -1915,7 +2024,7 @@
 
         <!-- Copy Unique Link Bar -->
         <div>
-          <label class="block text-[11px] font-bold text-slate-700 mb-1.5">Direct Product Link (यूनिक लिंक)</label>
+          <label class="block text-[11px] font-bold text-slate-700 mb-1.5">Direct Product Link</label>
           <div class="flex items-center gap-2">
             <div class="relative flex-1">
               <input 
@@ -2807,6 +2916,11 @@
         }
       }
 
+      // 6b. Apply Selected App Language
+      try {
+        applyAppLanguage(getAppLanguage());
+      } catch (e) {}
+
       // 7. Master Design System Splash Timer (Smooth fast transition)
       setTimeout(() => {
         const splash = document.getElementById('splash-screen');
@@ -3428,7 +3542,7 @@
       if (!activeDetailProduct) return;
       quickAddToCart(activeDetailProduct.id, selectedDetailSize);
       updateProductDetailCartBadge();
-      alert(`🛒 "${activeDetailProduct.title}" (साइज़: ${selectedDetailSize}) कार्ट में सफलतापूर्वक जुड़ गया है!`);
+      alert(`🛒 "${activeDetailProduct.title}" (Size: ${selectedDetailSize}) has been added to your cart!`);
     }
 
     function directBuyNowFromDetail() {
@@ -3683,11 +3797,11 @@
       
       if (socialLabel) {
         if (isInstagram) {
-          socialLabel.textContent = "Open Reel on Instagram App (इंस्टाग्राम पर देखें)";
+          socialLabel.textContent = "Open Reel on Instagram App";
         } else if (isYouTube) {
-          socialLabel.textContent = "Open Short on YouTube App (यूट्यूब पर देखें)";
+          socialLabel.textContent = "Open Short on YouTube App";
         } else {
-          socialLabel.textContent = "Open Video on Social Media (सोशल मीडिया पर देखें)";
+          socialLabel.textContent = "Open Video on Social Media";
         }
       }
 
@@ -4275,12 +4389,12 @@
       const name = document.getElementById('cust-name').value.trim();
       const phone = document.getElementById('cust-phone').value.trim();
       if (!name) {
-        alert("Please enter your full name (पूरा नाम दर्ज करें).");
+        alert("Please enter your full name.");
         document.getElementById('cust-name').focus();
         return;
       }
       if (!phone || phone.length < 10) {
-        alert("Please enter a valid 10-digit mobile number (10 अंकों का मोबाइल नंबर).");
+        alert("Please enter a valid 10-digit mobile number.");
         document.getElementById('cust-phone').focus();
         return;
       }
@@ -4709,29 +4823,29 @@
       const state = (document.getElementById('chk-cust-state') ? document.getElementById('chk-cust-state').value : 'Madhya Pradesh');
 
       if (!name) {
-        alert("कृपया ग्राहक का पूरा नाम दर्ज करें (Please enter full name).");
+        alert("Please enter your full name.");
         const el = document.getElementById('chk-cust-name');
         if (el) el.focus();
         return;
       }
       if (!phone || phone.length < 10) {
-        alert("कृपया 10 अंकों का वैध मोबाइल नंबर दर्ज करें (Please enter 10-digit mobile number).");
+        alert("Please enter a valid 10-digit mobile number.");
         const el = document.getElementById('chk-cust-phone');
         if (el) el.focus();
         return;
       }
       if (!house || !street) {
-        alert("कृपया मकान नंबर और गली / कॉलोनी का पता दर्ज करें (Please enter address details).");
+        alert("Please enter house number and street/colony.");
         return;
       }
       if (!pincode || pincode.length < 6) {
-        alert("कृपया 6 अंकों का पिनकोड दर्ज करें (Please enter 6-digit pincode).");
+        alert("Please enter a valid 6-digit pincode.");
         const el = document.getElementById('chk-cust-pincode');
         if (el) el.focus();
         return;
       }
       if (!city) {
-        alert("कृपया शहर का नाम दर्ज करें (Please enter city).");
+        alert("Please enter your city.");
         const el = document.getElementById('chk-cust-city');
         if (el) el.focus();
         return;
@@ -5762,11 +5876,28 @@
     }
 
     function submitNewUserProfile() {
+      console.log("[submitNewUserProfile] Button clicked, processing profile setup...");
       const saveBtn = document.getElementById('btn-save-profile');
+      const errorBox = document.getElementById('new-user-profile-error');
+      const errorText = document.getElementById('new-user-profile-error-text');
+      if (errorBox) errorBox.classList.add('hidden');
+
       const originalBtnText = saveBtn ? saveBtn.innerHTML : '';
       if (saveBtn) {
         saveBtn.disabled = true;
         saveBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2"></i> Saving Profile & Adding Coins...`;
+      }
+
+      function showProfileError(msg) {
+        if (errorBox && errorText) {
+          errorText.textContent = msg;
+          errorBox.classList.remove('hidden');
+        }
+        alert(msg);
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = originalBtnText;
+        }
       }
 
       try {
@@ -5775,38 +5906,50 @@
         const phoneInput = document.getElementById('new-user-phone');
         const cityInput = document.getElementById('new-user-city');
 
-        const name = (nameInput ? nameInput.value : '').trim();
+        let name = (nameInput ? nameInput.value : '').trim();
         let username = (usernameInput ? usernameInput.value : '').trim().replace(/^@/, '');
         let rawPhone = (phoneInput ? phoneInput.value : '').trim().replace(/[^0-9]/g, '');
-        const city = (cityInput ? cityInput.value : '').trim();
+        let city = (cityInput ? cityInput.value : '').trim();
 
-        // 1. Name Validation
-        if (!name || name.length < 2) {
-          alert("Please enter your full name.");
-          if (nameInput) nameInput.focus();
-          if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = originalBtnText; }
-          return;
-        }
-
-        // 2. Safe Email Resolution
+        // 1. Safe Email Resolution
         const emailBadge = document.getElementById('new-user-verified-email-badge');
         const emailFromBadge = emailBadge ? emailBadge.textContent.trim() : '';
         const safeEmail = (pendingAuthEmail || emailFromBadge || (pendingGoogleAuthUser && pendingGoogleAuthUser.email) || 'user@example.com').toLowerCase();
 
-        // 3. Username Fallback
-        if (!username || username.length < 3) {
-          username = safeEmail.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '') || 'buyer_' + Math.floor(1000 + Math.random() * 9000);
+        // Safe Name Fallback (If empty, fallback to Google displayName or email prefix)
+        if (!name || name.length < 2) {
+          const googleFallbackName = (pendingGoogleAuthUser && pendingGoogleAuthUser.displayName) ? pendingGoogleAuthUser.displayName.trim() : '';
+          if (googleFallbackName && googleFallbackName.length >= 2) {
+            name = googleFallbackName;
+            if (nameInput) nameInput.value = name;
+          } else {
+            const emailPrefixCapitalized = safeEmail.split('@')[0].replace(/[^a-zA-Z0-9]/g, '');
+            if (emailPrefixCapitalized && emailPrefixCapitalized.length >= 2) {
+              name = emailPrefixCapitalized.charAt(0).toUpperCase() + emailPrefixCapitalized.slice(1);
+              if (nameInput) nameInput.value = name;
+            } else {
+              showProfileError("Please enter your name to complete your profile.");
+              if (nameInput) nameInput.focus();
+              return;
+            }
+          }
         }
 
-        // 4. Phone Validation (clean 10-digit)
+        // 2. Username Fallback
+        if (!username || username.length < 3) {
+          username = safeEmail.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '') || 'buyer_' + Math.floor(1000 + Math.random() * 9000);
+          if (usernameInput) usernameInput.value = username;
+        }
+
+        // 3. Phone Handling (Friendly & Non-blocking)
         if (rawPhone.length > 10 && rawPhone.startsWith('91')) {
           rawPhone = rawPhone.slice(-10);
         }
-        if (!rawPhone || rawPhone.length < 10) {
-          alert("Please enter a valid 10-digit mobile number.");
-          if (phoneInput) phoneInput.focus();
-          if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = originalBtnText; }
-          return;
+        // If phone is valid 10-digit number, save it; otherwise keep it empty without blocking the user!
+        if (rawPhone && rawPhone.length !== 10) {
+          if (rawPhone.length > 10) {
+            rawPhone = rawPhone.slice(-10);
+          }
         }
 
         const users = getRegisteredUsers();
@@ -5856,7 +5999,9 @@
               .catch(err => {
                 console.warn("[Firestore user sync]", err);
               });
-          } catch (e) {}
+          } catch (e) {
+            console.warn("[Firestore user sync caught]", e);
+          }
         }
 
         // Also fetch any existing orders for this user
@@ -6490,6 +6635,148 @@
       if (confirm("Reset all local cart, order history, and product cache to default?")) {
         localStorage.clear();
         location.reload();
+      }
+    }
+
+    /* =========================================================
+       SYSTEM LANGUAGE SWITCHER (English / Hindi)
+       Dynamically updates UI strings across client store
+       ========================================================= */
+    const APP_TRANSLATIONS = {
+      en: {
+        appName: "Buyero Direct Store",
+        searchPlaceholder: "Search kurtis, shirts, jeans, electronics...",
+        navShop: "Shop",
+        navOrders: "My Orders",
+        navSupport: "Support",
+        navProfile: "Profile",
+        profileTitle: "My Account & Profile",
+        savedAddressesTitle: "Saved Addresses",
+        savedAddressesSub: "Manage home & office delivery addresses",
+        langTitle: "Language / भाषा",
+        langSub: "Switch system language (English / हिंदी)",
+        supportTitle: "Buyero Care",
+        supportSub: "Live chat & WhatsApp",
+        returnTitle: "Return Policy",
+        returnSub: "7-Day doorstep pickup",
+        loginBtn: "Login / Register Account",
+        switchAdmin: "Switch to Admin Studio (Owner Panel)",
+        privacyPolicy: "Privacy Policy & Terms of Use (256-Bit SSL Encrypted)",
+        selectSize: "Select Size",
+        freeDelivery: "Free Delivery",
+        codAvailable: "COD Available",
+        sevenDayReturn: "7-Day Return",
+        placeOrder: "Place Order",
+        nextAddress: "Next: Address & Payment",
+        confirmCoins: "Confirm & Claim ₹50 Welcome Coins 🪙"
+      },
+      hi: {
+        appName: "बायरो डायरेक्ट स्टोर",
+        searchPlaceholder: "कुर्ती, शर्ट, जींस, इलेक्ट्रॉनिक्स खोजें...",
+        navShop: "दुकान",
+        navOrders: "मेरे ऑर्डर्स",
+        navSupport: "सहायता",
+        navProfile: "प्रोफ़ाइल",
+        profileTitle: "मेरा खाता और प्रोफ़ाइल",
+        savedAddressesTitle: "सहेजे गए पते",
+        savedAddressesSub: "घर और ऑफिस के पते प्रबंधित करें",
+        langTitle: "भाषा / Language",
+        langSub: "सिस्टम की भाषा बदलें (हिंदी / English)",
+        supportTitle: "बायरो सहायता",
+        supportSub: "लाइव चैट और व्हाट्सएप",
+        returnTitle: "वापसी नीति",
+        returnSub: "7-दिवसीय दरवाज़े से पिकअप",
+        loginBtn: "लॉगिन / नया खाता बनाएं",
+        switchAdmin: "व्यवस्थापक स्टूडियो (एडमिन पैनल) पर जाएं",
+        privacyPolicy: "गोपनीयता नीति और नियम (256-बिट सुरक्षित)",
+        selectSize: "साइज़ चुनें",
+        freeDelivery: "मुफ़्त डिलीवरी",
+        codAvailable: "कैश ऑन डिलीवरी उपलब्ध",
+        sevenDayReturn: "7-दिन में वापसी",
+        placeOrder: "ऑर्डर करें (कैश ऑन डिलीवरी)",
+        nextAddress: "अगला: पता और भुगतान",
+        confirmCoins: "पुष्टि करें और ₹50 सिक्के प्राप्त करें 🪙"
+      }
+    };
+
+    function getAppLanguage() {
+      return localStorage.getItem('buyero_app_lang') || 'en';
+    }
+
+    function openLanguageModal() {
+      const modal = document.getElementById('language-modal');
+      if (!modal) return;
+      modal.classList.remove('hidden');
+      updateLanguageModalUI(getAppLanguage());
+    }
+
+    function closeLanguageModal() {
+      const modal = document.getElementById('language-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function updateLanguageModalUI(lang) {
+      const isEn = lang === 'en';
+      const optEn = document.getElementById('lang-opt-en');
+      const optHi = document.getElementById('lang-opt-hi');
+      const checkEn = document.getElementById('lang-check-en');
+      const checkHi = document.getElementById('lang-check-hi');
+
+      if (optEn) {
+        optEn.className = isEn 
+          ? "w-full p-3.5 rounded-2xl border-2 border-brand-orange bg-orange-50/50 flex items-center justify-between transition group"
+          : "w-full p-3.5 rounded-2xl border border-slate-200 hover:border-slate-300 bg-white flex items-center justify-between transition group";
+      }
+      if (optHi) {
+        optHi.className = !isEn 
+          ? "w-full p-3.5 rounded-2xl border-2 border-brand-orange bg-orange-50/50 flex items-center justify-between transition group"
+          : "w-full p-3.5 rounded-2xl border border-slate-200 hover:border-slate-300 bg-white flex items-center justify-between transition group";
+      }
+      if (checkEn) checkEn.classList.toggle('hidden', !isEn);
+      if (checkHi) checkHi.classList.toggle('hidden', isEn);
+    }
+
+    function setAppLanguage(lang) {
+      localStorage.setItem('buyero_app_lang', lang);
+      updateLanguageModalUI(lang);
+      applyAppLanguage(lang);
+      const pill = document.getElementById('profile-current-lang-pill');
+      if (pill) pill.textContent = lang === 'hi' ? 'हिंदी (Hindi)' : 'English';
+      setTimeout(() => {
+        closeLanguageModal();
+      }, 250);
+    }
+
+    function applyAppLanguage(lang) {
+      const currentLang = lang || getAppLanguage();
+      const t = APP_TRANSLATIONS[currentLang] || APP_TRANSLATIONS.en;
+
+      // Update Profile UI
+      const pill = document.getElementById('profile-current-lang-pill');
+      if (pill) pill.textContent = currentLang === 'hi' ? 'हिंदी (Hindi)' : 'English';
+
+      const searchInput = document.getElementById('search-input');
+      if (searchInput) searchInput.placeholder = t.searchPlaceholder;
+
+      // Bottom Navigation Labels
+      const navShopSpan = document.querySelector('#nav-btn-shop span');
+      if (navShopSpan) navShopSpan.textContent = t.navShop;
+      const navOrdersSpan = document.querySelector('#nav-btn-orders span');
+      if (navOrdersSpan) navOrdersSpan.textContent = t.navOrders;
+      const navSupportSpan = document.querySelector('#nav-btn-support span');
+      if (navSupportSpan) navSupportSpan.textContent = t.navSupport;
+      const navProfileSpan = document.querySelector('#nav-btn-profile span');
+      if (navProfileSpan) navProfileSpan.textContent = t.navProfile;
+
+      // Profile View Texts
+      const profileHeading = document.querySelector('#view-profile h3');
+      if (profileHeading && currentLang === 'hi') profileHeading.textContent = t.profileTitle;
+      else if (profileHeading && currentLang === 'en') profileHeading.textContent = "My Account & Profile";
+
+      // Save profile coins button in auth modal
+      const saveProfileBtn = document.getElementById('btn-save-profile');
+      if (saveProfileBtn && !saveProfileBtn.disabled) {
+        saveProfileBtn.innerHTML = `<i class="fa-solid fa-coins text-yellow-200 mr-1.5"></i> <span>${t.confirmCoins}</span>`;
       }
     }
   </script>
