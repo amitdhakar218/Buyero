@@ -1374,6 +1374,9 @@
         logActivityEvent('ORDER', `New Order: #${event.data.order.orderId} placed by ${event.data.order.customerName}`);
         refreshAllAdminData();
         showAdminOrderToast(event.data.order);
+      } else if (event.data && event.data.type === 'ORDER_UPDATED') {
+        logActivityEvent('ORDER', `Order #${event.data.orderId || (event.data.order && event.data.order.orderId)} status updated: ${event.data.order ? event.data.order.status : 'Updated'}`);
+        refreshAllAdminData();
       } else if (event.data && event.data.type === 'NEW_SUPPORT_MESSAGE') {
         logActivityEvent('CHAT', `Message from ${event.data.sender || 'Customer'}: "${(event.data.text || '').slice(0, 30)}..."`);
         loadAdminChatThreads();
