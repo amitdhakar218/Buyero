@@ -511,6 +511,17 @@
     <!-- VIEW 3: 🚚 ORDER MANAGEMENT (TRACKING & CUSTOMER DATA)   -->
     <!-- ========================================================= -->
     <section id="view-order" class="hidden space-y-4">
+      <!-- Orders Header with Real Refresh -->
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="font-poppins font-bold text-sm text-slate-800">Order Fulfillment</h2>
+          <p class="text-[10px] text-slate-500">Real-time orders, courier assignment & doorstep COD</p>
+        </div>
+        <button onclick="refreshAdminOrders(this)" class="text-xs text-brand-navy font-bold hover:underline flex items-center gap-1 px-2.5 py-1 bg-slate-100 rounded-lg hover:bg-slate-200 transition">
+          <i class="fa-solid fa-rotate"></i> Refresh Orders
+        </button>
+      </div>
+
       <!-- Universal Search Box -->
       <div class="relative">
         <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
@@ -1601,16 +1612,17 @@
       localStorage.setItem('buyero_orders', JSON.stringify(orders));
     }
 
-    function syncOrderUpdateToFirestore(order) {
-      if (!order || !order.orderId || !fbFirestore) return;
+    async function syncOrderUpdateToFirestore(order) {
+      if (!order || !order.orderId || !fbFirestore) return Promise.resolve();
       try {
-        fbFirestore.collection('orders').doc(order.orderId).set(order, { merge: true }).catch(err => {
-          console.warn("[Admin Firestore Order Sync Error]", err);
-        });
+        await fbFirestore.collection('orders').doc(order.orderId).set(order, { merge: true });
         if (order.userId) {
-          fbFirestore.collection('users').doc(order.userId).collection('orders').doc(order.orderId).set(order, { merge: true }).catch(() => {});
+          await fbFirestore.collection('users').doc(order.userId).collection('orders').doc(order.orderId).set(order, { merge: true }).catch(() => {});
         }
-      } catch (e) {}
+      } catch (err) {
+        console.warn("[Admin Firestore Order Sync Error]", err);
+        throw err;
+      }
     }
 
     function listenToFirestoreOrdersRealtime() {
@@ -1949,7 +1961,7 @@
     function calculateAnalysisMetrics() {
       const orders = getStoredOrders();
       const users = getStoredUsers();
-      const visits = localStorage.getItem('buyero_total_visits') || '142';
+      const visits = localStorage.getItem('buyero_total_visits') || '0';
 
       const totalOrders = orders.length;
       const pendingOrders = orders.filter(o => o.status !== 'Delivered' && o.status !== 'Completed').length;
@@ -1975,7 +1987,7 @@
       if (elCost) elCost.textContent = '₹' + totalCost.toLocaleString('en-IN');
       if (elProfit) elProfit.textContent = '₹' + netProfit.toLocaleString('en-IN');
       if (elProfitMargin) elProfitMargin.textContent = `${marginPercent}% Margin`;
-      if (elUsers) elUsers.textContent = Math.max(users.length, 1);
+      if (elUsers) elUsers.textContent = users.length;
       if (elVisits) elVisits.textContent = visits;
 
       // Pending badge on order bottom tab
@@ -2281,15 +2293,34 @@
         inStock: true
       };
 
+      const submitBtn = document.querySelector('#form-add-product button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Saving to Cloud...';
+      }
+
+      // Persist to Firestore first
+      if (fbFirestore) {
+        try {
+          await fbFirestore.collection('products').doc(prodId).set(newProd);
+        } catch (e) {
+          console.error("[Admin Firestore Add Product Error]", e);
+          alert("Failed to save product to Firebase: " + (e.message || "Network error") + ". Your inputs have been kept. Please retry.");
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up mr-1"></i> Publish to Buyero Catalog';
+          }
+          return;
+        }
+      }
+
       const catalog = getStoredCatalog();
       catalog.unshift(newProd);
       saveCatalog(catalog);
 
-      // Persist to Firestore
-      if (fbFirestore) {
-        fbFirestore.collection('products').doc(prodId).set(newProd).catch(e => {
-          console.warn("[Admin Firestore Add Product Error]", e);
-        });
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up mr-1"></i> Publish to Buyero Catalog';
       }
 
       // Broadcast to storefront
@@ -2304,18 +2335,22 @@
     }
 
     /* Delete Product */
-    function deleteProduct(prodId) {
+    async function deleteProduct(prodId) {
       if (confirm("Are you sure you want to delete this product from the store?")) {
+        // Delete from Firestore
+        if (fbFirestore) {
+          try {
+            await fbFirestore.collection('products').doc(prodId).delete();
+          } catch (e) {
+            console.error("[Admin Firestore Delete Product Error]", e);
+            alert("Failed to delete product from Firebase: " + (e.message || "Network error") + ". Please retry.");
+            return;
+          }
+        }
+
         let catalog = getStoredCatalog();
         catalog = catalog.filter(p => p.id !== prodId);
         saveCatalog(catalog);
-
-        // Delete from Firestore
-        if (fbFirestore) {
-          fbFirestore.collection('products').doc(prodId).delete().catch(e => {
-            console.warn("[Admin Firestore Delete Product Error]", e);
-          });
-        }
 
         // Broadcast to storefront
         try {
@@ -2351,7 +2386,7 @@
       if (modal) modal.classList.add('hidden');
     }
 
-    function handleSaveEditedProduct(event) {
+    async function handleSaveEditedProduct(event) {
       event.preventDefault();
       const id = document.getElementById('edit-prod-id').value;
       const title = document.getElementById('edit-prod-title').value.trim();
@@ -2365,6 +2400,12 @@
       let catalog = getStoredCatalog();
       const prod = catalog.find(p => p.id === id);
       if (prod) {
+        const editBtn = document.querySelector('#form-edit-product button[type="submit"]');
+        if (editBtn) {
+          editBtn.disabled = true;
+          editBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Saving to Cloud...';
+        }
+
         prod.title = title;
         prod.meeshoCostPrice = cost;
         prod.sellingPrice = price;
@@ -2375,13 +2416,26 @@
           prod.reelUrl = video;
         }
         prod.description = desc;
-        saveCatalog(catalog);
 
         // Persist to Firestore
         if (fbFirestore) {
-          fbFirestore.collection('products').doc(id).set(prod, { merge: true }).catch(e => {
-            console.warn("[Admin Firestore Edit Product Error]", e);
-          });
+          try {
+            await fbFirestore.collection('products').doc(id).set(prod, { merge: true });
+          } catch (e) {
+            console.error("[Admin Firestore Edit Product Error]", e);
+            alert("Failed to save product changes to Firebase: " + (e.message || "Network error") + ". Please retry.");
+            if (editBtn) {
+              editBtn.disabled = false;
+              editBtn.innerHTML = '<i class="fa-solid fa-floppy-disk mr-1"></i> Save Product Changes';
+            }
+            return;
+          }
+        }
+
+        saveCatalog(catalog);
+        if (editBtn) {
+          editBtn.disabled = false;
+          editBtn.innerHTML = '<i class="fa-solid fa-floppy-disk mr-1"></i> Save Product Changes';
         }
 
         // Broadcast to storefront
@@ -2659,7 +2713,7 @@
       `).join('');
     }
 
-    function updateOrderCourierDetails(orderId) {
+    async function updateOrderCourierDetails(orderId) {
       const statusSel = document.getElementById(`status-sel-${orderId}`);
       const courierSel = document.getElementById(`courier-sel-${orderId}`);
       const awbInp = document.getElementById(`awb-inp-${orderId}`);
@@ -2672,6 +2726,14 @@
       const awb = awbInp ? awbInp.value.trim() : '';
       const location = locInp ? locInp.value.trim() : '';
       const days = estInp ? estInp.value.trim() : '';
+
+      // Strict validation: If Admin marks as Shipped, courier and AWB must be specified manually
+      if (status === 'Shipped via Courier') {
+        if (!courier || !awb) {
+          alert('Validation Error: Please select an official courier partner and enter a valid AWB number before marking the order as Shipped.');
+          return;
+        }
+      }
 
       if (btn) {
         btn.disabled = true;
@@ -2697,8 +2759,20 @@
           date: new Date().toLocaleDateString()
         });
 
+        // Persist to Firestore first
+        try {
+          await syncOrderUpdateToFirestore(order);
+        } catch (err) {
+          console.error("Firestore sync error:", err);
+          alert("Failed to sync order update to Firebase: " + (err.message || "Network error") + ". Please retry.");
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> <span>Save & Sync Order Status</span>';
+          }
+          return;
+        }
+
         saveOrders(orders);
-        syncOrderUpdateToFirestore(order);
         logActivityEvent('ORDER', `Updated Order #${orderId} to "${status}"`);
 
         try {
@@ -2711,19 +2785,17 @@
           });
         } catch(e) {}
 
-        setTimeout(() => {
-          if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> <span>Save & Sync Order Status</span>';
-          }
-          alert(`Order #${orderId} updated to "${status}" and synced successfully!`);
-          calculateAnalysisMetrics();
-          renderFilteredOrders();
-        }, 300);
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> <span>Save & Sync Order Status</span>';
+        }
+        alert(`Order #${orderId} updated to "${status}" and synced successfully!`);
+        calculateAnalysisMetrics();
+        renderFilteredOrders();
       }
     }
 
-    function approveOrderCancellation(orderId) {
+    async function approveOrderCancellation(orderId) {
       if (confirm(`Approve cancellation for Order #${orderId}?`)) {
         let orders = getStoredOrders();
         const order = orders.find(o => o.orderId === orderId);
@@ -2735,8 +2807,16 @@
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             date: new Date().toLocaleDateString()
           });
+
+          try {
+            await syncOrderUpdateToFirestore(order);
+          } catch (err) {
+            console.error("Cancel order sync error:", err);
+            alert("Failed to sync cancellation to Firebase: " + (err.message || "Network error") + ". Please retry.");
+            return;
+          }
+
           saveOrders(orders);
-          syncOrderUpdateToFirestore(order);
           logActivityEvent('ORDER', `Approved Cancellation for Order #${orderId}`);
           try {
             syncChannel.postMessage({
@@ -2752,7 +2832,7 @@
       }
     }
 
-    function approveOrderReturn(orderId) {
+    async function approveOrderReturn(orderId) {
       if (confirm(`Approve doorstep return/exchange pickup for Order #${orderId}?`)) {
         let orders = getStoredOrders();
         const order = orders.find(o => o.orderId === orderId);
@@ -2764,8 +2844,16 @@
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             date: new Date().toLocaleDateString()
           });
+
+          try {
+            await syncOrderUpdateToFirestore(order);
+          } catch (err) {
+            console.error("Return pickup sync error:", err);
+            alert("Failed to sync return pickup to Firebase: " + (err.message || "Network error") + ". Please retry.");
+            return;
+          }
+
           saveOrders(orders);
-          syncOrderUpdateToFirestore(order);
           logActivityEvent('ORDER', `Approved Return Pickup for Order #${orderId}`);
           try {
             syncChannel.postMessage({
@@ -2781,12 +2869,13 @@
       }
     }
 
-    function completeOrderAction(orderId) {
+    async function completeOrderAction(orderId) {
       if (confirm(`Mark Order #${orderId} as Completed & Delivered?\nThis will transfer the order to History and permanently add profit to Net Profit.`)) {
         let orders = getStoredOrders();
         const order = orders.find(o => o.orderId === orderId);
         if (order) {
           order.status = 'Delivered';
+          order.paymentStatus = 'COLLECTED_AT_DOORSTEP';
           if (!order.history) order.history = [];
           order.history.push({
             status: 'Delivered',
@@ -2794,8 +2883,15 @@
             date: new Date().toLocaleDateString()
           });
 
+          try {
+            await syncOrderUpdateToFirestore(order);
+          } catch (err) {
+            console.error("Complete order sync error:", err);
+            alert("Failed to sync delivery to Firebase: " + (err.message || "Network error") + ". Please retry.");
+            return;
+          }
+
           saveOrders(orders);
-          syncOrderUpdateToFirestore(order);
           logActivityEvent('ORDER', `Order #${orderId} moved to Completed (Delivered)`);
 
           try {
@@ -3207,18 +3303,131 @@
       `).join('');
     }
 
-    function resolveTicketAction(ticketId) {
+    async function resolveTicketAction(ticketId) {
       let tickets = getStoredTickets();
       const t = tickets.find(x => x.id === ticketId);
       if (t) {
+        if (fbFirestore) {
+          try {
+            await fbFirestore.collection('support_tickets').doc(ticketId).set({ status: 'RESOLVED' }, { merge: true });
+          } catch (err) {
+            console.error("Resolve ticket Firestore error:", err);
+            alert("Failed to update ticket in Firebase: " + (err.message || "Network error") + ". Please retry.");
+            return;
+          }
+        }
         t.status = 'RESOLVED';
         localStorage.setItem('buyero_support_tickets', JSON.stringify(tickets));
-        if (fbFirestore) {
-          fbFirestore.collection('support_tickets').doc(ticketId).set({ status: 'RESOLVED' }, { merge: true }).catch(() => {});
-        }
         logActivityEvent('SUPPORT', `Resolved Ticket #${ticketId} for Order #${t.orderId}`);
         loadAdminSupportTickets();
         alert("Ticket marked as resolved!");
+      }
+    }
+
+    /* REAL FIREBASE REFRESH RECONCILIATIONS */
+    async function refreshAdminOrders(btn) {
+      const origHtml = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-rotate fa-spin"></i> Refreshing...';
+      }
+      try {
+        if (fbFirestore) {
+          const snap = await fbFirestore.collection('orders').get();
+          if (snap && !snap.empty) {
+            let localOrders = getStoredOrders();
+            snap.forEach(doc => {
+              const remote = doc.data();
+              if (!remote || !remote.orderId) return;
+              const idx = localOrders.findIndex(o => o.orderId === remote.orderId);
+              if (idx >= 0) {
+                localOrders[idx] = Object.assign({}, localOrders[idx], remote);
+              } else {
+                localOrders.unshift(remote);
+              }
+            });
+            saveOrders(localOrders);
+          }
+        }
+      } catch (e) {
+        console.warn("[Admin Refresh Orders Error]", e);
+      } finally {
+        calculateAnalysisMetrics();
+        renderFilteredOrders();
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = origHtml;
+        }
+      }
+    }
+
+    async function refreshAdminProducts(btn) {
+      const origHtml = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-rotate fa-spin"></i> Refreshing...';
+      }
+      try {
+        if (fbFirestore) {
+          const snap = await fbFirestore.collection('products').get();
+          if (snap && !snap.empty) {
+            let localCatalog = getStoredCatalog();
+            snap.forEach(doc => {
+              const remote = doc.data();
+              if (!remote || !remote.id) return;
+              const idx = localCatalog.findIndex(p => p.id === remote.id);
+              if (idx >= 0) {
+                localCatalog[idx] = Object.assign({}, localCatalog[idx], remote);
+              } else {
+                localCatalog.unshift(remote);
+              }
+            });
+            saveCatalog(localCatalog);
+          }
+        }
+      } catch (e) {
+        console.warn("[Admin Refresh Products Error]", e);
+      } finally {
+        loadAdminCatalogList();
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = origHtml;
+        }
+      }
+    }
+
+    async function refreshAdminTickets(btn) {
+      const origHtml = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-rotate fa-spin"></i> Refreshing...';
+      }
+      try {
+        if (fbFirestore) {
+          const snap = await fbFirestore.collection('support_tickets').get();
+          if (snap && !snap.empty) {
+            let localTickets = getStoredTickets();
+            snap.forEach(doc => {
+              const remote = doc.data();
+              if (!remote || !remote.id) return;
+              const idx = localTickets.findIndex(t => t.id === remote.id);
+              if (idx >= 0) {
+                localTickets[idx] = Object.assign({}, localTickets[idx], remote);
+              } else {
+                localTickets.unshift(remote);
+              }
+            });
+            localStorage.setItem('buyero_support_tickets', JSON.stringify(localTickets));
+          }
+        }
+      } catch (e) {
+        console.warn("[Admin Refresh Tickets Error]", e);
+      } finally {
+        loadAdminSupportTickets();
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = origHtml;
+        }
       }
     }
 

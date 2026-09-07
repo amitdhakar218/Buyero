@@ -322,7 +322,7 @@
           <h2 class="font-poppins font-bold text-xl text-slate-900">My Orders</h2>
           <p class="text-xs text-slate-500">Live order status, invoices & customer reviews</p>
         </div>
-        <button onclick="loadUserOrders()" class="text-xs text-brand-radial hover:underline flex items-center gap-1 font-semibold">
+        <button onclick="refreshClientOrders(this)" class="text-xs text-brand-radial hover:underline flex items-center gap-1 font-semibold">
           <i class="fa-solid fa-rotate-right"></i> Refresh
         </button>
       </div>
@@ -579,7 +579,7 @@
               </p>
             </div>
           </div>
-          <button onclick="loadClientChatMessages()" class="text-xs text-slate-300 hover:text-white p-1" title="Refresh messages">
+          <button onclick="refreshClientChatMessages(this)" class="text-xs text-slate-300 hover:text-white p-1" title="Refresh messages">
             <i class="fa-solid fa-rotate-right"></i>
           </button>
         </div>
@@ -5581,7 +5581,7 @@
         size: selectedProductSize || 'M'
       };
       closeProductModal();
-      openCheckoutModal(true); // pass direct = true
+      openCheckoutPage(true); // pass direct = true to official checkout page
     }
 
     /* SUGGESTED PRODUCTS BUILDER (Horizontal Scroll List) */
@@ -6052,227 +6052,22 @@
     }
 
     function openCheckoutModal(isDirect = false) {
-      if (!currentUser) {
-        pendingAuthAction = { type: 'checkout_modal', isDirect: isDirect };
-        const drawer = document.getElementById('cart-drawer');
-        const overlay = document.getElementById('cart-drawer-overlay');
-        if (drawer && !drawer.classList.contains('translate-x-full')) {
-          drawer.classList.add('translate-x-full');
-          if (overlay) overlay.classList.add('hidden');
-        }
-        openAuthModal('checkout_gate');
-        return;
-      }
-
-      let itemsToOrder = [];
-      if (isDirect && directCheckoutItem) {
-        itemsToOrder = [directCheckoutItem];
-      } else {
-        itemsToOrder = getStoredCart();
-        directCheckoutItem = null;
-      }
-
-      if (itemsToOrder.length === 0) {
-        alert("Your cart is empty. Please select a product first.");
-        return;
-      }
-
-      // Close cart drawer if open
-      const drawer = document.getElementById('cart-drawer');
-      const overlay = document.getElementById('cart-drawer-overlay');
-      if (drawer && !drawer.classList.contains('translate-x-full')) {
-        drawer.classList.add('translate-x-full');
-        if (overlay) overlay.classList.add('hidden');
-      }
-
-      // Start at Step 1
-      goToCheckoutStep1();
-      isCoinsDiscountApplied = false;
-      const coinsCheck = document.getElementById('checkout-use-coins');
-      if (coinsCheck) coinsCheck.checked = false;
-
-      // Prefill with stored user profile if exists
-      const user = currentUser || JSON.parse(localStorage.getItem('buyero_user') || 'null');
-      const autofillHint = document.getElementById('checkout-autofill-hint');
-      if (user) {
-        if (autofillHint) autofillHint.classList.remove('hidden');
-        if (document.getElementById('cust-name') && user.name) document.getElementById('cust-name').value = user.name;
-        if (document.getElementById('cust-phone') && user.phone) document.getElementById('cust-phone').value = user.phone;
-        if (document.getElementById('cust-house') && user.house) document.getElementById('cust-house').value = user.house;
-        if (document.getElementById('cust-street') && user.street) document.getElementById('cust-street').value = user.street;
-        if (document.getElementById('cust-landmark') && user.landmark) document.getElementById('cust-landmark').value = user.landmark;
-        if (document.getElementById('cust-city') && user.city) document.getElementById('cust-city').value = user.city;
-        if (document.getElementById('cust-state') && user.state) document.getElementById('cust-state').value = user.state;
-        if (document.getElementById('cust-pincode') && user.pincode) document.getElementById('cust-pincode').value = user.pincode;
-      } else {
-        if (autofillHint) autofillHint.classList.add('hidden');
-      }
-
-      updateCheckoutPayableAmount();
-      document.getElementById('checkout-modal').classList.remove('hidden');
+      // Delegate cleanly to authoritative single checkout flow (view-checkout)
+      openCheckoutPage(isDirect);
     }
 
     function closeCheckoutModal() {
-      document.getElementById('checkout-modal').classList.add('hidden');
+      const modal = document.getElementById('checkout-modal');
+      if (modal) modal.classList.add('hidden');
       directCheckoutItem = null;
     }
 
     /* =========================================================
-       ORDER SUBMISSION (CASH ON DELIVERY)
+       ORDER SUBMISSION (CASH ON DELIVERY) - DELEGATE TO OFFICIAL FLOW
        ========================================================= */
     async function handleCheckoutSubmit(event) {
-      event.preventDefault();
-
-      const name = document.getElementById('cust-name').value.trim();
-      const phone = document.getElementById('cust-phone').value.trim();
-      const house = (document.getElementById('cust-house') ? document.getElementById('cust-house').value : '').trim();
-      const street = (document.getElementById('cust-street') ? document.getElementById('cust-street').value : '').trim();
-      const landmark = (document.getElementById('cust-landmark') ? document.getElementById('cust-landmark').value : '').trim();
-      const pincode = document.getElementById('cust-pincode').value.trim();
-      const city = document.getElementById('cust-city').value.trim();
-      const state = document.getElementById('cust-state').value;
-      const paymentMode = 'COD';
-
-      if (!name || !phone || !pincode || !city || !state || !street) {
-        alert("Please fill in all delivery address fields (Name, Mobile, Street, City, State, Pincode).");
-        return;
-      }
-
-      // Strict Cash on Delivery (COD) payment flow
-
-      const { subtotal, couponDiscount, coinsDiscount, finalAmount, itemsToOrder } = calculateCurrentOrderAmounts();
-      if (itemsToOrder.length === 0) {
-        alert("No items selected for order.");
-        return;
-      }
-
-      const totalMeeshoCost = itemsToOrder.reduce((sum, i) => sum + ((i.meeshoCostPrice || 0) * i.quantity), 0);
-      const netCalculatedProfit = finalAmount - totalMeeshoCost;
-
-      const newOrderId = 'BYR-' + Math.floor(100000 + Math.random() * 900000);
-      const timestamp = new Date().toISOString();
-      const finalTxnId = 'COD-DOORSTEP';
-
-      // Full address string
-      const fullAddress = `${house ? house + ', ' : ''}${street}${landmark ? ', Near ' + landmark : ''}, ${city}, ${state} - ${pincode}`;
-
-      // Determine user UUID (prioritize Firebase Auth UID)
-      const currentEmail = (currentUser && currentUser.email) ? currentUser.email : '';
-      const currentUuid = (currentUser && (currentUser.authUid || currentUser.uuid || currentUser.userId)) 
-        ? (currentUser.authUid || currentUser.uuid || currentUser.userId) 
-        : (currentEmail ? generateDeterministicUserUuid(currentEmail) : generateUuidV4());
-
-      const newOrder = {
-        orderId: newOrderId,
-        timestamp: timestamp,
-        userId: currentUuid,
-        customerEmail: currentEmail,
-        customerName: name,
-        phone: phone,
-        house: house,
-        street: street,
-        landmark: landmark,
-        city: city,
-        state: state,
-        pincode: pincode,
-        address: fullAddress,
-        items: itemsToOrder,
-        totalAmount: finalAmount,
-        subtotal: subtotal,
-        coinsDiscount: coinsDiscount,
-        couponDiscount: couponDiscount,
-        meeshoCost: totalMeeshoCost,
-        netProfit: netCalculatedProfit,
-        paymentMode: paymentMode,
-        transactionId: finalTxnId,
-        paymentStatus: 'COD_PENDING_DOORSTEP',
-        // In-App Tracking Timeline Initial State
-        status: 'Order Placed',
-        courier: '',
-        awb: '',
-        history: [
-          { status: 'Order Placed', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), date: new Date().toLocaleDateString() }
-        ]
-      };
-
-      // Save locally to master list
-      let orders = getAllStoredOrders();
-      orders.unshift(newOrder);
-      saveOrders(orders);
-
-      // Deduct wallet coins only AFTER order has been successfully created/saved
-      if (isCoinsDiscountApplied && coinsDiscount > 0) {
-        const curCoins = (currentUser && currentUser.walletCoins !== undefined) ? currentUser.walletCoins : 50;
-        currentUser.walletCoins = Math.max(0, curCoins - coinsDiscount);
-        localStorage.setItem('buyero_user', JSON.stringify(currentUser));
-        renderUserProfile();
-      }
-
-      // Save / Update User Profile preserving UUID and email
-      currentUser = {
-        ...(currentUser || {}),
-        uuid: currentUuid,
-        userId: currentUuid,
-        name: name,
-        phone: phone,
-        email: currentEmail,
-        house: house,
-        street: street,
-        landmark: landmark,
-        address: fullAddress,
-        pincode: pincode,
-        city: city,
-        state: state
-      };
-      localStorage.setItem('buyero_user', JSON.stringify(currentUser));
-      renderUserProfile();
-
-      // Clear cart or direct item
-      if (!directCheckoutItem) {
-        saveCart([]);
-        appliedCoupon = null;
-      }
-      directCheckoutItem = null;
-
-      // Close modal
-      closeCheckoutModal();
-
-      // Sync with Firebase Firestore if available
-      syncOrderToFirestore(newOrder);
-
-      // Trigger Webhook POST to Google Sheets endpoint with separate columns
-      triggerGoogleSheetsWebhook(newOrder);
-
-      // Broadcast to Admin Studio in real-time
-      syncChannel.postMessage({
-        type: 'NEW_ORDER_PLACED',
-        order: newOrder
-      });
-
-      // Add user notification
-      addNotification({
-        id: 'notif_' + Date.now(),
-        title: 'Order Placed Successfully!',
-        message: `Order #${newOrderId} for ₹${finalAmount} is confirmed and sent to warehouse.`,
-        time: 'Just now',
-        read: false
-      });
-
-      // Navigate to tracking view
-      switchClientView('orders');
-
-      // Trigger Celebration Confetti
-      try {
-        if (typeof confetti === 'function') {
-          confetti({
-            particleCount: 100,
-            spread: 70,
-            origin: { y: 0.6 }
-          });
-        }
-      } catch (e) {}
-
-      alert(`🎉 Order #${newOrderId} placed successfully!\nPayment: Cash on Delivery (Pay at Doorstep)\nDelivery: Free Express (3-5 Days)`);
+      if (event && event.preventDefault) event.preventDefault();
+      return submitCheckoutOrder();
     }
 
     /* =========================================================
@@ -6728,12 +6523,14 @@
           appliedCoupon: checkoutState.appliedCouponCode || null,
           meeshoCost: totalMeeshoCost,
           netProfit: netCalculatedProfit,
-          paymentMode: paymentMode,
-          transactionId: transactionId,
-          paymentStatus: paymentStatus,
+          paymentMode: 'Cash on Delivery (COD)',
+          transactionId: null,
+          paymentStatus: 'COD_PENDING_DOORSTEP',
           status: 'Order Placed',
-          courier: 'Shadowfax Express',
-          awb: 'SFX' + Math.floor(10000000 + Math.random() * 90000000) + 'IN',
+          courier: '',
+          awb: '',
+          locationStatus: 'Order placed, awaiting warehouse dispatch',
+          deliveryDays: '4-6 Days',
           history: [
             { 
               status: 'Order Placed', 
@@ -6742,6 +6539,20 @@
             }
           ]
         };
+
+        // Atomic Cloud Persistence: Must succeed before clearing cart or deducting coins
+        if (fbFirestore) {
+          try {
+            await fbFirestore.collection('orders').doc(newOrder.orderId).set(newOrder);
+            if (newOrder.userId) {
+              await fbFirestore.collection('users').doc(newOrder.userId).collection('orders').doc(newOrder.orderId).set(newOrder).catch(() => {});
+            }
+          } catch (cloudErr) {
+            console.error("[Buyero Order Firestore Error]", cloudErr);
+            alert("Failed to submit order to server: " + (cloudErr.message || "Network Error") + ". Your cart and entered details have been preserved. Please retry.");
+            return;
+          }
+        }
 
         // 1. Save to master orders list
         let orders = getAllStoredOrders();
@@ -7238,6 +7049,12 @@
         return;
       }
 
+      if (order.status !== 'Order Placed') {
+        alert("This order has already been processed or dispatched and can no longer be cancelled. You may request a return or exchange after doorstep delivery.");
+        closeCancelOrderModal();
+        return;
+      }
+
       // Update order state
       order.status = 'Cancelled';
       order.cancelReason = reason;
@@ -7446,13 +7263,7 @@
       }
 
       container.innerHTML = orders.map(order => {
-        // Enforce state rule:
-        // If Admin hasn't filled courier / awb or updated beyond Order Placed,
-        // it reflects "Processing at Warehouse"
-        let effectiveStatus = order.status;
-        if (order.status === 'Order Placed' && (!order.courier || !order.awb)) {
-          effectiveStatus = 'Processing at Warehouse';
-        }
+        let effectiveStatus = order.status || 'Order Placed';
 
         const isCancelled = (order.status === 'Cancelled');
         const isDelivered = (order.status === 'Delivered');
@@ -7472,12 +7283,12 @@
           daysLeftForReturn = Math.max(0, 7 - diffDays);
         }
 
-        const isCancellable = (order.status === 'Order Placed' || effectiveStatus === 'Processing at Warehouse') && !isCancelled && !isDelivered;
+        const isCancellable = (order.status === 'Order Placed') && !isCancelled && !isDelivered;
 
         const currentStepIndex = isCancelled ? -1 : (
           TRACKING_STEPS.indexOf(effectiveStatus) >= 0
             ? TRACKING_STEPS.indexOf(effectiveStatus)
-            : 1
+            : 0
         );
 
         const dateFormatted = new Date(order.timestamp).toLocaleDateString(undefined, {
@@ -7556,8 +7367,9 @@
                           </span>
                           ${isCurrent ? `
                             <p class="text-[10px] text-slate-500 mt-0.5">
-                              ${step === 'Processing at Warehouse' ? 'Items are being packed and inspected.' : 
-                                step === 'Shipped via Courier' ? `Dispatched via ${order.courier || 'Courier'}. AWB: ${order.awb || 'Assigned'}` : 
+                              ${step === 'Order Placed' ? 'Order confirmed and verified in system.' :
+                                step === 'Processing at Warehouse' ? 'Items are being packed and inspected.' : 
+                                step === 'Shipped via Courier' ? (order.courier ? `Dispatched via ${order.courier}. AWB: ${order.awb}` : 'Awaiting courier assignment.') : 
                                 step === 'Out for Delivery' ? 'Delivery rider has picked up the shipment.' : 'Order verified in system.'}
                             </p>
                           ` : ''}
@@ -7567,19 +7379,17 @@
                   }).join('')}
                 </div>
 
-                <!-- Courier & AWB Details if Shipped -->
-                ${order.courier && order.awb ? `
-                  <div class="mt-3 p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
-                    <div>
-                      <span class="text-[10px] text-slate-400 uppercase font-bold">Courier Partner</span>
-                      <p class="font-bold text-slate-800">${order.courier}</p>
-                    </div>
-                    <div class="text-right">
-                      <span class="text-[10px] text-slate-400 uppercase font-bold">AWB Tracking #</span>
-                      <p class="font-mono font-bold text-brand-navy">${order.awb}</p>
-                    </div>
+                <!-- Courier & AWB Details -->
+                <div class="mt-3 p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+                  <div>
+                    <span class="text-[10px] text-slate-400 uppercase font-bold">Courier Partner</span>
+                    <p class="font-bold ${order.courier ? 'text-slate-800' : 'text-slate-500 italic'}">${order.courier || 'Pending assignment'}</p>
                   </div>
-                ` : ''}
+                  <div class="text-right">
+                    <span class="text-[10px] text-slate-400 uppercase font-bold">AWB Tracking #</span>
+                    <p class="font-mono font-bold ${order.awb ? 'text-brand-navy' : 'text-slate-500 italic'}">${order.awb || 'Pending assignment'}</p>
+                  </div>
+                </div>
               </div>
             `}
 
@@ -7644,6 +7454,58 @@
           </div>
         `;
       }).join('');
+    }
+
+    /* REAL LIVE ORDER REFRESH TRIGGER */
+    async function refreshClientOrders(btn) {
+      const origHtml = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-rotate-right fa-spin"></i> Refreshing...';
+      }
+      try {
+        if (fbFirestore) {
+          const snapshot = await fbFirestore.collection('orders').get();
+          if (snapshot && !snapshot.empty) {
+            let localAllOrders = getAllStoredOrders();
+            const targetUser = currentUser;
+            const uEmail = targetUser ? (targetUser.email || '').toLowerCase().trim() : '';
+            const uId = targetUser ? (targetUser.uuid || targetUser.userId) : '';
+            const authUid = targetUser ? (targetUser.authUid || (uId && !uId.startsWith('usr_') ? uId : null)) : null;
+            const detId = uEmail ? generateDeterministicUserUuid(uEmail) : null;
+            const uPhone = targetUser ? (targetUser.phone || '').trim() : '';
+
+            snapshot.forEach((doc) => {
+              const remoteOrder = doc.data();
+              if (!remoteOrder || !remoteOrder.orderId) return;
+              const remoteOrderEmail = (remoteOrder.customerEmail || '').toLowerCase().trim();
+              const matchUser = !targetUser ||
+                                (remoteOrder.userId && uId && remoteOrder.userId === uId) ||
+                                (remoteOrder.userId && authUid && remoteOrder.userId === authUid) ||
+                                (remoteOrder.userId && detId && remoteOrder.userId === detId) ||
+                                (remoteOrderEmail && uEmail && remoteOrderEmail === uEmail) ||
+                                (remoteOrder.phone && uPhone && remoteOrder.phone === uPhone);
+              if (matchUser) {
+                const existingIdx = localAllOrders.findIndex(o => o.orderId === remoteOrder.orderId);
+                if (existingIdx >= 0) {
+                  localAllOrders[existingIdx] = Object.assign({}, localAllOrders[existingIdx], remoteOrder);
+                } else {
+                  localAllOrders.unshift(remoteOrder);
+                }
+              }
+            });
+            saveOrders(localAllOrders);
+          }
+        }
+      } catch (err) {
+        console.warn("[Refresh Orders Error]", err);
+      } finally {
+        loadUserOrders();
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = origHtml;
+        }
+      }
     }
 
     /* =========================================================
@@ -9229,6 +9091,126 @@
       }
     }
 
+    async function refreshClientChatMessages(btn) {
+      const origHtml = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-rotate-right fa-spin"></i>';
+      }
+      try {
+        if (fbFirestore) {
+          const snapshot = await fbFirestore.collection('support_chats').get();
+          if (snapshot && !snapshot.empty) {
+            let messages = getStoredSupportMessages();
+            snapshot.forEach(doc => {
+              const remoteMsg = doc.data();
+              if (!remoteMsg) return;
+              const remoteId = remoteMsg.id || doc.id;
+              const idx = messages.findIndex(m => m.id === remoteId);
+              if (idx >= 0) {
+                messages[idx] = Object.assign({}, messages[idx], remoteMsg, { id: remoteId });
+              } else {
+                messages.push(Object.assign({}, remoteMsg, { id: remoteId }));
+              }
+            });
+            saveSupportMessages(messages);
+          }
+        }
+      } catch (err) {
+        console.warn("[Refresh Chat Messages Error]", err);
+      } finally {
+        loadClientChatMessages();
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = origHtml;
+        }
+      }
+    }
+
+    function populateSupportOrderSelect() {
+      const select = document.getElementById('support-order-select');
+      if (!select) return;
+      const orders = getStoredOrders();
+      if (!orders || orders.length === 0) {
+        select.innerHTML = '<option value="">No orders found to select</option>';
+        return;
+      }
+      select.innerHTML = '<option value="">-- Choose Order to get Help --</option>' + 
+        orders.map(o => `<option value="${o.orderId}">#${o.orderId} - ₹${o.totalAmount} (${o.status || 'Order Placed'})</option>`).join('');
+    }
+
+    async function submitUrgentSupportTicket() {
+      const orderSelect = document.getElementById('support-order-select');
+      const orderId = orderSelect ? orderSelect.value.trim() : '';
+      if (!orderId) {
+        alert("Please select an Order ID from the dropdown to submit a support ticket.");
+        return;
+      }
+
+      const issueSelect = document.getElementById('support-issue-type');
+      const issueType = issueSelect ? issueSelect.value : 'General Inquiry';
+      const notesEl = document.getElementById('support-ticket-notes');
+      const notes = notesEl ? notesEl.value.trim() : '';
+
+      const custName = (currentUser && currentUser.name) || 'Valued Customer';
+      const custPhone = (currentUser && currentUser.phone) || '';
+      const custEmail = (currentUser && currentUser.email) || '';
+      const userId = (currentUser && (currentUser.uuid || currentUser.userId || currentUser.authUid)) || '';
+
+      const ticketId = 'TCK-' + Date.now().toString(36).toUpperCase();
+      const ticket = {
+        id: ticketId,
+        orderId: orderId,
+        issueType: issueType,
+        notes: notes,
+        customerName: custName,
+        phone: custPhone,
+        email: custEmail,
+        userId: userId,
+        status: 'OPEN',
+        createdAt: new Date().toISOString()
+      };
+
+      const btn = document.querySelector('button[onclick="submitUrgentSupportTicket()"]');
+      const origText = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting Ticket...';
+      }
+
+      try {
+        if (fbFirestore) {
+          await fbFirestore.collection('support_tickets').doc(ticket.id).set(ticket);
+        }
+
+        try {
+          let tickets = JSON.parse(localStorage.getItem('buyero_support_tickets') || '[]');
+          tickets.unshift(ticket);
+          localStorage.setItem('buyero_support_tickets', JSON.stringify(tickets));
+        } catch (e) {}
+
+        try {
+          if (syncChannel) {
+            syncChannel.postMessage({
+              type: 'NEW_SUPPORT_TICKET',
+              ticket: ticket
+            });
+          }
+        } catch (e) {}
+
+        if (notesEl) notesEl.value = '';
+        alert(`✅ Support Ticket #${ticketId} submitted successfully!\nOur team will inspect order #${orderId} and respond shortly.`);
+      } catch (err) {
+        console.error("Support ticket submission failed:", err);
+        alert("Failed to submit support ticket. Please check your internet connection or call our care number.");
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = origText;
+        }
+      }
+    }
+
     // Listen for admin chat messages on sync channel
     syncChannel.addEventListener('message', (event) => {
       if (event.data && event.data.type === 'ADMIN_CHAT_REPLY') {
@@ -9321,6 +9303,7 @@
       }
       if (view === 'support') {
         loadClientChatMessages();
+        populateSupportOrderSelect();
         const supportDot = document.getElementById('support-nav-dot');
         if (supportDot) supportDot.classList.add('hidden');
       }
@@ -9335,6 +9318,8 @@
         { id: 'modal-product-video', close: () => closeProductVideoModal() },
         { id: 'modal-share-product', close: () => closeShareProductModal() },
         { id: 'modal-catalog-filters', close: () => closeCatalogFiltersModal() },
+        { id: 'product-modal', close: () => closeProductModal() },
+        { id: 'checkout-modal', close: () => closeCheckoutModal() },
         { id: 'modal-cancel-order', close: () => closeCancelOrderModal() },
         { id: 'modal-return-item', close: () => closeReturnItemModal() },
         { id: 'modal-order-details', close: () => closeOrderDetailsModal() },
@@ -9382,65 +9367,11 @@
     });
 
     /* =========================================================
-       DEBUG / SAMPLE DATA SEEDING HELPERS
+       DATA RESETS
        ========================================================= */
     function seedDemoOrders() {
-      const sampleOrders = [
-        {
-          orderId: "BYR-849201",
-          timestamp: new Date(Date.now() - 3600000 * 24).toISOString(),
-          customerName: "Rahul Sharma",
-          phone: "9876543210",
-          address: "Flat 402, Lotus Heights, MG Road",
-          pincode: "400001",
-          city: "Mumbai",
-          state: "Maharashtra",
-          items: [DEFAULT_CATALOG[0], DEFAULT_CATALOG[1]],
-          totalAmount: 1748,
-          meeshoCost: 800,
-          netProfit: 948,
-          paymentMode: "ONLINE",
-          transactionId: "TXN-BYR-MUM94821",
-          paymentStatus: "VERIFIED",
-          status: "Shipped via Courier",
-          courier: "Delhivery Surface",
-          awb: "DEL8492019482IN",
-          history: [
-            { status: "Order Placed", time: "10:30 AM", date: "Yesterday" },
-            { status: "Processing at Warehouse", time: "01:15 PM", date: "Yesterday" },
-            { status: "Shipped via Courier", time: "05:45 PM", date: "Yesterday" }
-          ]
-        },
-        {
-          orderId: "BYR-671239",
-          timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
-          customerName: "Rahul Sharma",
-          phone: "9876543210",
-          address: "Flat 402, Lotus Heights, MG Road",
-          pincode: "400001",
-          city: "Mumbai",
-          state: "Maharashtra",
-          items: [DEFAULT_CATALOG[2]],
-          totalAmount: 1199,
-          meeshoCost: 510,
-          netProfit: 689,
-          paymentMode: "COD",
-          transactionId: "COD-VERIFIED",
-          paymentStatus: "PENDING_DELIVERY",
-          status: "Processing at Warehouse",
-          courier: "",
-          awb: "",
-          history: [
-            { status: "Order Placed", time: "08:15 AM", date: "Today" },
-            { status: "Processing at Warehouse", time: "09:00 AM", date: "Today" }
-          ]
-        }
-      ];
-
-      saveOrders(sampleOrders);
-      alert("Seeded 2 realistic demo orders with live tracking timelines!");
-      loadUserOrders();
-      switchClientView('orders');
+      // Intentionally deactivated to strictly enforce real user and Firestore orders only
+      console.log("[Buyero] Demo order seeding is disabled. Orders must come from actual customer checkout or Firestore.");
     }
 
     function clearAllLocalData() {
