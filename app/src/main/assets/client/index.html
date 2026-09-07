@@ -3390,6 +3390,171 @@
       }).catch((err) => {
         console.warn("[Buyero Cloud Orders Sync]", err);
       });
+
+      // Also attach realtime listener
+      listenToUserOrdersRealtime(targetUser);
+    }
+
+    let userOrdersUnsubscribe = null;
+    function listenToUserOrdersRealtime(user) {
+      const targetUser = user || currentUser;
+      if (!targetUser || !fbFirestore) return;
+      if (userOrdersUnsubscribe) {
+        try { userOrdersUnsubscribe(); } catch(e) {}
+        userOrdersUnsubscribe = null;
+      }
+      const uEmail = (targetUser.email || '').toLowerCase().trim();
+      const uId = targetUser.uuid || targetUser.userId;
+      const authUid = targetUser.authUid || (uId && !uId.startsWith('usr_') ? uId : null);
+      const detId = uEmail ? generateDeterministicUserUuid(uEmail) : null;
+      const uPhone = (targetUser.phone || '').trim();
+
+      if (!uEmail && !uId && !detId && !uPhone) return;
+
+      try {
+        userOrdersUnsubscribe = fbFirestore.collection('orders').onSnapshot((snapshot) => {
+          if (!snapshot || snapshot.empty) return;
+          let localAllOrders = getAllStoredOrders();
+          let changed = false;
+
+          snapshot.forEach((doc) => {
+            const remoteOrder = doc.data();
+            if (!remoteOrder || !remoteOrder.orderId) return;
+
+            const remoteOrderEmail = (remoteOrder.customerEmail || '').toLowerCase().trim();
+            const remotePhone = (remoteOrder.phone || '').trim();
+            const matchUser = (remoteOrder.userId && uId && remoteOrder.userId === uId) ||
+                              (remoteOrder.userId && authUid && remoteOrder.userId === authUid) ||
+                              (remoteOrder.userId && detId && remoteOrder.userId === detId) ||
+                              (remoteOrderEmail && uEmail && remoteOrderEmail === uEmail) ||
+                              (remotePhone && uPhone && remotePhone === uPhone);
+
+            if (matchUser) {
+              const existingIdx = localAllOrders.findIndex(o => o.orderId === remoteOrder.orderId);
+              if (existingIdx >= 0) {
+                if (JSON.stringify(localAllOrders[existingIdx]) !== JSON.stringify(remoteOrder)) {
+                  localAllOrders[existingIdx] = Object.assign({}, localAllOrders[existingIdx], remoteOrder);
+                  changed = true;
+                }
+              } else {
+                localAllOrders.unshift(remoteOrder);
+                changed = true;
+              }
+            }
+          });
+
+          if (changed) {
+            saveOrders(localAllOrders);
+            loadUserOrders();
+            if (typeof renderOrdersList === 'function') renderOrdersList();
+            const modal = document.getElementById('modal-order-details');
+            if (modal && !modal.classList.contains('hidden')) {
+              const idHeader = document.getElementById('ord-detail-id-header');
+              if (idHeader) {
+                const currentOpenedId = idHeader.textContent.replace('#', '').trim();
+                if (currentOpenedId) openOrderDetailsModal(currentOpenedId);
+              }
+            }
+          }
+        }, (err) => {
+          console.warn("[Realtime Orders Listener Error]", err);
+        });
+      } catch (e) {
+        console.warn("[Orders Listener Setup]", e);
+      }
+    }
+
+    let catalogUnsubscribe = null;
+    function listenToCatalogRealtime() {
+      if (!fbFirestore) return;
+      if (catalogUnsubscribe) {
+        try { catalogUnsubscribe(); } catch(e) {}
+        catalogUnsubscribe = null;
+      }
+      try {
+        catalogUnsubscribe = fbFirestore.collection('products').onSnapshot((snapshot) => {
+          if (!snapshot) return;
+          let remoteProds = [];
+          snapshot.forEach(doc => {
+            const p = doc.data();
+            if (p && p.id && !p.deleted) remoteProds.push(p);
+          });
+          if (remoteProds.length > 0) {
+            let local = getStoredCatalog();
+            let changed = false;
+            remoteProds.forEach(rp => {
+              const idx = local.findIndex(p => p.id === rp.id);
+              if (idx >= 0) {
+                if (JSON.stringify(local[idx]) !== JSON.stringify(rp)) {
+                  local[idx] = Object.assign({}, local[idx], rp);
+                  changed = true;
+                }
+              } else {
+                local.unshift(rp);
+                changed = true;
+              }
+            });
+            snapshot.docChanges().forEach(change => {
+              if (change.type === 'removed') {
+                local = local.filter(p => p.id !== change.doc.id);
+                changed = true;
+              }
+            });
+            if (changed) {
+              localStorage.setItem('buyero_catalog', JSON.stringify(local));
+              setupCategoryPills();
+              loadCatalog();
+            }
+          }
+        }, (err) => {
+          console.warn("[Realtime Catalog Listener Error]", err);
+        });
+      } catch (e) {}
+    }
+
+    let supportChatUnsubscribe = null;
+    function listenToSupportChatsRealtime() {
+      if (!fbFirestore) return;
+      if (supportChatUnsubscribe) {
+        try { supportChatUnsubscribe(); } catch(e) {}
+        supportChatUnsubscribe = null;
+      }
+      const identity = getClientChatIdentity();
+      try {
+        supportChatUnsubscribe = fbFirestore.collection('support_chats').onSnapshot((snapshot) => {
+          if (!snapshot) return;
+          let messages = getStoredSupportMessages();
+          let changed = false;
+          snapshot.docChanges().forEach(change => {
+            if (change.type === 'added') {
+              const msg = change.doc.data();
+              if (!msg || !msg.text) return;
+              if (msg.clientId === identity.clientId || msg.clientId === 'ALL' || !msg.clientId) {
+                const exists = messages.some(m => m.id === msg.id || (m.timestamp === msg.timestamp && m.text === msg.text));
+                if (!exists) {
+                  messages.push(msg);
+                  changed = true;
+                  if (msg.isAdmin) {
+                    const supportDot = document.getElementById('support-nav-dot');
+                    if (supportDot) supportDot.classList.remove('hidden');
+                    addNotification({
+                      id: 'notif_' + Date.now(),
+                      title: 'New Support Message',
+                      message: msg.text,
+                      time: 'Just now',
+                      read: false
+                    });
+                  }
+                }
+              }
+            }
+          });
+          if (changed) {
+            saveSupportMessages(messages);
+            loadClientChatMessages();
+          }
+        }, (err) => console.warn("[Support Chat Listener]", err));
+      } catch (e) {}
     }
 
     function getStoredNotifications() {
@@ -3516,6 +3681,10 @@
       try {
         applyAppLanguage(getAppLanguage());
       } catch (e) {}
+
+      // 6c. Realtime Firestore Listeners
+      listenToCatalogRealtime();
+      listenToSupportChatsRealtime();
 
       // 7. Master Design System Splash Timer (Smooth fast transition)
       setTimeout(() => {
@@ -4594,35 +4763,45 @@
 
       if (!container) return;
 
+      const variantSection = document.getElementById('pdetail-variant-section');
       const cat = (product.category || '').toLowerCase();
       const title = (product.title || '').toLowerCase();
 
       let sizes = [];
-      if (cat.includes('footwear') || title.includes('shoe') || title.includes('sneaker') || title.includes('sandal')) {
+      const isFootwear = cat.includes('footwear') || title.includes('shoe') || title.includes('sneaker') || title.includes('sandal');
+      const isApparel = cat.includes('fashion') || cat.includes('clothing') || title.includes('kurta') || title.includes('saree') || title.includes('shirt') || title.includes('dress') || title.includes('jacket') || title.includes('top') || title.includes('t-shirt') || title.includes('tshirt');
+
+      if (isFootwear) {
         sizes = ['UK 6', 'UK 7', 'UK 8', 'UK 9', 'UK 10'];
         selectedDetailSize = 'UK 8';
-      } else if (cat.includes('fashion') || title.includes('kurta') || title.includes('saree') || title.includes('shirt') || title.includes('dress') || title.includes('jacket')) {
+      } else if (isApparel) {
         sizes = ['S', 'M', 'L', 'XL', 'XXL'];
         selectedDetailSize = 'M';
       } else if (product.sizes && Array.isArray(product.sizes) && product.sizes.length > 0) {
         sizes = product.sizes;
         selectedDetailSize = sizes[0];
       } else {
-        sizes = ['Standard Size'];
-        selectedDetailSize = 'Standard Size';
+        sizes = [];
+        selectedDetailSize = 'Standard';
       }
 
-      selectedProductSize = selectedDetailSize;
-
-      container.innerHTML = sizes.map(size => `
-        <button 
-          type="button"
-          onclick="selectProductDetailSize('${size}')" 
-          class="pdetail-size-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${size === selectedDetailSize ? 'border-2 border-brand-orange bg-orange-50 text-brand-orange shadow-sm' : 'border border-slate-300 text-slate-700 bg-white hover:border-brand-navy'}"
-          data-size="${size}">
-          ${size}
-        </button>
-      `).join('');
+      if (sizes.length > 0) {
+        if (variantSection) variantSection.classList.remove('hidden');
+        selectedProductSize = selectedDetailSize;
+        container.innerHTML = sizes.map(size => `
+          <button 
+            type="button"
+            onclick="selectProductDetailSize('${size}')" 
+            class="pdetail-size-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${size === selectedDetailSize ? 'border-2 border-brand-orange bg-orange-50 text-brand-orange shadow-sm' : 'border border-slate-300 text-slate-700 bg-white hover:border-brand-navy'}"
+            data-size="${size}">
+            ${size}
+          </button>
+        `).join('');
+      } else {
+        if (variantSection) variantSection.classList.add('hidden');
+        selectedProductSize = 'Standard';
+        container.innerHTML = '';
+      }
     }
 
     function selectProductDetailSize(size) {
@@ -4816,7 +4995,7 @@
             rating: 5,
             comment: 'Outstanding quality and very fast doorstep delivery. Size and fit are exactly as described!',
             date: '2 days ago',
-            verifiedPurchase: true
+            verifiedPurchase: false
           },
           {
             id: 'rev_' + productId + '_2',
@@ -4829,6 +5008,40 @@
             verifiedPurchase: false
           }
         ];
+      }
+
+      // Check remote Firestore for new customer reviews
+      if (fbFirestore && !feed.getAttribute('data-syncing-' + productId)) {
+        feed.setAttribute('data-syncing-' + productId, 'true');
+        fbFirestore.collection('reviews').where('productId', '==', productId).get().then(snapshot => {
+          feed.removeAttribute('data-syncing-' + productId);
+          if (snapshot && !snapshot.empty) {
+            let remoteList = [];
+            snapshot.forEach(doc => {
+              const d = doc.data();
+              if (d && d.id) remoteList.push(d);
+            });
+            if (remoteList.length > 0) {
+              const currentAll = getStoredReviews();
+              let updated = false;
+              remoteList.forEach(r => {
+                const idx = currentAll.findIndex(item => item.id === r.id);
+                if (idx < 0) {
+                  currentAll.unshift(r);
+                  updated = true;
+                }
+              });
+              if (updated) {
+                saveStoredReviews(currentAll);
+                if (activeDetailProduct && activeDetailProduct.id === productId) {
+                  loadProductDetailReviews(productId);
+                }
+              }
+            }
+          }
+        }).catch(() => {
+          feed.removeAttribute('data-syncing-' + productId);
+        });
       }
 
       // Calculate rating metrics
@@ -4909,8 +5122,8 @@
       const name = (nameInput ? nameInput.value : '').trim() || (currentUser.name || 'Anonymous');
       const comment = (commentInput ? commentInput.value : '').trim();
 
-      if (!comment || comment.length < 3) {
-        alert("Please write a short review before submitting.");
+      if (!comment || comment.length < 5) {
+        alert("Please write a helpful review (at least 5 characters).");
         if (commentInput) commentInput.focus();
         return;
       }
@@ -4926,12 +5139,20 @@
         rating: selectedReviewStars,
         comment: comment,
         date: 'Just now',
-        verifiedPurchase: isVerified
+        verifiedPurchase: isVerified,
+        timestamp: new Date().toISOString()
       };
 
       const reviews = getStoredReviews();
       reviews.unshift(newReview);
       saveStoredReviews(reviews);
+
+      // Persist to Firestore
+      if (fbFirestore) {
+        fbFirestore.collection('reviews').doc(newReview.id).set(newReview).catch(e => {
+          console.warn("[Review Firestore Save]", e);
+        });
+      }
 
       // Reset form
       if (commentInput) commentInput.value = '';
@@ -7449,8 +7670,8 @@
 
         doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
-        doc.text("TAX INVOICE / CASH BILL", 14, 30);
-        doc.text("GSTIN: 27AABCB1234F1Z9 • support@buyero.com", 14, 35);
+        doc.text("CUSTOMER INVOICE / CASH BILL", 14, 30);
+        doc.text("Official Order Bill • Buyero E-Commerce Store", 14, 35);
 
         doc.setFontSize(10);
         doc.text(`Invoice #: INV-${order.orderId}`, 150, 22);
@@ -7473,10 +7694,10 @@
         doc.setFont('helvetica', 'bold');
         doc.text("Payment & Shipping Details:", 120, 52);
         doc.setFont('helvetica', 'normal');
-        doc.text(`Payment Mode: ${order.paymentMode}`, 120, 59);
-        doc.text(`Txn Ref: ${order.transactionId || 'COD-VERIFIED'}`, 120, 65);
-        doc.text(`Courier: ${order.courier || 'Warehouse Standard'}`, 120, 71);
-        doc.text(`AWB Tracking: ${order.awb || 'Generated on Dispatch'}`, 120, 77);
+        doc.text(`Payment Mode: Cash on Delivery (COD)`, 120, 59);
+        doc.text(`Payment Status: ${order.paymentStatus || 'Pending Doorstep Collection'}`, 120, 65);
+        doc.text(`Courier: ${order.courier || 'Pending Dispatch'}`, 120, 71);
+        doc.text(`AWB Tracking: ${order.awb || 'Assigned on Dispatch'}`, 120, 77);
 
         // 3. Itemized Table Header
         let y = 90;
@@ -8445,13 +8666,7 @@
         }
         if (authMainBtn) {
           authMainBtn.innerHTML = `<i class="fa-solid fa-right-from-bracket mr-1"></i> Sign Out Account`;
-          authMainBtn.onclick = () => {
-            currentUser = null;
-            localStorage.removeItem('buyero_user');
-            renderUserProfile();
-            switchClientView('shop');
-            alert("Signed out successfully.");
-          };
+          authMainBtn.onclick = handleAuthActionClick;
         }
       } else {
         if (nameEl) nameEl.textContent = "Guest User";
@@ -8467,8 +8682,25 @@
         }
         if (authMainBtn) {
           authMainBtn.innerHTML = `<i class="fa-solid fa-right-to-bracket mr-1"></i> Login / Register Account`;
-          authMainBtn.onclick = () => openAuthModal();
+          authMainBtn.onclick = handleAuthActionClick;
         }
+      }
+    }
+
+    function handleAuthActionClick() {
+      if (currentUser) {
+        if (confirm("Are you sure you want to sign out from your Buyero account?")) {
+          if (fbAuth) {
+            try { fbAuth.signOut().catch(() => {}); } catch(e) {}
+          }
+          currentUser = null;
+          localStorage.removeItem('buyero_user');
+          renderUserProfile();
+          switchClientView('shop');
+          alert("You have been signed out successfully.");
+        }
+      } else {
+        openAuthModal();
       }
     }
 
@@ -9097,28 +9329,32 @@
 
     // Android WebView Hardware Back Navigation Listener
     window.addEventListener('popstate', (event) => {
-      // 1. Check if cancel order modal is open
-      const modalCancel = document.getElementById('modal-cancel-order');
-      if (modalCancel && !modalCancel.classList.contains('hidden')) {
-        closeCancelOrderModal();
-        return;
+      // 1. Check open modals in order of precedence
+      const modalsToClose = [
+        { id: 'modal-image-lightbox', close: () => closeImageLightbox() },
+        { id: 'modal-product-video', close: () => closeProductVideoModal() },
+        { id: 'modal-share-product', close: () => closeShareProductModal() },
+        { id: 'modal-catalog-filters', close: () => closeCatalogFiltersModal() },
+        { id: 'modal-cancel-order', close: () => closeCancelOrderModal() },
+        { id: 'modal-return-item', close: () => closeReturnItemModal() },
+        { id: 'modal-order-details', close: () => closeOrderDetailsModal() },
+        { id: 'saved-addresses-modal', close: () => closeSavedAddressesModal() },
+        { id: 'edit-profile-modal', close: () => closeEditProfileModal() },
+        { id: 'return-rules-modal', close: () => closeReturnRulesModal() },
+        { id: 'privacy-policy-modal', close: () => closePrivacyPolicyModal() },
+        { id: 'language-modal', close: () => closeLanguageModal() },
+        { id: 'auth-modal', close: () => closeAuthModal() }
+      ];
+
+      for (const m of modalsToClose) {
+        const el = document.getElementById(m.id);
+        if (el && !el.classList.contains('hidden')) {
+          m.close();
+          return;
+        }
       }
 
-      // 2. Check if return item modal is open
-      const modalReturn = document.getElementById('modal-return-item');
-      if (modalReturn && !modalReturn.classList.contains('hidden')) {
-        closeReturnItemModal();
-        return;
-      }
-
-      // 3. Check if auth modal is open
-      const authModal = document.getElementById('auth-modal');
-      if (authModal && !authModal.classList.contains('hidden')) {
-        closeAuthModal();
-        return;
-      }
-
-      // 4. Check if cart drawer is open
+      // Check cart drawer
       const cartDrawer = document.getElementById('cart-drawer');
       const cartOverlay = document.getElementById('cart-drawer-overlay');
       if (cartDrawer && !cartDrawer.classList.contains('translate-x-full')) {
@@ -9127,7 +9363,20 @@
         return;
       }
 
-      // 5. Navigate to previous view or fallback to 'shop'
+      // Check notification drawer
+      const notifDrawer = document.getElementById('notif-drawer-overlay');
+      if (notifDrawer && !notifDrawer.classList.contains('hidden')) {
+        toggleNotificationDrawer();
+        return;
+      }
+
+      // If on detail or checkout, return to shop
+      if (currentActiveView === 'product-detail' || currentActiveView === 'checkout' || currentActiveView === 'order-success') {
+        switchClientView('shop', { fromPopState: true });
+        return;
+      }
+
+      // Navigate to previous view or fallback to 'shop'
       const targetView = (event.state && event.state.view) ? event.state.view : 'shop';
       switchClientView(targetView, { fromPopState: true });
     });

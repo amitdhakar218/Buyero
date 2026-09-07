@@ -1437,6 +1437,10 @@
       refreshAllAdminData();
       trackAdminVisit();
       listenToFirestoreOrdersRealtime();
+      listenToFirestoreCatalogRealtime();
+      listenToAdminSupportChatsRealtime();
+      listenToAdminSupportTicketsRealtime();
+      listenToAnalyticsCountersRealtime();
     });
 
     function checkAdminAuthentication() {
@@ -1689,6 +1693,120 @@
       }
     }
 
+    function listenToFirestoreCatalogRealtime() {
+      if (!fbFirestore) return;
+      try {
+        fbFirestore.collection('products').onSnapshot((snapshot) => {
+          if (!snapshot) return;
+          let remoteProds = [];
+          snapshot.forEach(doc => {
+            const p = doc.data();
+            if (p && p.id && !p.deleted) remoteProds.push(p);
+          });
+          if (remoteProds.length > 0) {
+            let local = getStoredCatalog();
+            let changed = false;
+            remoteProds.forEach(rp => {
+              const idx = local.findIndex(p => p.id === rp.id);
+              if (idx >= 0) {
+                if (JSON.stringify(local[idx]) !== JSON.stringify(rp)) {
+                  local[idx] = Object.assign({}, local[idx], rp);
+                  changed = true;
+                }
+              } else {
+                local.unshift(rp);
+                changed = true;
+              }
+            });
+            snapshot.docChanges().forEach(change => {
+              if (change.type === 'removed') {
+                local = local.filter(p => p.id !== change.doc.id);
+                changed = true;
+              }
+            });
+            if (changed) {
+              saveCatalog(local);
+              loadAdminCatalogList();
+            }
+          }
+        }, (err) => console.warn("[Admin Catalog Listener]", err));
+      } catch (e) {}
+    }
+
+    function listenToAdminSupportChatsRealtime() {
+      if (!fbFirestore) return;
+      try {
+        fbFirestore.collection('support_chats').onSnapshot((snapshot) => {
+          if (!snapshot) return;
+          let messages = getStoredChatMessages();
+          let changed = false;
+          snapshot.docChanges().forEach(change => {
+            if (change.type === 'added') {
+              const m = change.doc.data();
+              if (!m || !m.text) return;
+              const exists = messages.some(item => item.id === m.id || (item.timestamp === m.timestamp && item.text === m.text && item.clientId === m.clientId));
+              if (!exists) {
+                messages.push(m);
+                changed = true;
+              }
+            }
+          });
+          if (changed) {
+            saveChatMessages(messages);
+            loadAdminChatThreads();
+            if (typeof selectedChatClientId !== 'undefined' && selectedChatClientId) {
+              renderActiveThreadMessages();
+            }
+          }
+        }, (err) => console.warn("[Admin Support Chat Listener]", err));
+      } catch (e) {}
+    }
+
+    function listenToAdminSupportTicketsRealtime() {
+      if (!fbFirestore) return;
+      try {
+        fbFirestore.collection('support_tickets').onSnapshot((snapshot) => {
+          if (!snapshot) return;
+          let tickets = getStoredTickets();
+          let changed = false;
+          snapshot.forEach(doc => {
+            const t = doc.data();
+            if (!t || !t.id) return;
+            const idx = tickets.findIndex(item => item.id === t.id);
+            if (idx >= 0) {
+              if (JSON.stringify(tickets[idx]) !== JSON.stringify(t)) {
+                tickets[idx] = Object.assign({}, tickets[idx], t);
+                changed = true;
+              }
+            } else {
+              tickets.unshift(t);
+              changed = true;
+            }
+          });
+          if (changed) {
+            localStorage.setItem('buyero_support_tickets', JSON.stringify(tickets));
+            loadAdminSupportTickets();
+          }
+        }, (err) => console.warn("[Admin Tickets Listener]", err));
+      } catch (e) {}
+    }
+
+    function listenToAnalyticsCountersRealtime() {
+      if (!fbFirestore) return;
+      try {
+        fbFirestore.collection('analytics_summary').doc('live_counters').onSnapshot((doc) => {
+          if (doc && doc.exists) {
+            const data = doc.data();
+            if (data && typeof data.totalVisits === 'number') {
+              localStorage.setItem('buyero_total_visits', String(data.totalVisits));
+              const elVisits = document.getElementById('stat-total-visits');
+              if (elVisits) elVisits.textContent = data.totalVisits;
+            }
+          }
+        }, () => {});
+      } catch (e) {}
+    }
+
     function getStoredUsers() {
       try {
         return JSON.parse(localStorage.getItem('buyero_registered_users') || '[]');
@@ -1696,7 +1814,7 @@
     }
 
     function trackAdminVisit() {
-      let visits = parseInt(localStorage.getItem('buyero_total_visits') || '142', 10);
+      let visits = parseInt(localStorage.getItem('buyero_total_visits') || '0', 10);
       visits++;
       localStorage.setItem('buyero_total_visits', visits.toString());
     }
@@ -2167,6 +2285,18 @@
       catalog.unshift(newProd);
       saveCatalog(catalog);
 
+      // Persist to Firestore
+      if (fbFirestore) {
+        fbFirestore.collection('products').doc(prodId).set(newProd).catch(e => {
+          console.warn("[Admin Firestore Add Product Error]", e);
+        });
+      }
+
+      // Broadcast to storefront
+      try {
+        syncChannel.postMessage({ type: 'CATALOG_UPDATED' });
+      } catch(e) {}
+
       logActivityEvent('CATALOG', `Added new product: "${title}" (₹${price})`);
       alert(`🎉 Product "${title}" published successfully to Buyero Store!`);
       document.getElementById('form-add-product').reset();
@@ -2179,6 +2309,19 @@
         let catalog = getStoredCatalog();
         catalog = catalog.filter(p => p.id !== prodId);
         saveCatalog(catalog);
+
+        // Delete from Firestore
+        if (fbFirestore) {
+          fbFirestore.collection('products').doc(prodId).delete().catch(e => {
+            console.warn("[Admin Firestore Delete Product Error]", e);
+          });
+        }
+
+        // Broadcast to storefront
+        try {
+          syncChannel.postMessage({ type: 'CATALOG_UPDATED' });
+        } catch(e) {}
+
         logActivityEvent('CATALOG', `Deleted product #${prodId}`);
         loadAdminCatalogList();
       }
@@ -2233,6 +2376,19 @@
         }
         prod.description = desc;
         saveCatalog(catalog);
+
+        // Persist to Firestore
+        if (fbFirestore) {
+          fbFirestore.collection('products').doc(id).set(prod, { merge: true }).catch(e => {
+            console.warn("[Admin Firestore Edit Product Error]", e);
+          });
+        }
+
+        // Broadcast to storefront
+        try {
+          syncChannel.postMessage({ type: 'CATALOG_UPDATED' });
+        } catch(e) {}
+
         logActivityEvent('CATALOG', `Updated product "${title}"`);
         alert("Product changes saved successfully!");
         closeEditProductModal();
@@ -2337,7 +2493,12 @@
               <span class="font-mono font-bold text-brand-navy text-xs">#${o.orderId}</span>
               <span class="text-[10px] text-slate-400 block">${new Date(o.timestamp || Date.now()).toLocaleDateString()}</span>
             </div>
-            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+              o.status === 'Delivered' ? 'bg-emerald-100 text-emerald-800' :
+              o.status === 'Cancelled' ? 'bg-rose-100 text-rose-800' :
+              o.status === 'Shipped via Courier' ? 'bg-blue-100 text-blue-800' :
+              'bg-amber-100 text-amber-800'
+            }">
               ${o.status || 'Pending'}
             </span>
           </div>
@@ -2354,18 +2515,93 @@
             </div>
           </div>
 
-          <!-- Courier Logistics Dropdown & AWB Tracking -->
+          <!-- Ordered Items Breakdown -->
+          <div class="space-y-1.5 bg-slate-50/70 p-2.5 rounded-2xl border border-slate-100">
+            <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Ordered Items (${(o.items || []).length})</div>
+            ${(o.items || []).map(item => `
+              <div class="flex items-center gap-2 text-xs">
+                <img src="${item.image || ''}" class="w-8 h-8 rounded-lg object-cover border border-slate-200" onerror="this.style.display='none'"/>
+                <div class="flex-1 min-w-0">
+                  <span class="font-bold text-slate-800 truncate block">${item.title}</span>
+                  <span class="text-[10px] text-slate-500">${item.size ? 'Size: ' + item.size + ' • ' : ''}Qty: ${item.quantity || 1} • ₹${item.sellingPrice || item.price}</span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+
+          <!-- Customer Delivery Address -->
+          <div class="text-[11px] text-slate-600 bg-slate-50/50 p-2.5 rounded-xl border border-slate-100">
+            <div class="font-bold text-slate-800"><i class="fa-solid fa-location-dot text-brand-orange mr-1"></i> Delivery Address:</div>
+            <p class="mt-0.5 leading-snug">${o.address || ''}, ${o.city || ''}, ${o.state || ''} - ${o.pincode || ''}</p>
+          </div>
+
+          <!-- COD & Payment Details -->
+          <div class="flex items-center justify-between text-[11px] px-1">
+            <span class="text-slate-500 font-medium">Payment: <strong class="text-slate-800">Cash on Delivery (COD)</strong></span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${o.status === 'Delivered' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+              ${o.status === 'Delivered' ? '✓ Cash Collected' : 'Doorstep Collection'}
+            </span>
+          </div>
+
+          <!-- Customer Requests (Cancellation / Return) -->
+          ${o.cancellationReason ? `
+            <div class="p-2.5 bg-rose-50 border border-rose-200 rounded-2xl text-xs space-y-1.5">
+              <div class="font-bold text-rose-800 flex items-center gap-1.5">
+                <i class="fa-solid fa-triangle-exclamation text-rose-600"></i>
+                <span>Customer Requested Cancellation</span>
+              </div>
+              <p class="text-rose-700 text-[11px]">Reason: "${o.cancellationReason}"</p>
+              ${o.status !== 'Cancelled' ? `
+                <button onclick="approveOrderCancellation('${o.orderId}')" class="w-full py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs transition">
+                  Approve Order Cancellation
+                </button>
+              ` : '<span class="text-xs font-bold text-rose-800 block">Order Cancelled</span>'}
+            </div>
+          ` : ''}
+
+          ${o.returnDetails ? `
+            <div class="p-2.5 bg-amber-50 border border-amber-200 rounded-2xl text-xs space-y-1.5">
+              <div class="font-bold text-amber-900 flex items-center gap-1.5">
+                <i class="fa-solid fa-arrow-rotate-left text-amber-600"></i>
+                <span>Customer Return Request (${o.returnDetails.type})</span>
+              </div>
+              <p class="text-amber-800 text-[11px]">Reason: "${o.returnDetails.reason}"</p>
+              ${o.returnDetails.notes ? `<p class="text-amber-700 text-[10px]">${o.returnDetails.notes}</p>` : ''}
+              <button onclick="approveOrderReturn('${o.orderId}')" class="w-full py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs transition">
+                Approve Doorstep Pickup & Settlement
+              </button>
+            </div>
+          ` : ''}
+
+          <!-- Order Status & Courier Logistics Controls -->
           <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2 text-xs">
             <div class="grid grid-cols-2 gap-2">
               <div>
+                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Order Status</label>
+                <select id="status-sel-${o.orderId}" class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-xl outline-none focus:border-brand-navy">
+                  <option value="Order Placed" ${o.status === 'Order Placed' ? 'selected' : ''}>Order Placed</option>
+                  <option value="Processing at Warehouse" ${o.status === 'Processing at Warehouse' ? 'selected' : ''}>Processing at Warehouse</option>
+                  <option value="Shipped via Courier" ${o.status === 'Shipped via Courier' ? 'selected' : ''}>Shipped via Courier</option>
+                  <option value="Out for Delivery" ${o.status === 'Out for Delivery' ? 'selected' : ''}>Out for Delivery</option>
+                  <option value="Delivered" ${o.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
+                  <option value="Cancelled" ${o.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                </select>
+              </div>
+              <div>
                 <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Courier Logistics</label>
                 <select id="courier-sel-${o.orderId}" class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-xl outline-none focus:border-brand-navy">
+                  <option value="" ${!o.courier ? 'selected' : ''}>-- Assign Courier --</option>
                   <option value="Delhivery" ${o.courier === 'Delhivery' ? 'selected' : ''}>Delhivery Express</option>
                   <option value="Shadowfax" ${o.courier === 'Shadowfax' ? 'selected' : ''}>Shadowfax Logistics</option>
                   <option value="Xpressbees" ${o.courier === 'Xpressbees' ? 'selected' : ''}>Xpressbees Courier</option>
                   <option value="BlueDart" ${o.courier === 'BlueDart' ? 'selected' : ''}>BlueDart Surface</option>
+                  <option value="DTDC" ${o.courier === 'DTDC' ? 'selected' : ''}>DTDC Express</option>
+                  <option value="India Post" ${o.courier === 'India Post' ? 'selected' : ''}>India Post Speed Post</option>
                 </select>
               </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
               <div>
                 <label class="block text-[10px] font-bold text-slate-600 mb-0.5">AWB Tracking #</label>
                 <input 
@@ -2376,76 +2612,94 @@
                   class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-xl outline-none focus:border-brand-navy font-mono"
                 />
               </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2">
-              <div>
-                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Live Location Status</label>
-                <input 
-                  type="text" 
-                  id="loc-inp-${o.orderId}" 
-                  value="${o.locationStatus || 'Dispatched from Central Warehouse'}" 
-                  placeholder="e.g. Arrived at Hub" 
-                  class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-xl outline-none"
-                />
-              </div>
               <div>
                 <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Estimated Delivery</label>
                 <input 
                   type="text" 
                   id="est-inp-${o.orderId}" 
-                  value="${o.deliveryDays || '3 Days'}" 
+                  value="${o.deliveryDays || '3-5 Days'}" 
                   placeholder="e.g. 3 Days" 
                   class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-xl outline-none"
                 />
               </div>
             </div>
 
+            <div>
+              <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Current Live Hub / Status</label>
+              <input 
+                type="text" 
+                id="loc-inp-${o.orderId}" 
+                value="${o.locationStatus || ''}" 
+                placeholder="e.g. Dispatched from Central Fulfillment Hub" 
+                class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-xl outline-none"
+              />
+            </div>
+
             <button 
+              id="btn-update-${o.orderId}"
               onclick="updateOrderCourierDetails('${o.orderId}')" 
-              class="w-full py-1.5 bg-brand-navy hover:bg-brand-deep text-white font-bold rounded-xl text-[11px] transition shadow"
+              class="w-full py-2 bg-brand-navy hover:bg-brand-deep text-white font-bold rounded-xl text-xs transition shadow flex items-center justify-center gap-1.5 active:scale-98"
             >
-              Update Courier Tracking & Sync
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <span>Save & Sync Order Status</span>
             </button>
           </div>
 
-          <!-- Complete Order (7-Day Logic) Button -->
-          <button 
-            onclick="completeOrderAction('${o.orderId}')" 
-            class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition shadow flex items-center justify-center gap-1.5 active:scale-98"
-          >
-            <i class="fa-solid fa-circle-check"></i>
-            <span>Move to Completed Order (Complete Order)</span>
-          </button>
+          <!-- Complete Order (Quick Delivered) Button -->
+          ${o.status !== 'Delivered' ? `
+            <button 
+              onclick="completeOrderAction('${o.orderId}')" 
+              class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition shadow flex items-center justify-center gap-1.5 active:scale-98"
+            >
+              <i class="fa-solid fa-circle-check"></i>
+              <span>Quick Mark as Delivered & Cash Collected</span>
+            </button>
+          ` : ''}
         </div>
       `).join('');
     }
 
     function updateOrderCourierDetails(orderId) {
-      const courier = document.getElementById(`courier-sel-${orderId}`).value;
-      const awb = document.getElementById(`awb-inp-${orderId}`).value.trim();
-      const location = document.getElementById(`loc-inp-${orderId}`).value.trim();
-      const days = document.getElementById(`est-inp-${orderId}`).value.trim();
+      const statusSel = document.getElementById(`status-sel-${orderId}`);
+      const courierSel = document.getElementById(`courier-sel-${orderId}`);
+      const awbInp = document.getElementById(`awb-inp-${orderId}`);
+      const locInp = document.getElementById(`loc-inp-${orderId}`);
+      const estInp = document.getElementById(`est-inp-${orderId}`);
+      const btn = document.getElementById(`btn-update-${orderId}`);
+
+      const status = statusSel ? statusSel.value : 'Shipped via Courier';
+      const courier = courierSel ? courierSel.value : '';
+      const awb = awbInp ? awbInp.value.trim() : '';
+      const location = locInp ? locInp.value.trim() : '';
+      const days = estInp ? estInp.value.trim() : '';
+
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Saving to Cloud...';
+      }
 
       let orders = getStoredOrders();
       const order = orders.find(o => o.orderId === orderId);
       if (order) {
+        order.status = status;
         order.courier = courier;
         order.awb = awb;
         order.locationStatus = location;
         order.deliveryDays = days;
-        order.status = 'Shipped via Courier';
+        if (status === 'Delivered') {
+          order.paymentStatus = 'COLLECTED_AT_DOORSTEP';
+        }
 
         if (!order.history) order.history = [];
         order.history.push({
-          status: `Shipped via ${courier} (AWB: ${awb})`,
+          status: `${status}${courier ? ' via ' + courier : ''}${awb ? ' (AWB: ' + awb + ')' : ''}`,
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           date: new Date().toLocaleDateString()
         });
 
         saveOrders(orders);
         syncOrderUpdateToFirestore(order);
-        logActivityEvent('ORDER', `Updated Order #${orderId}: ${courier} AWB ${awb}`);
+        logActivityEvent('ORDER', `Updated Order #${orderId} to "${status}"`);
 
         try {
           syncChannel.postMessage({
@@ -2457,9 +2711,73 @@
           });
         } catch(e) {}
 
-        alert(`Tracking updated for Order #${orderId}!`);
-        calculateAnalysisMetrics();
-        renderFilteredOrders();
+        setTimeout(() => {
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> <span>Save & Sync Order Status</span>';
+          }
+          alert(`Order #${orderId} updated to "${status}" and synced successfully!`);
+          calculateAnalysisMetrics();
+          renderFilteredOrders();
+        }, 300);
+      }
+    }
+
+    function approveOrderCancellation(orderId) {
+      if (confirm(`Approve cancellation for Order #${orderId}?`)) {
+        let orders = getStoredOrders();
+        const order = orders.find(o => o.orderId === orderId);
+        if (order) {
+          order.status = 'Cancelled';
+          if (!order.history) order.history = [];
+          order.history.push({
+            status: 'Cancelled by Admin per Customer Request',
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            date: new Date().toLocaleDateString()
+          });
+          saveOrders(orders);
+          syncOrderUpdateToFirestore(order);
+          logActivityEvent('ORDER', `Approved Cancellation for Order #${orderId}`);
+          try {
+            syncChannel.postMessage({
+              type: 'ORDER_STATUS_UPDATED',
+              orderId: orderId,
+              status: 'Cancelled'
+            });
+          } catch(e) {}
+          calculateAnalysisMetrics();
+          renderFilteredOrders();
+          alert(`Order #${orderId} has been cancelled.`);
+        }
+      }
+    }
+
+    function approveOrderReturn(orderId) {
+      if (confirm(`Approve doorstep return/exchange pickup for Order #${orderId}?`)) {
+        let orders = getStoredOrders();
+        const order = orders.find(o => o.orderId === orderId);
+        if (order) {
+          order.status = 'Return Pickup Scheduled';
+          if (!order.history) order.history = [];
+          order.history.push({
+            status: 'Return Pickup Approved & Scheduled by Support',
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            date: new Date().toLocaleDateString()
+          });
+          saveOrders(orders);
+          syncOrderUpdateToFirestore(order);
+          logActivityEvent('ORDER', `Approved Return Pickup for Order #${orderId}`);
+          try {
+            syncChannel.postMessage({
+              type: 'ORDER_STATUS_UPDATED',
+              orderId: orderId,
+              status: 'Return Pickup Scheduled'
+            });
+          } catch(e) {}
+          calculateAnalysisMetrics();
+          renderFilteredOrders();
+          alert(`Return pickup scheduled for Order #${orderId}.`);
+        }
       }
     }
 
@@ -2828,6 +3146,13 @@
       messages.push(newMsg);
       saveChatMessages(messages);
 
+      // Persist to Firestore support_chats
+      if (fbFirestore) {
+        fbFirestore.collection('support_chats').add(newMsg).catch(e => {
+          console.warn("[Admin Firestore Send Message Error]", e);
+        });
+      }
+
       input.value = '';
       renderActiveThreadMessages();
       loadAdminChatThreads();
@@ -2856,11 +3181,8 @@
 
       let tickets = getStoredTickets();
       if (tickets.length === 0) {
-        // Sample ticket
-        tickets = [
-          { id: 'tkt_101', orderId: 'BYR-849201', issueType: 'Delivery Timeline', notes: 'Customer asked when order will arrive in Mumbai.', status: 'OPEN', date: 'Today' }
-        ];
-        localStorage.setItem('buyero_support_tickets', JSON.stringify(tickets));
+        container.innerHTML = '<div class="py-8 text-center text-slate-400">No urgent support tickets open.</div>';
+        return;
       }
 
       container.innerHTML = tickets.map(t => `
@@ -2891,11 +3213,33 @@
       if (t) {
         t.status = 'RESOLVED';
         localStorage.setItem('buyero_support_tickets', JSON.stringify(tickets));
+        if (fbFirestore) {
+          fbFirestore.collection('support_tickets').doc(ticketId).set({ status: 'RESOLVED' }, { merge: true }).catch(() => {});
+        }
         logActivityEvent('SUPPORT', `Resolved Ticket #${ticketId} for Order #${t.orderId}`);
         loadAdminSupportTickets();
         alert("Ticket marked as resolved!");
       }
     }
+
+    /* Android Hardware Back Button (popstate) Handler */
+    window.addEventListener('popstate', () => {
+      const editModal = document.getElementById('modal-edit-product');
+      if (editModal && !editModal.classList.contains('hidden')) {
+        closeEditProductModal();
+        return;
+      }
+      const custModal = document.getElementById('modal-customer-profile');
+      if (custModal && !custModal.classList.contains('hidden')) {
+        closeCustomerProfileModal();
+        return;
+      }
+      const actModal = document.getElementById('modal-activity-hub');
+      if (actModal && !actModal.classList.contains('hidden')) {
+        closeActivityHubModal();
+        return;
+      }
+    });
   </script>
 </body>
 </html>
