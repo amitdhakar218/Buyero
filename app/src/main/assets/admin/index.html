@@ -396,21 +396,51 @@
             </div>
           </div>
 
-          <!-- Live Profit Calculator (Meesho Cost & Buyero Price) -->
-          <div class="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
-            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-700 block">Live Profit Calculator</span>
-            <div class="grid grid-cols-2 gap-2">
+          <!-- Catalog Availability Status -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Catalog Availability Status *</label>
+            <select id="inp-prod-status" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl outline-none focus:border-brand-navy bg-white">
+              <option value="PUBLISHED">Available (Published)</option>
+              <option value="OUT_OF_STOCK">Out of Stock</option>
+              <option value="HIDDEN">Hidden from Customer Catalog</option>
+            </select>
+          </div>
+
+          <!-- Commercial Pricing Model (Source Cost, MRP, Selling Price) -->
+          <div class="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                <i class="fa-solid fa-calculator text-brand-navy"></i> Product Pricing Model
+              </span>
+              <span class="text-[10px] text-slate-500 font-medium">Manual MRP Control</span>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
               <div>
-                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Meesho Cost Price (₹) *</label>
+                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Source Cost (₹) *</label>
                 <input 
                   type="number" 
                   id="inp-prod-cost" 
                   required 
-                  min="1" 
-                  placeholder="200" 
+                  min="0" 
+                  placeholder="400" 
                   oninput="calculateProductMarginLive()"
-                  class="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-xl outline-none focus:border-brand-navy bg-white"
+                  class="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-xl outline-none focus:border-brand-navy bg-white"
                 />
+                <span class="text-[9px] text-slate-400 block mt-0.5">Supplier cost</span>
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">MRP / Full (₹) *</label>
+                <input 
+                  type="number" 
+                  id="inp-prod-mrp" 
+                  required 
+                  min="1" 
+                  placeholder="999" 
+                  oninput="calculateProductMarginLive()"
+                  class="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-xl outline-none focus:border-brand-navy bg-white"
+                />
+                <span class="text-[9px] text-slate-400 block mt-0.5">Strikethrough</span>
               </div>
               <div>
                 <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Selling Price (₹) *</label>
@@ -419,40 +449,83 @@
                   id="inp-prod-price" 
                   required 
                   min="1" 
-                  placeholder="400" 
+                  placeholder="699" 
                   oninput="calculateProductMarginLive()"
-                  class="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-xl outline-none focus:border-brand-navy bg-white"
+                  class="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-xl outline-none focus:border-brand-navy bg-white"
                 />
+                <span class="text-[9px] text-slate-400 block mt-0.5">Customer pays</span>
               </div>
             </div>
 
-            <div class="pt-1.5 border-t border-slate-200 flex items-center justify-between text-xs">
-              <span class="text-slate-600">Your Profit on this product:</span>
-              <span id="badge-live-prod-margin" class="font-bold text-emerald-600">₹0 (0% margin)</span>
+            <!-- Live Calculation Summary Card -->
+            <div id="box-live-pricing-summary" class="pt-1.5 border-t border-slate-200">
+              <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                <div class="bg-white p-2 rounded-xl border border-slate-200">
+                  <span class="text-[10px] text-slate-500 block">Customer Price</span>
+                  <strong class="text-slate-800" id="calc-disp-price">₹0</strong>
+                </div>
+                <div class="bg-white p-2 rounded-xl border border-slate-200">
+                  <span class="text-[10px] text-slate-500 block">Customer Discount</span>
+                  <strong class="text-indigo-600" id="calc-disp-discount">₹0 (0%)</strong>
+                </div>
+                <div class="bg-white p-2 rounded-xl border border-slate-200">
+                  <span class="text-[10px] text-slate-500 block">Estimated Profit</span>
+                  <strong class="text-emerald-600" id="calc-disp-profit">₹0</strong>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- Variant Availability & Supplier Notes -->
-          <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">Variant Availability & Supplier Notes</label>
-            <textarea 
-              id="inp-prod-variants" 
-              rows="2" 
-              placeholder="e.g. Sizes S, M, L, XL available. Sourced from Meesho Top Vendor." 
-              class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl outline-none focus:border-brand-navy"
-            ></textarea>
+          <!-- Private Business Information (Admin-Only, Never Sent to Customer) -->
+          <div class="p-3 bg-indigo-50/70 border border-indigo-200 rounded-2xl space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-bold text-indigo-950 flex items-center gap-1.5">
+                <i class="fa-solid fa-lock text-indigo-600"></i>
+                <span>Private Supplier & Source Data (Admin Only)</span>
+              </label>
+              <span class="text-[9px] font-bold bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full uppercase tracking-wider">Confidential</span>
+            </div>
+            <p class="text-[10px] text-indigo-800">Source product URL is required to publish product. Customer will NEVER receive this link or supplier details.</p>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-700 mb-0.5">Source Product URL *</label>
+              <input 
+                type="url" 
+                id="inp-prod-source-url" 
+                placeholder="https://www.meesho.com/... or supplier website product link" 
+                class="w-full px-3 py-2 text-xs border border-indigo-200 rounded-xl outline-none focus:border-indigo-600 bg-white"
+              />
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[10px] font-bold text-slate-700 mb-0.5">Supplier Reference / Code</label>
+                <input 
+                  type="text" 
+                  id="inp-prod-supplier-ref" 
+                  placeholder="e.g. s-94821034 or Vendor Code" 
+                  class="w-full px-3 py-1.5 text-xs border border-indigo-200 rounded-xl outline-none focus:border-indigo-600 bg-white"
+                />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-700 mb-0.5">Private Admin Notes</label>
+                <input 
+                  type="text" 
+                  id="inp-prod-admin-notes" 
+                  placeholder="Packing notes, vendor contact, etc." 
+                  class="w-full px-3 py-1.5 text-xs border border-indigo-200 rounded-xl outline-none focus:border-indigo-600 bg-white"
+                />
+              </div>
+            </div>
           </div>
 
-          <!-- Meesho / Supplier Product Link or Code (Admin Private) -->
+          <!-- Variant Availability (Customer Visible) -->
           <div>
-            <div class="flex items-center justify-between mb-1">
-              <label class="block text-xs font-bold text-slate-700">Meesho / Supplier Link or Code</label>
-              <span class="text-[10px] text-brand-navy font-semibold flex items-center gap-1"><i class="fa-solid fa-lock text-[9px]"></i> Private to Admin</span>
-            </div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Variant Options (Customer Visible)</label>
             <input 
               type="text" 
-              id="inp-prod-supplier" 
-              placeholder="e.g. https://www.meesho.com/s/p/... or Product Code s-94821034" 
+              id="inp-prod-variants" 
+              placeholder="e.g. Sizes S, M, L, XL or Standard" 
               class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl outline-none focus:border-brand-navy"
             />
           </div>
@@ -928,46 +1001,87 @@
           </div>
         </div>
 
-        <!-- Live Profit Calculator (Cost & Selling Price) -->
-        <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-1.5">
-          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-600 block">Pricing & Profit Margin</span>
+        <!-- Catalog Availability Status -->
+        <div>
+          <label class="block font-bold text-slate-700 mb-0.5">Catalog Availability Status *</label>
+          <select id="edit-prod-status" class="w-full px-3 py-1.5 border border-slate-300 rounded-xl outline-none focus:border-brand-navy bg-white">
+            <option value="PUBLISHED">Available (Published)</option>
+            <option value="OUT_OF_STOCK">Out of Stock</option>
+            <option value="HIDDEN">Hidden from Customer Catalog</option>
+          </select>
+        </div>
+
+        <!-- Pricing Model (Source Cost, MRP, Selling Price) -->
+        <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-600 block">Pricing & Profit Architecture</span>
+            <span class="text-[9px] text-slate-500 font-medium">Manual MRP Control</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <label class="block font-bold text-slate-700 text-[10px] mb-0.5">Source Cost (₹) *</label>
+              <input type="number" id="edit-prod-cost" required min="0" oninput="calculateEditProductMarginLive()" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-xl outline-none focus:border-brand-navy bg-white text-xs" />
+              <span class="text-[9px] text-slate-400 block mt-0.5">Supplier cost</span>
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 text-[10px] mb-0.5">MRP / Full (₹) *</label>
+              <input type="number" id="edit-prod-mrp" required min="1" oninput="calculateEditProductMarginLive()" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-xl outline-none focus:border-brand-navy bg-white text-xs" />
+              <span class="text-[9px] text-slate-400 block mt-0.5">Strikethrough</span>
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 text-[10px] mb-0.5">Selling Price (₹) *</label>
+              <input type="number" id="edit-prod-price" required min="1" oninput="calculateEditProductMarginLive()" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-xl outline-none focus:border-brand-navy bg-white text-xs" />
+              <span class="text-[9px] text-slate-400 block mt-0.5">Customer price</span>
+            </div>
+          </div>
+          <div id="box-edit-pricing-summary" class="pt-1.5 border-t border-slate-200">
+            <div class="grid grid-cols-3 gap-2 text-center text-xs">
+              <div class="bg-white p-1.5 rounded-xl border border-slate-200">
+                <span class="text-[9px] text-slate-500 block">Customer Price</span>
+                <strong class="text-slate-800" id="edit-calc-disp-price">₹0</strong>
+              </div>
+              <div class="bg-white p-1.5 rounded-xl border border-slate-200">
+                <span class="text-[9px] text-slate-500 block">Customer Discount</span>
+                <strong class="text-indigo-600" id="edit-calc-disp-discount">₹0 (0%)</strong>
+              </div>
+              <div class="bg-white p-1.5 rounded-xl border border-slate-200">
+                <span class="text-[9px] text-slate-500 block">Estimated Profit</span>
+                <strong class="text-emerald-600" id="edit-calc-disp-profit">₹0</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Private Business Information (Admin Only) -->
+        <div class="p-2.5 bg-indigo-50/70 border border-indigo-200 rounded-2xl space-y-1.5 text-xs">
+          <div class="flex items-center justify-between">
+            <label class="font-bold text-indigo-950 flex items-center gap-1">
+              <i class="fa-solid fa-lock text-indigo-600 text-[10px]"></i>
+              <span>Private Supplier & Source Data (Admin Only)</span>
+            </label>
+            <span class="text-[9px] font-bold bg-indigo-100 text-indigo-800 px-1.5 py-0.2 rounded-full uppercase">Confidential</span>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 text-[10px] mb-0.5">Source Product URL *</label>
+            <input type="url" id="edit-prod-source-url" placeholder="https://www.meesho.com/... or supplier link" class="w-full px-2.5 py-1.5 border border-indigo-200 rounded-xl outline-none focus:border-indigo-600 bg-white text-xs" />
+          </div>
+
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="block font-bold text-slate-700 mb-0.5">Meesho Cost (₹) *</label>
-              <input type="number" id="edit-prod-cost" required min="1" oninput="calculateEditProductMarginLive()" class="w-full px-3 py-1.5 border border-slate-300 rounded-xl outline-none focus:border-brand-navy bg-white" />
+              <label class="block font-bold text-slate-700 text-[10px] mb-0.5">Supplier Ref / Code</label>
+              <input type="text" id="edit-prod-supplier-ref" placeholder="e.g. s-94821034" class="w-full px-2.5 py-1.5 border border-indigo-200 rounded-xl outline-none focus:border-indigo-600 bg-white text-xs" />
             </div>
             <div>
-              <label class="block font-bold text-slate-700 mb-0.5">Selling Price (₹) *</label>
-              <input type="number" id="edit-prod-price" required min="1" oninput="calculateEditProductMarginLive()" class="w-full px-3 py-1.5 border border-slate-300 rounded-xl outline-none focus:border-brand-navy bg-white" />
+              <label class="block font-bold text-slate-700 text-[10px] mb-0.5">Private Admin Notes</label>
+              <input type="text" id="edit-prod-admin-notes" placeholder="Notes..." class="w-full px-2.5 py-1.5 border border-indigo-200 rounded-xl outline-none focus:border-indigo-600 bg-white text-xs" />
             </div>
           </div>
-          <div class="pt-1 border-t border-slate-200 flex items-center justify-between text-[11px]">
-            <span class="text-slate-500">Estimated Profit:</span>
-            <span id="badge-edit-prod-margin" class="font-bold text-emerald-600">₹0 (0% margin)</span>
-          </div>
         </div>
 
-        <!-- Stock Status & Meesho Supplier Link -->
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="block font-bold text-slate-700 mb-0.5">Stock Status</label>
-            <select id="edit-prod-instock" class="w-full px-3 py-1.5 border border-slate-300 rounded-xl outline-none focus:border-brand-navy bg-white">
-              <option value="true">In Stock</option>
-              <option value="false">Out of Stock</option>
-            </select>
-          </div>
-          <div>
-            <label class="block font-bold text-slate-700 mb-0.5 flex items-center gap-1">
-              <span>Meesho Link / Code</span>
-              <i class="fa-solid fa-lock text-[8px] text-brand-navy" title="Private to Admin"></i>
-            </label>
-            <input type="text" id="edit-prod-supplier" placeholder="e.g. s-94821034" class="w-full px-3 py-1.5 border border-slate-300 rounded-xl outline-none focus:border-brand-navy" />
-          </div>
-        </div>
-
-        <!-- Variants & Supplier Notes -->
+        <!-- Variant Availability (Customer Visible) -->
         <div>
-          <label class="block font-bold text-slate-700 mb-0.5">Variant Availability & Supplier Notes</label>
+          <label class="block font-bold text-slate-700 mb-0.5">Variant Options (Customer Visible)</label>
           <input type="text" id="edit-prod-variants" placeholder="e.g. Sizes S, M, L, XL" class="w-full px-3 py-1.5 border border-slate-300 rounded-xl outline-none focus:border-brand-navy" />
         </div>
 
@@ -1009,7 +1123,7 @@
     "title": "Anarkali Embroidered Kurta & Dupatta Set",
     "category": "Fashion",
     "image": "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 380,
+    "privateSourceCost": 380,
     "sellingPrice": 799,
     "mrp": 1599,
     "description": "Pure georgette stitched flared kurta with heavy zari embroidery border and matching organza dupatta.",
@@ -1025,7 +1139,7 @@
     "title": "TWS Wireless Earbuds with ANC & 40H Battery",
     "category": "Electronics",
     "image": "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 420,
+    "privateSourceCost": 420,
     "sellingPrice": 949,
     "mrp": 2499,
     "description": "True Wireless Stereo earphones featuring quad mic Environmental Noise Cancellation, IPX5 sweat resistance, and instant Type-C fast charging.",
@@ -1041,7 +1155,7 @@
     "title": "Air Cushion Lightweight Running Sneakers",
     "category": "Footwear",
     "image": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 510,
+    "privateSourceCost": 510,
     "sellingPrice": 1199,
     "mrp": 2899,
     "description": "Ergonomic shock-absorbing running sneakers with breathable flyknit mesh upper and high-grip rubber sole.",
@@ -1057,7 +1171,7 @@
     "title": "Cast Iron 3-Piece Non-Stick Cookware Set",
     "category": "Home & Kitchen",
     "image": "https://images.unsplash.com/photo-1584990347449-33827ec3cfb6?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 650,
+    "privateSourceCost": 650,
     "sellingPrice": 1399,
     "mrp": 2999,
     "description": "Heavy-gauge pre-seasoned cast iron skillet, dosa tawa, and kadhai set for induction and gas stoves.",
@@ -1073,7 +1187,7 @@
     "title": "Smart Stainless Steel Vacuum Flask 500ml",
     "category": "Home & Kitchen",
     "image": "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 190,
+    "privateSourceCost": 190,
     "sellingPrice": 499,
     "mrp": 999,
     "description": "LED touch digital temperature display insulated water bottle keeping liquids hot/cold for 24 hours.",
@@ -1089,7 +1203,7 @@
     "title": "Men's Slim Fit Casual Denim Jacket",
     "category": "Fashion",
     "image": "https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 490,
+    "privateSourceCost": 490,
     "sellingPrice": 1099,
     "mrp": 2299,
     "description": "Classic washed distressed indigo denim jacket with metal shank buttons and twin flap chest pockets.",
@@ -1105,7 +1219,7 @@
     "title": "Kanjivaram Soft Silk Woven Zari Saree",
     "category": "Fashion",
     "image": "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 580,
+    "privateSourceCost": 580,
     "sellingPrice": 1299,
     "mrp": 3499,
     "description": "Traditional South Indian rich jacquard weave silk saree with contrast pallu and unstitched blouse piece.",
@@ -1121,7 +1235,7 @@
     "title": "Bluetooth Calling Smartwatch with AMOLED Screen",
     "category": "Electronics",
     "image": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 690,
+    "privateSourceCost": 690,
     "sellingPrice": 1499,
     "mrp": 3999,
     "description": "1.96-inch AMOLED display smartwatch with Bluetooth calling, 120+ sports modes, SpO2 & 24/7 heart rate monitor.",
@@ -1137,7 +1251,7 @@
     "title": "Men's Handcrafted Casual Leather Loafers",
     "category": "Footwear",
     "image": "https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 410,
+    "privateSourceCost": 410,
     "sellingPrice": 899,
     "mrp": 1999,
     "description": "Slip-on casual driving shoes with cushioned insole and flexible anti-skid rubber sole for all-day comfort.",
@@ -1153,7 +1267,7 @@
     "title": "Pure Glace Cotton King Size Double Bedsheet",
     "category": "Home & Kitchen",
     "image": "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 280,
+    "privateSourceCost": 280,
     "sellingPrice": 649,
     "mrp": 1499,
     "description": "210 TC breathable glace cotton printed bedsheet with 2 matching pillow covers. Color fade resistant.",
@@ -1169,7 +1283,7 @@
     "title": "Men's Slim Stretch Cotton Lycra Chinos",
     "category": "Fashion",
     "image": "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 320,
+    "privateSourceCost": 320,
     "sellingPrice": 699,
     "mrp": 1599,
     "description": "Modern slim fit stretchable cotton chinos for formal and casual office wear. Wrinkle free fabric.",
@@ -1185,7 +1299,7 @@
     "title": "10000mAh Ultra Slim 22.5W Fast Power Bank",
     "category": "Electronics",
     "image": "https://images.unsplash.com/photo-1609592426507-6f8a846c4342?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 390,
+    "privateSourceCost": 390,
     "sellingPrice": 799,
     "mrp": 1799,
     "description": "Dual USB and Type-C PD output power bank with LED battery level display and multi-layer device protection.",
@@ -1201,7 +1315,7 @@
     "title": "Handcrafted Jaipuri Embroidered Leather Juttis",
     "category": "Footwear",
     "image": "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 240,
+    "privateSourceCost": 240,
     "sellingPrice": 549,
     "mrp": 1299,
     "description": "Traditional handmade Punjabi/Jaipuri mojari jutti with thread embroidery and cushioned sole.",
@@ -1217,7 +1331,7 @@
     "title": "Automatic Rechargeable Electric Water Dispenser",
     "category": "Home & Kitchen",
     "image": "https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 150,
+    "privateSourceCost": 150,
     "sellingPrice": 349,
     "mrp": 799,
     "description": "Wireless USB rechargeable water pump for standard 20-litre cans. One-touch automatic water dispensing.",
@@ -1233,7 +1347,7 @@
     "title": "Women's Floral Print Flared A-Line Rayon Kurti",
     "category": "Fashion",
     "image": "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 210,
+    "privateSourceCost": 210,
     "sellingPrice": 449,
     "mrp": 999,
     "description": "Comfortable breathable rayon printed kurti with 3/4 sleeves and mandarin collar for daily college/office use.",
@@ -1249,7 +1363,7 @@
     "title": "10-Inch RGB LED Ring Light with 7ft Metal Tripod",
     "category": "Electronics",
     "image": "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 320,
+    "privateSourceCost": 320,
     "sellingPrice": 699,
     "mrp": 1899,
     "description": "Color changing RGB ring light with mobile holder and wireless shutter remote for video recording and reels.",
@@ -1265,7 +1379,7 @@
     "title": "Ultra Lightweight Orthopedic Sports Running Shoes",
     "category": "Footwear",
     "image": "https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 460,
+    "privateSourceCost": 460,
     "sellingPrice": 999,
     "mrp": 2199,
     "description": "Memory foam arch support orthopedic gym and walking sneakers designed to relieve heel stress.",
@@ -1281,7 +1395,7 @@
     "title": "360 Rotating Multi-Tier Kitchen Spice Rack",
     "category": "Home & Kitchen",
     "image": "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 270,
+    "privateSourceCost": 270,
     "sellingPrice": 599,
     "mrp": 1299,
     "description": "Revolving 16-jar spice carousel organizer with airtight sprinkler lids for mess-free modern kitchen counters.",
@@ -1297,7 +1411,7 @@
     "title": "Men's Genuine Hunter Leather RFID Bifold Wallet",
     "category": "Accessories",
     "image": "https://images.unsplash.com/photo-1627123424574-724758594e93?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 180,
+    "privateSourceCost": 180,
     "sellingPrice": 399,
     "mrp": 899,
     "description": "Handmade oil pull-up vintage leather purse wallet with RFID blocking technology, coin pocket and 8 card slots.",
@@ -1313,7 +1427,7 @@
     "title": "Polarized UV400 Metal Aviator Sunglasses",
     "category": "Accessories",
     "image": "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 190,
+    "privateSourceCost": 190,
     "sellingPrice": 449,
     "mrp": 1199,
     "description": "Classic teardrop gold-rim aviator sunglasses with polarized anti-glare scratch-resistant glass lenses.",
@@ -1329,7 +1443,7 @@
     "title": "Professional 13-Piece Soft Bristle Makeup Brush Kit",
     "category": "Beauty",
     "image": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 170,
+    "privateSourceCost": 170,
     "sellingPrice": 399,
     "mrp": 999,
     "description": "Super soft synthetic bristle makeup brushes for foundation, blending, eyeshadow, and blush with pouch.",
@@ -1345,7 +1459,7 @@
     "title": "Water-Resistant Anti-Theft Laptop Backpack 30L",
     "category": "Accessories",
     "image": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 390,
+    "privateSourceCost": 390,
     "sellingPrice": 849,
     "mrp": 1999,
     "description": "Durable Oxford fabric laptop bag with external USB charging port, hidden back pocket, and 15.6-inch sleeve.",
@@ -1361,7 +1475,7 @@
     "title": "Oversized Graphic Fleece Unisex Streetwear Hoodie",
     "category": "Fashion",
     "image": "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 420,
+    "privateSourceCost": 420,
     "sellingPrice": 899,
     "mrp": 1999,
     "description": "320 GSM heavyweight brushed fleece cotton hoodie with drop shoulder aesthetic and kangaroo pouch.",
@@ -1377,7 +1491,7 @@
     "title": "Wireless Bluetooth Soundbar with Deep Bass Subwoofer",
     "category": "Electronics",
     "image": "https://images.unsplash.com/photo-1545454675-3531b543be5d?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 370,
+    "privateSourceCost": 370,
     "sellingPrice": 799,
     "mrp": 1999,
     "description": "16W RMS portable soundbar speaker with dual bass radiators, FM radio, AUX, USB & 8-hour battery backup.",
@@ -1393,7 +1507,7 @@
     "title": "Hand-Woven Bohemian Cotton Macrame Wall Hanging",
     "category": "Home & Kitchen",
     "image": "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 210,
+    "privateSourceCost": 210,
     "sellingPrice": 499,
     "mrp": 1199,
     "description": "Eco-friendly handmade bohemian chic geometric tapestry wall hanging for living room and bedroom aesthetics.",
@@ -1772,41 +1886,93 @@
     function listenToFirestoreCatalogRealtime() {
       if (!fbFirestore) return;
       try {
+        let cachedPublic = {};
+        let cachedPrivate = {};
+
+        function mergeAndSaveAdminCatalog() {
+          let local = getStoredCatalog();
+          let changed = false;
+
+          // Merge all public products with their matching private data
+          Object.keys(cachedPublic).forEach(id => {
+            const pub = cachedPublic[id];
+            const priv = cachedPrivate[id] || {};
+            const mergedItem = Object.assign({}, pub, priv);
+
+            const idx = local.findIndex(p => p.id === id);
+            if (idx >= 0) {
+              if (JSON.stringify(local[idx]) !== JSON.stringify(mergedItem)) {
+                local[idx] = Object.assign({}, local[idx], mergedItem);
+                changed = true;
+              }
+            } else {
+              local.unshift(mergedItem);
+              changed = true;
+            }
+          });
+
+          if (changed) {
+            saveCatalog(local);
+            loadAdminCatalogList();
+          }
+        }
+
+        // 1. Listen to Public Products collection
         fbFirestore.collection('products').onSnapshot((snapshot) => {
           if (!snapshot) return;
-          let remoteProds = [];
           snapshot.forEach(doc => {
             const p = doc.data();
-            if (p && p.id && !p.deleted) remoteProds.push(p);
+            if (p && p.id && !p.deleted) {
+              // Check for legacy private fields to auto-migrate to admin_product_data
+              if (p.meeshoCostPrice !== undefined || p.supplierUrl !== undefined || p.privateSourceCost !== undefined) {
+                const privateData = {
+                  id: p.id,
+                  productId: p.id,
+                  privateSourceCost: p.privateSourceCost !== undefined ? p.privateSourceCost : (p.meeshoCostPrice || 0),
+                  sourceProductUrl: p.sourceProductUrl || p.supplierUrl || '',
+                  updatedAt: new Date().toISOString()
+                };
+                // Write to protected partition
+                fbFirestore.collection('admin_product_data').doc(p.id).set(privateData, { merge: true }).catch(() => {});
+                // Clean from public collection
+                fbFirestore.collection('products').doc(p.id).update({
+                  meeshoCostPrice: firebase.firestore.FieldValue.delete(),
+                  supplierUrl: firebase.firestore.FieldValue.delete(),
+                  privateSourceCost: firebase.firestore.FieldValue.delete()
+                }).catch(() => {});
+              }
+              cachedPublic[p.id] = p;
+            }
           });
-          if (remoteProds.length > 0) {
-            let local = getStoredCatalog();
-            let changed = false;
-            remoteProds.forEach(rp => {
-              const idx = local.findIndex(p => p.id === rp.id);
-              if (idx >= 0) {
-                if (JSON.stringify(local[idx]) !== JSON.stringify(rp)) {
-                  local[idx] = Object.assign({}, local[idx], rp);
-                  changed = true;
-                }
-              } else {
-                local.unshift(rp);
-                changed = true;
-              }
-            });
-            snapshot.docChanges().forEach(change => {
-              if (change.type === 'removed') {
-                local = local.filter(p => p.id !== change.doc.id);
-                changed = true;
-              }
-            });
-            if (changed) {
+
+          snapshot.docChanges().forEach(change => {
+            if (change.type === 'removed') {
+              delete cachedPublic[change.doc.id];
+              let local = getStoredCatalog().filter(p => p.id !== change.doc.id);
               saveCatalog(local);
               loadAdminCatalogList();
             }
-          }
+          });
+
+          mergeAndSaveAdminCatalog();
         }, (err) => console.warn("[Admin Catalog Listener]", err));
-      } catch (e) {}
+
+        // 2. Listen to Admin Private Product Data collection
+        fbFirestore.collection('admin_product_data').onSnapshot((snapshot) => {
+          if (!snapshot) return;
+          snapshot.forEach(doc => {
+            const priv = doc.data();
+            if (priv && (priv.productId || priv.id)) {
+              const id = priv.productId || priv.id;
+              cachedPrivate[id] = priv;
+            }
+          });
+          mergeAndSaveAdminCatalog();
+        }, (err) => console.warn("[Admin Private Data Listener]", err));
+
+      } catch (e) {
+        console.warn("[Admin Firestore Catalog Listener Error]", e);
+      }
     }
 
     function listenToAdminSupportChatsRealtime() {
@@ -2022,6 +2188,45 @@
        SECTION 1: 📊 ANALYSIS CALCULATIONS
        7 Magic Cards: Total Orders, Pending, Revenue, Cost, Net Profit, Users, Visits
        ========================================================= */
+    /* Helper: Enriches an order with admin-private business data */
+    function getAdminOrderPrivateData(order) {
+      const catalog = getStoredCatalog();
+      let totalCost = 0;
+      const enrichedItems = (order.items || []).map(item => {
+        const prod = catalog.find(p => p.id === item.id) || {};
+        const cost = item.privateSourceCost !== undefined ? Number(item.privateSourceCost)
+                   : item.meeshoCostPrice !== undefined ? Number(item.meeshoCostPrice)
+                   : prod.privateSourceCost !== undefined ? Number(prod.privateSourceCost)
+                   : prod.meeshoCostPrice !== undefined ? Number(prod.meeshoCostPrice)
+                   : Math.round((Number(item.sellingPrice || item.price) || 0) * 0.55);
+        const sell = Number(item.sellingPrice || item.price) || 0;
+        const qty = Number(item.quantity) || 1;
+        const profit = (sell - cost) * qty;
+        totalCost += cost * qty;
+        const sourceUrl = item.sourceProductUrl || item.supplierUrl || prod.sourceProductUrl || prod.supplierUrl || '';
+        const supplierRef = item.supplierReference || prod.supplierReference || '';
+        return {
+          ...item,
+          privateSourceCost: cost,
+          sellingPrice: sell,
+          quantity: qty,
+          itemProfit: profit,
+          sourceProductUrl: sourceUrl,
+          supplierReference: supplierRef
+        };
+      });
+
+      const totalRevenue = Number(order.totalAmount) || enrichedItems.reduce((s, i) => s + (i.sellingPrice * i.quantity), 0);
+      const netProfit = totalRevenue - totalCost;
+
+      return {
+        totalRevenue,
+        totalCost,
+        netProfit,
+        enrichedItems
+      };
+    }
+
     function calculateAnalysisMetrics() {
       const orders = getStoredOrders();
       const users = getStoredUsers();
@@ -2030,8 +2235,15 @@
       const totalOrders = orders.length;
       const pendingOrders = orders.filter(o => o.status !== 'Delivered' && o.status !== 'Completed').length;
       
-      const totalRevenue = orders.reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0);
-      const totalCost = orders.reduce((sum, o) => sum + (Number(o.meeshoCost) || 0), 0);
+      let totalRevenue = 0;
+      let totalCost = 0;
+
+      orders.forEach(o => {
+        const m = getAdminOrderPrivateData(o);
+        totalRevenue += m.totalRevenue;
+        totalCost += m.totalCost;
+      });
+
       const netProfit = totalRevenue - totalCost;
       const marginPercent = totalRevenue > 0 ? Math.round((netProfit / totalRevenue) * 100) : 0;
 
@@ -2074,147 +2286,34 @@
       const orders = getStoredOrders();
 
       if (orders.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">No orders placed yet. Place an order in Store to test!</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">No orders placed yet.</td></tr>';
         return;
       }
 
-      tbody.innerHTML = orders.map(o => `
-        <tr class="hover:bg-slate-50 transition">
+      tbody.innerHTML = orders.map(o => {
+        const m = getAdminOrderPrivateData(o);
+        return `
+        <tr class="hover:bg-slate-50 transition border-b border-slate-100">
           <td class="p-2.5 font-mono font-bold text-brand-navy">#${o.orderId}</td>
           <td class="p-2.5">
             <span class="font-bold text-slate-900 block">${o.customerName}</span>
             <span class="text-[10px] text-slate-400">${o.phone}</span>
           </td>
-          <td class="p-2.5 font-bold font-poppins">₹${o.totalAmount}</td>
-          <td class="p-2.5 text-rose-600 font-semibold font-poppins">₹${o.meeshoCost || 0}</td>
-          <td class="p-2.5 font-bold font-poppins text-emerald-600">₹${(o.totalAmount - (o.meeshoCost || 0))}</td>
+          <td class="p-2.5 font-bold font-poppins text-slate-900">₹${m.totalRevenue}</td>
+          <td class="p-2.5 font-medium font-poppins text-rose-600">₹${m.totalCost}</td>
+          <td class="p-2.5 font-bold font-poppins text-emerald-600">+${m.netProfit}</td>
           <td class="p-2.5">
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${
-              o.status === 'Delivered' || o.status === 'Completed' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-            }">${o.status || 'Order Placed'}</span>
+            <span class="px-2 py-0.5 rounded-full text-[9px] font-bold ${o.status === 'Delivered' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+              ${o.status || 'Pending'}
+            </span>
           </td>
         </tr>
-      `).join('');
+      `;}).join('');
     }
 
     /* =========================================================
-       PRODUCT PERFORMANCE MODAL (MOST LIKED & REVIEW SYSTEM)
-       ========================================================= */
-    function openProductPerformanceModal() {
-      renderMostLikedProducts();
-      renderProductReviewsManagement();
-      const modal = document.getElementById('modal-product-performance');
-      if (modal) modal.classList.remove('hidden');
-    }
-
-    function closeProductPerformanceModal() {
-      const modal = document.getElementById('modal-product-performance');
-      if (modal) modal.classList.add('hidden');
-    }
-
-    function switchPerfTab(tab) {
-      const tabLikes = document.getElementById('perf-tab-likes');
-      const tabReviews = document.getElementById('perf-tab-reviews');
-      const contentLikes = document.getElementById('perf-content-likes');
-      const contentReviews = document.getElementById('perf-content-reviews');
-
-      if (contentLikes) contentLikes.classList.toggle('hidden', tab !== 'likes');
-      if (contentReviews) contentReviews.classList.toggle('hidden', tab !== 'reviews');
-
-      if (tabLikes) {
-        tabLikes.className = (tab === 'likes')
-          ? "flex-1 py-2 rounded-xl bg-white text-slate-900 shadow-sm"
-          : "flex-1 py-2 rounded-xl text-slate-600 hover:text-slate-900";
-      }
-      if (tabReviews) {
-        tabReviews.className = (tab === 'reviews')
-          ? "flex-1 py-2 rounded-xl bg-white text-slate-900 shadow-sm"
-          : "flex-1 py-2 rounded-xl text-slate-600 hover:text-slate-900";
-      }
-    }
-
-    function renderMostLikedProducts() {
-      const container = document.getElementById('most-liked-products-list');
-      if (!container) return;
-      const catalog = getStoredCatalog();
-
-      // Sort descending by likesCount
-      const sorted = [...catalog].sort((a, b) => (b.likesCount || 0) - (a.likesCount || 0));
-
-      container.innerHTML = sorted.map((p, idx) => `
-        <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between">
-          <div class="flex items-center gap-2.5">
-            <span class="w-6 text-center font-bold font-poppins text-slate-400">#${idx + 1}</span>
-            <img src="${p.image}" alt="${p.title}" class="w-11 h-11 object-cover rounded-xl border border-slate-200" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'" />
-            <div class="min-w-0">
-              <h5 class="font-bold text-xs text-slate-900 truncate max-w-[180px]">${p.title}</h5>
-              <span class="text-[10px] text-slate-400 uppercase">${p.category} • ₹${p.sellingPrice}</span>
-            </div>
-          </div>
-          <div class="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-600 font-bold text-xs">
-            <i class="fa-solid fa-heart text-xs text-rose-500 animate-pulse"></i>
-            <span>${p.likesCount || 0} Likes</span>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    function getStoredReviews() {
-      try {
-        return JSON.parse(localStorage.getItem('buyero_customer_reviews') || '[]');
-      } catch(e) { return []; }
-    }
-
-    function renderProductReviewsManagement() {
-      const container = document.getElementById('reviews-management-list');
-      if (!container) return;
-
-      let reviews = getStoredReviews();
-      if (reviews.length === 0) {
-        // Seed realistic sample reviews
-        reviews = [
-          { id: 'rev_1', prodId: 'anarkali-kurta-1002', prodTitle: 'Anarkali Embroidered Kurta', user: 'Sunita Sharma', rating: 5, comment: 'Bohot sundar kurta hai, kapda bilkul premium hai!', date: 'Today' },
-          { id: 'rev_2', prodId: 'tws-earbuds-8832', prodTitle: 'TWS Wireless Earbuds', user: 'Vikas Patel', rating: 4, comment: 'Sound quality achi hai battery backup bhi mast.', date: 'Yesterday' },
-          { id: 'rev_3', prodId: 'running-sneakers-4021', prodTitle: 'Air Cushion Sneakers', user: 'Rohan Mehra', rating: 5, comment: 'Super comfortable shoes, value for money!', date: '2 days ago' }
-        ];
-        localStorage.setItem('buyero_customer_reviews', JSON.stringify(reviews));
-      }
-
-      container.innerHTML = reviews.map(r => `
-        <div class="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex items-start justify-between gap-2">
-          <div class="space-y-1 flex-1">
-            <div class="flex items-center justify-between">
-              <span class="font-bold text-slate-800 text-xs">${r.user}</span>
-              <span class="text-amber-500 font-bold text-xs">★ ${r.rating}.0</span>
-            </div>
-            <p class="text-[11px] text-slate-600">"${r.comment}"</p>
-            <span class="text-[10px] text-slate-400 block font-semibold">${r.prodTitle} • ${r.date}</span>
-          </div>
-          <button 
-            onclick="deleteCustomerReview('${r.id}')"
-            class="px-2.5 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-xl text-xs font-bold transition flex items-center gap-1 flex-shrink-0"
-            title="Delete Review & Recalculate Rating"
-          >
-            <i class="fa-regular fa-trash-can"></i> Delete 🗑️
-          </button>
-        </div>
-      `).join('');
-    }
-
-    function deleteCustomerReview(reviewId) {
-      if (confirm("Delete this customer review? The product average star rating will recalculate automatically.")) {
-        let reviews = getStoredReviews();
-        reviews = reviews.filter(r => r.id !== reviewId);
-        localStorage.setItem('buyero_customer_reviews', JSON.stringify(reviews));
-        renderProductReviewsManagement();
-        logActivityEvent('REVIEW', `Review #${reviewId} deleted by Admin`);
-        alert("Review removed successfully! Product star rating updated.");
-      }
-    }
-
-    /* =========================================================
-       SECTION 2: 📦 PRODUCT MANAGEMENT
-       Sub-tabs: All Products & Add New Product
+       SECTION 2: 📦 PRODUCT & CATALOG MANAGEMENT
+       Dual-partition Firestore writes, pricing validation, margins, & private supplier URL
        ========================================================= */
     function switchProductSubTab(sub) {
       const btnAll = document.getElementById('subtab-btn-prod-all');
@@ -2225,288 +2324,420 @@
       if (contentAll) contentAll.classList.toggle('hidden', sub !== 'all');
       if (contentAdd) contentAdd.classList.toggle('hidden', sub !== 'add');
 
-      if (btnAll) {
-        btnAll.className = (sub === 'all')
-          ? "flex-1 py-2 text-xs font-bold rounded-xl bg-white text-slate-900 shadow-sm transition"
-          : "flex-1 py-2 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-900 transition";
+      const activeClass = "flex-1 py-2 text-xs font-bold rounded-xl bg-white text-slate-900 shadow-sm transition";
+      const inactiveClass = "flex-1 py-2 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-900 transition";
+
+      if (btnAll) btnAll.className = (sub === 'all') ? activeClass : inactiveClass;
+      if (btnAdd) btnAdd.className = (sub === 'add') ? activeClass : inactiveClass;
+
+      if (sub === 'all') {
+        loadAdminCatalogList();
+      } else if (sub === 'add') {
+        calculateProductMarginLive();
       }
-      if (btnAdd) {
-        btnAdd.className = (sub === 'add')
-          ? "flex-1 py-2 text-xs font-bold rounded-xl bg-white text-slate-900 shadow-sm transition"
-          : "flex-1 py-2 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-900 transition";
+    }
+
+    function handleTitleChangeAutoId(title) {
+      const el = document.getElementById('inp-prod-id');
+      if (!el) return;
+      if (!title || !title.trim()) {
+        el.value = '';
+        return;
+      }
+      const slug = title.toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '')
+        .slice(0, 24);
+      const randomSuffix = Date.now().toString(36).slice(-4) + Math.random().toString(36).slice(2, 6);
+      el.value = `byr-${slug || 'prod'}-${randomSuffix}`;
+    }
+
+    function calculateProductMarginLive() {
+      const mrp = Math.max(0, Number(document.getElementById('inp-prod-mrp') ? document.getElementById('inp-prod-mrp').value : 0) || 0);
+      const price = Math.max(0, Number(document.getElementById('inp-prod-price') ? document.getElementById('inp-prod-price').value : 0) || 0);
+      const cost = Math.max(0, Number(document.getElementById('inp-prod-cost') ? document.getElementById('inp-prod-cost').value : 0) || 0);
+
+      const dispPrice = document.getElementById('calc-disp-price');
+      const dispDisc = document.getElementById('calc-disp-discount');
+      const dispProfit = document.getElementById('calc-disp-profit');
+
+      if (dispPrice) dispPrice.textContent = `₹${price}`;
+
+      if (dispDisc) {
+        if (mrp > 0 && price > mrp) {
+          dispDisc.innerHTML = `<span class="text-rose-600 font-bold">⚠️ Price > MRP!</span>`;
+        } else {
+          const discountAmt = Math.max(0, mrp - price);
+          const discountPct = mrp > 0 ? Math.round((discountAmt / mrp) * 100) : 0;
+          dispDisc.innerHTML = `<span class="text-indigo-600">₹${discountAmt} (${discountPct}%)</span>`;
+        }
       }
 
-      if (sub === 'all') loadAdminCatalogList();
+      if (dispProfit) {
+        const profit = price - cost;
+        const profitPct = price > 0 ? Math.round((profit / price) * 100) : 0;
+        if (profit < 0) {
+          dispProfit.innerHTML = `<span class="text-rose-600 font-bold">₹${profit} (${profitPct}% Loss)</span>`;
+        } else {
+          dispProfit.innerHTML = `<span class="text-emerald-600 font-bold">+₹${profit} (${profitPct}%)</span>`;
+        }
+      }
+    }
+
+    function calculateEditProductMarginLive() {
+      const mrp = Math.max(0, Number(document.getElementById('edit-prod-mrp') ? document.getElementById('edit-prod-mrp').value : 0) || 0);
+      const price = Math.max(0, Number(document.getElementById('edit-prod-price') ? document.getElementById('edit-prod-price').value : 0) || 0);
+      const cost = Math.max(0, Number(document.getElementById('edit-prod-cost') ? document.getElementById('edit-prod-cost').value : 0) || 0);
+
+      const dispPrice = document.getElementById('edit-calc-disp-price');
+      const dispDisc = document.getElementById('edit-calc-disp-discount');
+      const dispProfit = document.getElementById('edit-calc-disp-profit');
+
+      if (dispPrice) dispPrice.textContent = `₹${price}`;
+
+      if (dispDisc) {
+        if (mrp > 0 && price > mrp) {
+          dispDisc.innerHTML = `<span class="text-rose-600 font-bold">⚠️ Price > MRP!</span>`;
+        } else {
+          const discountAmt = Math.max(0, mrp - price);
+          const discountPct = mrp > 0 ? Math.round((discountAmt / mrp) * 100) : 0;
+          dispDisc.innerHTML = `<span class="text-indigo-600">₹${discountAmt} (${discountPct}%)</span>`;
+        }
+      }
+
+      if (dispProfit) {
+        const profit = price - cost;
+        const profitPct = price > 0 ? Math.round((profit / price) * 100) : 0;
+        if (profit < 0) {
+          dispProfit.innerHTML = `<span class="text-rose-600 font-bold">₹${profit} (${profitPct}% Loss)</span>`;
+        } else {
+          dispProfit.innerHTML = `<span class="text-emerald-600 font-bold">+₹${profit} (${profitPct}%)</span>`;
+        }
+      }
+    }
+
+    function addExtraImageInput() {
+      const container = document.getElementById('extra-images-container');
+      if (!container) return;
+      const div = document.createElement('div');
+      div.className = "flex items-center gap-2";
+      div.innerHTML = `
+        <input type="url" placeholder="Extra image URL..." class="inp-prod-extra-img flex-1 px-3 py-1.5 text-xs border border-slate-300 rounded-xl outline-none focus:border-brand-navy" />
+        <button type="button" onclick="this.parentElement.remove()" class="p-2 text-rose-500 hover:bg-rose-50 rounded-xl text-xs">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      `;
+      container.appendChild(div);
+    }
+
+    async function handleAdminAddProduct(event) {
+      if (event && event.preventDefault) event.preventDefault();
+
+      const title = (document.getElementById('inp-prod-title') ? document.getElementById('inp-prod-title').value : '').trim();
+      let prodId = (document.getElementById('inp-prod-id') ? document.getElementById('inp-prod-id').value : '').trim();
+      const category = document.getElementById('inp-prod-category') ? document.getElementById('inp-prod-category').value : 'Fashion';
+      const badge = (document.getElementById('inp-prod-badge') ? document.getElementById('inp-prod-badge').value : '').trim();
+      const status = document.getElementById('inp-prod-status') ? document.getElementById('inp-prod-status').value : 'PUBLISHED';
+      
+      const cost = Number(document.getElementById('inp-prod-cost') ? document.getElementById('inp-prod-cost').value : 0) || 0;
+      const mrp = Number(document.getElementById('inp-prod-mrp') ? document.getElementById('inp-prod-mrp').value : 0) || 0;
+      const price = Number(document.getElementById('inp-prod-price') ? document.getElementById('inp-prod-price').value : 0) || 0;
+
+      const sourceUrl = (document.getElementById('inp-prod-source-url') ? document.getElementById('inp-prod-source-url').value : '').trim();
+      const supplierRef = (document.getElementById('inp-prod-supplier-ref') ? document.getElementById('inp-prod-supplier-ref').value : '').trim();
+      const adminNotes = (document.getElementById('inp-prod-admin-notes') ? document.getElementById('inp-prod-admin-notes').value : '').trim();
+
+      const variants = (document.getElementById('inp-prod-variants') ? document.getElementById('inp-prod-variants').value : '').trim() || 'Standard';
+      const mainImage = (document.getElementById('inp-prod-image') ? document.getElementById('inp-prod-image').value : '').trim();
+      const videoUrl = (document.getElementById('inp-prod-video') ? document.getElementById('inp-prod-video').value : '').trim();
+      const desc = (document.getElementById('inp-prod-desc') ? document.getElementById('inp-prod-desc').value : '').trim();
+
+      // Collect extra images
+      const extraImageInputs = document.querySelectorAll('.inp-prod-extra-img');
+      const extraImages = [];
+      extraImageInputs.forEach(inp => {
+        if (inp.value && inp.value.trim().startsWith('http')) {
+          extraImages.push(inp.value.trim());
+        }
+      });
+
+      // Validations
+      if (!title || !mainImage || !desc) {
+        alert("Please fill all required fields (Title, Home Image, and Description).");
+        return;
+      }
+      if (price <= 0 || mrp <= 0) {
+        alert("Both MRP and Selling Price must be greater than 0.");
+        return;
+      }
+      if (price > mrp) {
+        alert(`Selling Price (₹${price}) cannot be higher than MRP (₹${mrp}). Please fix before saving.`);
+        return;
+      }
+
+      // Mandatory Supplier Source URL check for Published Products
+      if (status === 'PUBLISHED') {
+        if (!sourceUrl || !sourceUrl.startsWith('http')) {
+          alert("Supplier Source URL is mandatory to publish a product live. Please provide a valid supplier URL (e.g. Meesho link) or select 'Hidden' / 'Out of Stock'.");
+          const el = document.getElementById('inp-prod-source-url');
+          if (el) el.focus();
+          return;
+        }
+      }
+
+      if (!prodId) {
+        const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 24);
+        prodId = `byr-${slug || 'prod'}-${Date.now().toString(36).slice(-4)}${Math.random().toString(36).slice(2, 6)}`;
+      }
+
+      const discountAmt = Math.max(0, mrp - price);
+      const discountPct = mrp > 0 ? Math.round((discountAmt / mrp) * 100) : 0;
+      const now = new Date().toISOString();
+
+      // PARTITION 1: Customer-Facing Public Document (/products/{id})
+      // Absolutely NO privateSourceCost, sourceProductUrl, supplierReference, or adminNotes!
+      const publicProduct = {
+        id: prodId,
+        title: title,
+        category: category,
+        badge: badge || '',
+        mrp: mrp,
+        sellingPrice: price,
+        price: price,
+        discountPercent: discountPct,
+        discountAmount: discountAmt,
+        image: mainImage,
+        extraImages: extraImages,
+        images: [mainImage, ...extraImages],
+        videoUrl: videoUrl || '',
+        description: desc,
+        variants: variants,
+        status: status,
+        inStock: (status === 'PUBLISHED'),
+        rating: 4.8,
+        likesCount: 0,
+        reviewCount: 0,
+        createdAt: now,
+        updatedAt: now
+      };
+
+      // PARTITION 2: Admin-Private Document (/admin_product_data/{id})
+      const privateProductData = {
+        id: prodId,
+        productId: prodId,
+        privateSourceCost: cost,
+        sourceProductUrl: sourceUrl,
+        supplierReference: supplierRef,
+        adminNotes: adminNotes,
+        createdAt: now,
+        updatedAt: now
+      };
+
+      try {
+        // Dual write to Firestore
+        if (fbFirestore) {
+          await fbFirestore.collection('products').doc(prodId).set(publicProduct);
+          await fbFirestore.collection('admin_product_data').doc(prodId).set(privateProductData);
+        }
+
+        // Merge for Admin Studio local view
+        const mergedForAdmin = Object.assign({}, publicProduct, privateProductData);
+        let catalog = getStoredCatalog();
+        const existingIdx = catalog.findIndex(p => p.id === prodId);
+        if (existingIdx >= 0) {
+          catalog[existingIdx] = mergedForAdmin;
+        } else {
+          catalog.unshift(mergedForAdmin);
+        }
+        saveStoredCatalog(catalog);
+
+        // Broadcast to customer store
+        try {
+          syncChannel.postMessage({
+            type: 'CATALOG_UPDATED',
+            productId: prodId
+          });
+        } catch(e) {}
+
+        // Reset form
+        const form = document.getElementById('form-add-product');
+        if (form) form.reset();
+        const extraContainer = document.getElementById('extra-images-container');
+        if (extraContainer) extraContainer.innerHTML = '';
+        const idField = document.getElementById('inp-prod-id');
+        if (idField) idField.value = '';
+
+        recordActivityLog('PRODUCT_ADDED', `Added new product "${title}" (ID: ${prodId}) with MRP ₹${mrp} & Sell ₹${price}`);
+        alert(`✅ Product "${title}" has been successfully added to the catalog!`);
+
+        switchProductSubTab('all');
+        calculateAnalysisMetrics();
+      } catch (err) {
+        console.error("[Add Product Error]", err);
+        alert(`Error saving product: ${err.message || err}`);
+      }
     }
 
     function loadAdminCatalogList() {
       const container = document.getElementById('admin-product-list-container');
       const countEl = document.getElementById('admin-catalog-count');
+      const catalog = getStoredCatalog();
+
+      if (countEl) countEl.textContent = catalog.length;
       if (!container) return;
 
-      const catalog = getStoredCatalog();
-      if (countEl) countEl.textContent = catalog.length;
-
       if (catalog.length === 0) {
-        container.innerHTML = '<div class="py-8 text-center text-slate-400">Catalog is empty. Add a product to get started.</div>';
+        container.innerHTML = `
+          <div class="bg-white rounded-2xl p-8 text-center border border-slate-200">
+            <i class="fa-solid fa-boxes-stacked text-3xl text-slate-300 mb-2"></i>
+            <p class="text-xs text-slate-500 font-bold">No products in catalog yet.</p>
+            <button onclick="switchProductSubTab('add')" class="mt-3 px-4 py-2 bg-brand-orange text-white text-xs font-bold rounded-xl shadow">
+              <i class="fa-solid fa-plus mr-1"></i> Add First Product
+            </button>
+          </div>
+        `;
         return;
       }
 
-      container.innerHTML = catalog.map(p => `
-        <div class="p-3 bg-white border border-slate-200 rounded-2xl shadow-sm flex items-center justify-between gap-3">
-          <div class="flex items-center gap-3 min-w-0">
-            <img src="${p.image}" alt="${p.title}" class="w-14 h-14 object-cover rounded-xl border border-slate-100 flex-shrink-0" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'" />
-            <div class="min-w-0">
-              <div class="flex items-center gap-2">
-                <h5 class="font-bold text-xs text-slate-900 truncate">${p.title}</h5>
-                <span class="px-1.5 py-0.2 text-[9px] font-bold rounded-full ${p.inStock !== false ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">
-                  ${p.inStock !== false ? 'In Stock' : 'Out of Stock'}
-                </span>
-              </div>
-              <div class="flex items-center gap-2 mt-0.5 text-[11px]">
-                <span class="font-bold text-brand-navy">Sell: ₹${p.sellingPrice}</span>
-                <span class="text-slate-400 font-medium">Cost: ₹${p.meeshoCostPrice || 0}</span>
-                <span class="text-emerald-600 font-bold">Profit: ₹${p.sellingPrice - (p.meeshoCostPrice || 0)}</span>
-              </div>
-              <div class="flex items-center gap-2 mt-0.5 text-[10px] text-slate-400">
-                <span>${p.category}</span>
-                ${p.supplierUrl ? `
-                  <span>•</span>
-                  <a href="${p.supplierUrl}" target="_blank" class="text-brand-orange hover:underline font-semibold flex items-center gap-0.5">
-                    <i class="fa-solid fa-link text-[9px]"></i> Meesho Source
-                  </a>
-                ` : ''}
+      container.innerHTML = catalog.map(p => {
+        const cost = p.privateSourceCost !== undefined ? Number(p.privateSourceCost)
+                   : p.meeshoCostPrice !== undefined ? Number(p.meeshoCostPrice) : 0;
+        const sell = Number(p.sellingPrice) || Number(p.price) || 0;
+        const mrp = Number(p.mrp) || sell;
+        const profit = sell - cost;
+        const profitPct = sell > 0 ? Math.round((profit / sell) * 100) : 0;
+        const discPct = mrp > 0 ? Math.round(((mrp - sell) / mrp) * 100) : 0;
+        const sourceUrl = p.sourceProductUrl || p.supplierUrl || '';
+        const supplierRef = p.supplierReference || '';
+
+        const status = p.status || (p.inStock ? 'PUBLISHED' : 'OUT_OF_STOCK');
+        let statusBadge = '';
+        if (status === 'PUBLISHED') {
+          statusBadge = '<span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200"><i class="fa-solid fa-check-circle mr-1"></i>Available</span>';
+        } else if (status === 'OUT_OF_STOCK') {
+          statusBadge = '<span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-200"><i class="fa-solid fa-clock mr-1"></i>Out of Stock</span>';
+        } else {
+          statusBadge = '<span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-slate-100 text-slate-700 border border-slate-200"><i class="fa-solid fa-eye-slash mr-1"></i>Hidden</span>';
+        }
+
+        return `
+          <div class="bg-white rounded-2xl p-3 border border-slate-200 shadow-sm space-y-2.5 transition hover:border-slate-300">
+            <div class="flex gap-3">
+              <img src="${p.image || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200'}" alt="${p.title}" class="w-16 h-16 rounded-xl object-cover border border-slate-100 flex-shrink-0" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200'" />
+              <div class="flex-1 min-w-0">
+                <div class="flex items-start justify-between gap-1">
+                  <h4 class="font-bold text-xs text-slate-900 truncate" title="${p.title}">${p.title}</h4>
+                  ${statusBadge}
+                </div>
+                <div class="flex items-center gap-2 mt-1 text-[11px]">
+                  <span class="px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] font-semibold">${p.category || 'General'}</span>
+                  <span class="font-mono text-[10px] text-slate-400">#${p.id}</span>
+                </div>
+                <!-- Public Pricing Row -->
+                <div class="flex items-center gap-2 mt-1">
+                  <span class="font-bold text-slate-900 text-xs font-poppins">₹${sell}</span>
+                  <span class="text-[10px] text-slate-400 line-through font-poppins">₹${mrp}</span>
+                  <span class="text-[10px] font-bold text-indigo-600">(${discPct}% off)</span>
+                </div>
               </div>
             </div>
+
+            <!-- Admin-Private Commercial Data Card -->
+            <div class="p-2 bg-indigo-50/70 border border-indigo-100 rounded-xl space-y-1 text-xs">
+              <div class="flex items-center justify-between text-[10px]">
+                <span class="font-bold text-indigo-950 flex items-center gap-1">
+                  <i class="fa-solid fa-lock text-indigo-600"></i> Admin Business Intelligence
+                </span>
+                <span class="font-bold ${profit >= 0 ? 'text-emerald-700' : 'text-rose-600'}">
+                  Margin: ${profit >= 0 ? '+' : ''}₹${profit} (${profitPct}%)
+                </span>
+              </div>
+              <div class="grid grid-cols-2 gap-2 text-[10px] text-slate-600 pt-0.5">
+                <div>
+                  <span class="text-slate-400">Source Cost:</span> <strong class="text-slate-800">₹${cost}</strong>
+                </div>
+                <div>
+                  <span class="text-slate-400">Supplier Ref:</span> <span class="font-mono text-slate-700">${supplierRef || 'N/A'}</span>
+                </div>
+              </div>
+              ${sourceUrl ? `
+                <div class="pt-1 border-t border-indigo-100 flex items-center justify-between">
+                  <span class="text-[9px] text-indigo-700 font-semibold truncate max-w-[200px]"><i class="fa-solid fa-link text-indigo-500 mr-1"></i>${sourceUrl}</span>
+                  <a href="${sourceUrl}" target="_blank" rel="noopener noreferrer" class="px-2 py-0.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-[9px] font-bold inline-flex items-center gap-1">
+                    <span>Source Link</span> <i class="fa-solid fa-arrow-up-right-from-square text-[8px]"></i>
+                  </a>
+                </div>
+              ` : `
+                <div class="pt-1 border-t border-indigo-100 text-[9px] text-amber-700">
+                  <i class="fa-solid fa-triangle-exclamation mr-1"></i>No Supplier URL linked
+                </div>
+              `}
+            </div>
+
+            <!-- Action Controls -->
+            <div class="flex items-center gap-1.5 pt-1 border-t border-slate-100">
+              <button 
+                onclick="openEditProductModal('${p.id}')" 
+                class="flex-1 py-1.5 px-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl text-[11px] transition flex items-center justify-center gap-1"
+              >
+                <i class="fa-solid fa-pen-to-square"></i> Edit
+              </button>
+              <button 
+                onclick="toggleProductAvailability('${p.id}')" 
+                class="py-1.5 px-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-[11px] transition flex items-center gap-1"
+                title="Toggle Availability"
+              >
+                <i class="fa-solid fa-toggle-on text-brand-navy"></i> Status
+              </button>
+              <button 
+                onclick="deleteProductFromCatalog('${p.id}')" 
+                class="py-1.5 px-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold rounded-xl text-[11px] transition flex items-center gap-1"
+                title="Delete Product"
+              >
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
           </div>
-
-          <div class="flex items-center gap-1.5 flex-shrink-0">
-            <button 
-              onclick="toggleProductStock('${p.id}')"
-              class="w-8 h-8 rounded-xl ${p.inStock !== false ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'} flex items-center justify-center text-xs transition"
-              title="${p.inStock !== false ? 'Click to mark Out of Stock' : 'Click to mark In Stock'}"
-            >
-              <i class="fa-solid ${p.inStock !== false ? 'fa-toggle-on text-base text-emerald-600' : 'fa-toggle-off text-base text-slate-400'}"></i>
-            </button>
-            <button 
-              onclick="openEditProductModal('${p.id}')"
-              class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center text-xs transition"
-              title="Edit Product Details"
-            >
-              <i class="fa-solid fa-pen-to-square"></i>
-            </button>
-            <button 
-              onclick="deleteProduct('${p.id}')"
-              class="w-8 h-8 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center text-xs transition"
-              title="Delete Product Permanently"
-            >
-              <i class="fa-regular fa-trash-can"></i>
-            </button>
-          </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
 
-    /* 1-Click Stock Toggle */
-    async function toggleProductStock(prodId) {
-      let catalog = getStoredCatalog();
-      const prod = catalog.find(p => p.id === prodId);
-      if (!prod) return;
-      prod.inStock = prod.inStock === false ? true : false;
-
-      if (fbFirestore) {
-        try {
-          await fbFirestore.collection('products').doc(prodId).set({ inStock: prod.inStock }, { merge: true });
-        } catch (e) {
-          console.warn("[Stock Sync Error]", e);
-        }
-      }
-      saveCatalog(catalog);
-      try {
-        syncChannel.postMessage({ type: 'CATALOG_UPDATED' });
-      } catch(e) {}
-      loadAdminCatalogList();
-      logActivityEvent('CATALOG', `Changed "${prod.title}" stock status to ${prod.inStock ? 'In Stock' : 'Out of Stock'}`);
-    }
-
-    /* Auto Unique ID Generation from Title */
-    function handleTitleChangeAutoId(title) {
-      const idInp = document.getElementById('inp-prod-id');
-      if (!idInp) return;
-      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 20);
-      const rand = Math.floor(1000 + Math.random() * 9000);
-      idInp.value = slug ? `${slug}-${rand}` : `prod-${rand}`;
-    }
-
-    /* Live Margin Calculator */
-    function calculateProductMarginLive() {
-      const cost = Number(document.getElementById('inp-prod-cost').value) || 0;
-      const price = Number(document.getElementById('inp-prod-price').value) || 0;
-      const profit = price - cost;
-      const margin = price > 0 ? Math.round((profit / price) * 100) : 0;
-
-      const badge = document.getElementById('badge-live-prod-margin');
-      if (badge) {
-        badge.textContent = `₹${profit} (${margin}% margin)`;
-        badge.className = profit >= 0 ? "font-bold text-emerald-600" : "font-bold text-rose-600";
-      }
-    }
-
-    /* Extra Image Link Inputs */
-    function addExtraImageInput() {
-      const container = document.getElementById('extra-images-container');
-      if (!container) return;
-      const input = document.createElement('div');
-      input.className = "flex items-center gap-1.5";
-      input.innerHTML = `
-        <input type="url" placeholder="Extra image link..." class="flex-1 px-3 py-1.5 text-xs border border-slate-300 rounded-xl outline-none focus:border-brand-navy extra-image-link" />
-        <button type="button" onclick="this.parentElement.remove()" class="text-rose-500 hover:text-rose-700 p-1 text-xs">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      `;
-      container.appendChild(input);
-    }
-
-    /* Save New Product */
-    async function handleAdminAddProduct(event) {
-      event.preventDefault();
-      const title = document.getElementById('inp-prod-title').value.trim();
-      const prodId = document.getElementById('inp-prod-id').value.trim() || ('prod-' + Math.floor(1000 + Math.random() * 9000));
-      const category = document.getElementById('inp-prod-category').value;
-      const badge = document.getElementById('inp-prod-badge').value.trim();
-      const cost = Number(document.getElementById('inp-prod-cost').value) || 0;
-      const price = Number(document.getElementById('inp-prod-price').value) || 0;
-      const variants = document.getElementById('inp-prod-variants').value.trim();
-      const supplierUrl = document.getElementById('inp-prod-supplier') ? document.getElementById('inp-prod-supplier').value.trim() : '';
-      const image = document.getElementById('inp-prod-image').value.trim();
-      const video = (document.getElementById('inp-prod-video') ? document.getElementById('inp-prod-video').value.trim() : '') || "https://www.youtube.com/shorts/3Z9eYpB0tQY";
-      const desc = document.getElementById('inp-prod-desc').value.trim();
-
-      const newProd = {
-        id: prodId,
-        title: title,
-        category: category,
-        badge: badge || null,
-        meeshoCostPrice: cost,
-        sellingPrice: price,
-        mrp: Math.round(price * 1.8),
-        variants: variants,
-        supplierUrl: supplierUrl,
-        image: image,
-        videoUrl: video,
-        reelUrl: video,
-        description: desc,
-        likesCount: 0,
-        rating: 4.8,
-        inStock: true
-      };
-
-      const submitBtn = document.querySelector('#form-add-product button[type="submit"]');
-      if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Saving to Cloud...';
-      }
-
-      // Persist to Firestore first
-      if (fbFirestore) {
-        try {
-          await fbFirestore.collection('products').doc(prodId).set(newProd);
-        } catch (e) {
-          console.error("[Admin Firestore Add Product Error]", e);
-          alert("Failed to save product to Firebase: " + (e.message || "Network error") + ". Your inputs have been kept. Please retry.");
-          if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up mr-1"></i> Publish to Buyero Catalog';
-          }
-          return;
-        }
-      }
-
+    function openEditProductModal(productId) {
       const catalog = getStoredCatalog();
-      catalog.unshift(newProd);
-      saveCatalog(catalog);
-
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up mr-1"></i> Publish to Buyero Catalog';
+      const p = catalog.find(x => x.id === productId);
+      if (!p) {
+        alert("Product not found.");
+        return;
       }
 
-      // Broadcast to storefront
-      try {
-        syncChannel.postMessage({ type: 'CATALOG_UPDATED' });
-      } catch(e) {}
+      document.getElementById('edit-prod-id').value = p.id;
+      document.getElementById('edit-prod-title').value = p.title || '';
+      document.getElementById('edit-prod-category').value = p.category || 'Fashion';
+      document.getElementById('edit-prod-badge').value = p.badge || '';
+      document.getElementById('edit-prod-status').value = p.status || (p.inStock ? 'PUBLISHED' : 'OUT_OF_STOCK');
 
-      logActivityEvent('CATALOG', `Added new product: "${title}" (₹${price})`);
-      alert(`🎉 Product "${title}" published successfully to Buyero Store!`);
-      document.getElementById('form-add-product').reset();
-      switchProductSubTab('all');
-    }
+      const cost = p.privateSourceCost !== undefined ? p.privateSourceCost
+                 : p.meeshoCostPrice !== undefined ? p.meeshoCostPrice : 0;
+      const sell = p.sellingPrice || p.price || 0;
+      const mrp = p.mrp || sell;
 
-    /* Delete Product */
-    async function deleteProduct(prodId) {
-      if (confirm("Are you sure you want to delete this product from the store?")) {
-        // Delete from Firestore
-        if (fbFirestore) {
-          try {
-            await fbFirestore.collection('products').doc(prodId).delete();
-          } catch (e) {
-            console.error("[Admin Firestore Delete Product Error]", e);
-            alert("Failed to delete product from Firebase: " + (e.message || "Network error") + ". Please retry.");
-            return;
-          }
-        }
+      document.getElementById('edit-prod-cost').value = cost;
+      document.getElementById('edit-prod-mrp').value = mrp;
+      document.getElementById('edit-prod-price').value = sell;
 
-        let catalog = getStoredCatalog();
-        catalog = catalog.filter(p => p.id !== prodId);
-        saveCatalog(catalog);
+      document.getElementById('edit-prod-source-url').value = p.sourceProductUrl || p.supplierUrl || '';
+      document.getElementById('edit-prod-supplier-ref').value = p.supplierReference || '';
+      document.getElementById('edit-prod-admin-notes').value = p.adminNotes || '';
 
-        // Broadcast to storefront
-        try {
-          syncChannel.postMessage({ type: 'CATALOG_UPDATED' });
-        } catch(e) {}
-
-        logActivityEvent('CATALOG', `Deleted product #${prodId}`);
-        loadAdminCatalogList();
-      }
-    }
-
-    /* Edit Product Modal */
-    function openEditProductModal(prodId) {
-      const catalog = getStoredCatalog();
-      const prod = catalog.find(p => p.id === prodId);
-      if (!prod) return;
-
-      document.getElementById('edit-prod-id').value = prod.id;
-      document.getElementById('edit-prod-title').value = prod.title;
-      if (document.getElementById('edit-prod-category')) document.getElementById('edit-prod-category').value = prod.category || 'Fashion';
-      if (document.getElementById('edit-prod-badge')) document.getElementById('edit-prod-badge').value = prod.badge || '';
-      document.getElementById('edit-prod-cost').value = prod.meeshoCostPrice || 0;
-      document.getElementById('edit-prod-price').value = prod.sellingPrice;
-      if (document.getElementById('edit-prod-instock')) document.getElementById('edit-prod-instock').value = prod.inStock === false ? 'false' : 'true';
-      if (document.getElementById('edit-prod-supplier')) document.getElementById('edit-prod-supplier').value = prod.supplierUrl || '';
-      if (document.getElementById('edit-prod-variants')) document.getElementById('edit-prod-variants').value = prod.variants || '';
-      document.getElementById('edit-prod-image').value = prod.image;
-      const editVideoEl = document.getElementById('edit-prod-video');
-      if (editVideoEl) editVideoEl.value = prod.videoUrl || prod.reelUrl || '';
-      document.getElementById('edit-prod-desc').value = prod.description;
+      document.getElementById('edit-prod-variants').value = p.variants || '';
+      document.getElementById('edit-prod-image').value = p.image || '';
+      document.getElementById('edit-prod-video').value = p.videoUrl || '';
+      document.getElementById('edit-prod-desc').value = p.description || '';
 
       calculateEditProductMarginLive();
 
       const modal = document.getElementById('modal-edit-product');
       if (modal) modal.classList.remove('hidden');
-    }
-
-    function calculateEditProductMarginLive() {
-      const cost = Number(document.getElementById('edit-prod-cost').value) || 0;
-      const price = Number(document.getElementById('edit-prod-price').value) || 0;
-      const profit = price - cost;
-      const margin = price > 0 ? Math.round((profit / price) * 100) : 0;
-
-      const badge = document.getElementById('badge-edit-prod-margin');
-      if (badge) {
-        badge.textContent = `₹${profit} (${margin}% margin)`;
-        badge.className = profit >= 0 ? "font-bold text-emerald-600" : "font-bold text-rose-600";
-      }
     }
 
     function closeEditProductModal() {
@@ -2515,83 +2746,201 @@
     }
 
     async function handleSaveEditedProduct(event) {
-      event.preventDefault();
-      const id = document.getElementById('edit-prod-id').value;
-      const title = document.getElementById('edit-prod-title').value.trim();
-      const category = document.getElementById('edit-prod-category') ? document.getElementById('edit-prod-category').value : 'Fashion';
-      const badge = document.getElementById('edit-prod-badge') ? document.getElementById('edit-prod-badge').value.trim() : '';
+      if (event && event.preventDefault) event.preventDefault();
+
+      const prodId = document.getElementById('edit-prod-id').value;
+      const title = (document.getElementById('edit-prod-title').value || '').trim();
+      const category = document.getElementById('edit-prod-category').value;
+      const badge = (document.getElementById('edit-prod-badge').value || '').trim();
+      const status = document.getElementById('edit-prod-status').value;
+
       const cost = Number(document.getElementById('edit-prod-cost').value) || 0;
+      const mrp = Number(document.getElementById('edit-prod-mrp').value) || 0;
       const price = Number(document.getElementById('edit-prod-price').value) || 0;
-      const inStock = document.getElementById('edit-prod-instock') ? (document.getElementById('edit-prod-instock').value === 'true') : true;
-      const supplierUrl = document.getElementById('edit-prod-supplier') ? document.getElementById('edit-prod-supplier').value.trim() : '';
-      const variants = document.getElementById('edit-prod-variants') ? document.getElementById('edit-prod-variants').value.trim() : '';
-      const image = document.getElementById('edit-prod-image').value.trim();
-      const editVideoEl = document.getElementById('edit-prod-video');
-      const video = editVideoEl ? editVideoEl.value.trim() : '';
-      const desc = document.getElementById('edit-prod-desc').value.trim();
 
-      let catalog = getStoredCatalog();
-      const prod = catalog.find(p => p.id === id);
-      if (prod) {
-        const editBtn = document.querySelector('#form-edit-product button[type="submit"]');
-        if (editBtn) {
-          editBtn.disabled = true;
-          editBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Saving to Cloud...';
+      const sourceUrl = (document.getElementById('edit-prod-source-url').value || '').trim();
+      const supplierRef = (document.getElementById('edit-prod-supplier-ref').value || '').trim();
+      const adminNotes = (document.getElementById('edit-prod-admin-notes').value || '').trim();
+
+      const variants = (document.getElementById('edit-prod-variants').value || '').trim() || 'Standard';
+      const mainImage = (document.getElementById('edit-prod-image').value || '').trim();
+      const videoUrl = (document.getElementById('edit-prod-video').value || '').trim();
+      const desc = (document.getElementById('edit-prod-desc').value || '').trim();
+
+      // Validations
+      if (!title || !mainImage || !desc) {
+        alert("Please fill all required fields (Title, Image URL, and Description).");
+        return;
+      }
+      if (price <= 0 || mrp <= 0) {
+        alert("Both MRP and Selling Price must be greater than 0.");
+        return;
+      }
+      if (price > mrp) {
+        alert(`Selling Price (₹${price}) cannot be higher than MRP (₹${mrp}). Please fix before saving.`);
+        return;
+      }
+
+      if (status === 'PUBLISHED') {
+        if (!sourceUrl || !sourceUrl.startsWith('http')) {
+          alert("Supplier Source URL is mandatory to publish a product live. Please provide a valid supplier URL (e.g. Meesho link) or select 'Hidden' / 'Out of Stock'.");
+          const el = document.getElementById('edit-prod-source-url');
+          if (el) el.focus();
+          return;
         }
+      }
 
-        prod.title = title;
-        prod.category = category;
-        prod.badge = badge || null;
-        prod.meeshoCostPrice = cost;
-        prod.sellingPrice = price;
-        prod.mrp = Math.round(price * 1.8);
-        prod.inStock = inStock;
-        prod.supplierUrl = supplierUrl;
-        prod.variants = variants;
-        prod.image = image;
-        if (video) {
-          prod.videoUrl = video;
-          prod.reelUrl = video;
-        }
-        prod.description = desc;
+      const discountAmt = Math.max(0, mrp - price);
+      const discountPct = mrp > 0 ? Math.round((discountAmt / mrp) * 100) : 0;
+      const now = new Date().toISOString();
 
-        // Persist to Firestore
+      // PARTITION 1: Customer-Facing Public Document (/products/{id})
+      const publicProduct = {
+        id: prodId,
+        title: title,
+        category: category,
+        badge: badge || '',
+        mrp: mrp,
+        sellingPrice: price,
+        price: price,
+        discountPercent: discountPct,
+        discountAmount: discountAmt,
+        image: mainImage,
+        videoUrl: videoUrl || '',
+        description: desc,
+        variants: variants,
+        status: status,
+        inStock: (status === 'PUBLISHED'),
+        updatedAt: now
+      };
+
+      // PARTITION 2: Admin-Private Document (/admin_product_data/{id})
+      const privateProductData = {
+        id: prodId,
+        productId: prodId,
+        privateSourceCost: cost,
+        sourceProductUrl: sourceUrl,
+        supplierReference: supplierRef,
+        adminNotes: adminNotes,
+        updatedAt: now
+      };
+
+      try {
         if (fbFirestore) {
-          try {
-            await fbFirestore.collection('products').doc(id).set(prod, { merge: true });
-          } catch (e) {
-            console.error("[Admin Firestore Edit Product Error]", e);
-            alert("Failed to save product changes to Firebase: " + (e.message || "Network error") + ". Please retry.");
-            if (editBtn) {
-              editBtn.disabled = false;
-              editBtn.innerHTML = '<i class="fa-solid fa-floppy-disk mr-1"></i> Save Product Changes';
-            }
-            return;
-          }
+          await fbFirestore.collection('products').doc(prodId).set(publicProduct, { merge: true });
+          await fbFirestore.collection('admin_product_data').doc(prodId).set(privateProductData, { merge: true });
         }
 
-        saveCatalog(catalog);
-        if (editBtn) {
-          editBtn.disabled = false;
-          editBtn.innerHTML = '<i class="fa-solid fa-floppy-disk mr-1"></i> Save Product Changes';
+        // Update Admin local catalog
+        const merged = Object.assign({}, publicProduct, privateProductData);
+        let catalog = getStoredCatalog();
+        const idx = catalog.findIndex(p => p.id === prodId);
+        if (idx >= 0) {
+          catalog[idx] = Object.assign({}, catalog[idx], merged);
+        } else {
+          catalog.unshift(merged);
         }
+        saveStoredCatalog(catalog);
 
-        // Broadcast to storefront
         try {
-          syncChannel.postMessage({ type: 'CATALOG_UPDATED' });
+          syncChannel.postMessage({
+            type: 'CATALOG_UPDATED',
+            productId: prodId
+          });
         } catch(e) {}
 
-        logActivityEvent('CATALOG', `Updated product "${title}"`);
-        alert("Product changes saved successfully!");
         closeEditProductModal();
         loadAdminCatalogList();
+        calculateAnalysisMetrics();
+        recordActivityLog('PRODUCT_EDITED', `Updated product "${title}" (#${prodId}) - MRP ₹${mrp}, Sell ₹${price}`);
+        alert(`✅ Product "${title}" updated successfully!`);
+      } catch (err) {
+        console.error("[Edit Product Error]", err);
+        alert(`Failed to update product: ${err.message || err}`);
       }
     }
 
-    /* =========================================================
-       SECTION 3: 🚚 ORDER MANAGEMENT
-       Universal Search & 3 Sub-Tabs: Live & Pending, Sheets View, Completed Orders
-       ========================================================= */
+    async function toggleProductAvailability(productId) {
+      let catalog = getStoredCatalog();
+      const p = catalog.find(x => x.id === productId);
+      if (!p) return;
+
+      const currentStatus = p.status || (p.inStock ? 'PUBLISHED' : 'OUT_OF_STOCK');
+      let nextStatus = 'PUBLISHED';
+      if (currentStatus === 'PUBLISHED') nextStatus = 'OUT_OF_STOCK';
+      else if (currentStatus === 'OUT_OF_STOCK') nextStatus = 'HIDDEN';
+      else nextStatus = 'PUBLISHED';
+
+      const sourceUrl = p.sourceProductUrl || p.supplierUrl || '';
+      if (nextStatus === 'PUBLISHED' && (!sourceUrl || !sourceUrl.startsWith('http'))) {
+        alert("Cannot publish product without a valid Supplier Source URL. Please edit product and add supplier URL first.");
+        return;
+      }
+
+      p.status = nextStatus;
+      p.inStock = (nextStatus === 'PUBLISHED');
+      p.updatedAt = new Date().toISOString();
+
+      try {
+        if (fbFirestore) {
+          await fbFirestore.collection('products').doc(productId).set({
+            status: nextStatus,
+            inStock: p.inStock,
+            updatedAt: p.updatedAt
+          }, { merge: true });
+        }
+
+        saveStoredCatalog(catalog);
+        loadAdminCatalogList();
+
+        try {
+          syncChannel.postMessage({
+            type: 'CATALOG_UPDATED',
+            productId: productId
+          });
+        } catch(e) {}
+
+        recordActivityLog('PRODUCT_STATUS_CHANGED', `Changed status of "${p.title}" to ${nextStatus}`);
+      } catch(err) {
+        console.error("[Toggle Availability Error]", err);
+      }
+    }
+
+    async function deleteProductFromCatalog(productId) {
+      const catalog = getStoredCatalog();
+      const p = catalog.find(x => x.id === productId);
+      const title = p ? p.title : productId;
+
+      if (!confirm(`Are you sure you want to permanently delete "${title}" from the catalog? This action will remove it from both customer store and admin database.`)) {
+        return;
+      }
+
+      try {
+        if (fbFirestore) {
+          await fbFirestore.collection('products').doc(productId).delete().catch(() => {});
+          await fbFirestore.collection('admin_product_data').doc(productId).delete().catch(() => {});
+        }
+
+        const filtered = catalog.filter(x => x.id !== productId);
+        saveStoredCatalog(filtered);
+
+        try {
+          syncChannel.postMessage({
+            type: 'CATALOG_UPDATED',
+            productId: productId
+          });
+        } catch(e) {}
+
+        loadAdminCatalogList();
+        calculateAnalysisMetrics();
+        recordActivityLog('PRODUCT_DELETED', `Deleted product "${title}" (#${productId})`);
+      } catch (err) {
+        console.error("[Delete Product Error]", err);
+        alert(`Failed to delete product: ${err.message || err}`);
+      }
+    }
+
+    /* Orders Management Tabs */
     function switchOrderSubTab(sub) {
       const btnLive = document.getElementById('subtab-btn-order-live');
       const btnSheets = document.getElementById('subtab-btn-order-sheets');
@@ -2605,8 +2954,8 @@
       if (contentSheets) contentSheets.classList.toggle('hidden', sub !== 'sheets');
       if (contentCompleted) contentCompleted.classList.toggle('hidden', sub !== 'completed');
 
-      const activeClass = "flex-1 py-2 px-2 text-center rounded-xl bg-white text-slate-900 shadow-sm whitespace-nowrap transition font-bold";
-      const inactiveClass = "flex-1 py-2 px-2 text-center rounded-xl text-slate-600 hover:text-slate-900 whitespace-nowrap transition font-bold";
+      const activeClass = "flex-1 py-2 text-xs font-bold rounded-xl bg-white text-slate-900 shadow-sm transition";
+      const inactiveClass = "flex-1 py-2 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-900 transition";
 
       if (btnLive) btnLive.className = (sub === 'live') ? activeClass : inactiveClass;
       if (btnSheets) btnSheets.className = (sub === 'sheets') ? activeClass : inactiveClass;
@@ -2678,12 +3027,14 @@
         return;
       }
 
-      container.innerHTML = orders.map(o => `
+      container.innerHTML = orders.map(o => {
+        const m = getAdminOrderPrivateData(o);
+        return `
         <div class="bg-white rounded-3xl p-4 border border-slate-200 shadow-sm space-y-3">
           <div class="flex items-center justify-between border-b border-slate-100 pb-2">
             <div>
               <span class="font-mono font-bold text-brand-navy text-xs">#${o.orderId}</span>
-              <span class="text-[10px] text-slate-400 block">${new Date(o.timestamp || Date.now()).toLocaleDateString()}</span>
+              <span class="text-[10px] text-slate-400 block">${new Date(o.timestamp || Date.now()).toLocaleDateString()} ${new Date(o.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
             <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
               o.status === 'Delivered' ? 'bg-emerald-100 text-emerald-800' :
@@ -2695,57 +3046,16 @@
             </span>
           </div>
 
-          <!-- Customer & Item Info -->
+          <!-- Customer & Amount Row -->
           <div class="flex items-center justify-between text-xs">
             <div class="cursor-pointer" onclick="openCustomerProfileModal('${o.phone}', '${o.customerName}', '${o.address}')">
               <span class="font-bold text-slate-900 block hover:text-brand-orange">${o.customerName} 👑</span>
               <span class="text-[11px] text-slate-500">${o.phone} • ${o.city || ''}</span>
             </div>
             <div class="text-right font-poppins">
-              <span class="font-bold text-sm text-slate-900 block">₹${o.totalAmount}</span>
-              <span class="text-[10px] text-emerald-600 font-bold">Profit: ₹${o.netProfit || (o.totalAmount - (o.meeshoCost || 0))}</span>
+              <span class="font-bold text-sm text-slate-900 block">₹${m.totalRevenue}</span>
+              <span class="text-[10px] text-emerald-600 font-bold">Est. Profit: +₹${m.netProfit}</span>
             </div>
-          </div>
-
-          <!-- Ordered Items Breakdown -->
-          <div class="space-y-1.5 bg-slate-50/70 p-2.5 rounded-2xl border border-slate-100">
-            <div class="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-              <span>Ordered Items (${(o.items || []).length})</span>
-              <span class="text-slate-600 font-semibold">Cost & Profit Breakdown</span>
-            </div>
-            ${(o.items || []).map(item => {
-              const itemCost = item.meeshoCostPrice || Math.round((item.sellingPrice || item.price || 0) * 0.55);
-              const itemSell = item.sellingPrice || item.price || 0;
-              const itemProfit = (itemSell - itemCost) * (item.quantity || 1);
-              return `
-              <div class="p-2 bg-white rounded-xl border border-slate-200/80 space-y-1">
-                <div class="flex items-center gap-2 text-xs">
-                  <img src="${item.image || ''}" class="w-10 h-10 rounded-lg object-cover border border-slate-200" onerror="this.style.display='none'"/>
-                  <div class="flex-1 min-w-0">
-                    <div class="flex items-center justify-between">
-                      <span class="font-bold text-slate-800 truncate block">${item.title}</span>
-                      <span class="text-emerald-600 font-bold font-mono text-[11px]">+₹${itemProfit}</span>
-                    </div>
-                    <div class="flex items-center gap-2 text-[10px] text-slate-500 mt-0.5">
-                      ${item.size ? `<span class="bg-slate-100 px-1.5 py-0.5 rounded font-semibold text-slate-700">Size: ${item.size}</span>` : ''}
-                      <span>Qty: ${item.quantity || 1}</span>
-                      <span>•</span>
-                      <span>Sell: <strong class="text-slate-800">₹${itemSell}</strong></span>
-                      <span>•</span>
-                      <span class="text-rose-600 font-medium">Cost: ₹${itemCost}</span>
-                    </div>
-                  </div>
-                </div>
-                ${item.supplierUrl ? `
-                  <div class="flex items-center justify-between pt-1 border-t border-slate-100 text-[10px]">
-                    <span class="text-slate-500 truncate max-w-[200px] font-mono"><i class="fa-solid fa-link text-brand-orange mr-1"></i>${item.supplierUrl}</span>
-                    <a href="${item.supplierUrl}" target="_blank" class="text-brand-navy font-bold hover:underline flex items-center gap-1">
-                      Open Meesho Source <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
-                    </a>
-                  </div>
-                ` : ''}
-              </div>
-            `;}).join('')}
           </div>
 
           <!-- Customer Delivery Address -->
@@ -2754,11 +3064,62 @@
             <p class="mt-0.5 leading-snug">${o.address || ''}, ${o.city || ''}, ${o.state || ''} - ${o.pincode || ''}</p>
           </div>
 
+          <!-- 🔒 PRIVATE FULFILLMENT & SOURCE DATA (ADMIN-ONLY) -->
+          <div class="bg-indigo-50/70 border border-indigo-200/80 rounded-2xl p-3 space-y-2">
+            <div class="flex items-center justify-between text-[11px] font-bold text-indigo-950 border-b border-indigo-100 pb-1.5">
+              <span class="flex items-center gap-1.5">
+                <i class="fa-solid fa-lock text-brand-navy"></i>
+                <span>PRIVATE FULFILLMENT / SUPPLIER DATA</span>
+              </span>
+              <span class="text-emerald-700 font-poppins">Order Profit: +₹${m.netProfit}</span>
+            </div>
+
+            <div class="space-y-2">
+              ${m.enrichedItems.map(item => `
+                <div class="p-2.5 bg-white rounded-xl border border-indigo-100 text-xs space-y-1.5">
+                  <div class="flex items-center gap-2">
+                    <img src="${item.image || ''}" class="w-10 h-10 rounded-lg object-cover border border-slate-200 flex-shrink-0" onerror="this.style.display='none'"/>
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center justify-between">
+                        <span class="font-bold text-slate-900 truncate block">${item.title}</span>
+                        <span class="text-emerald-600 font-bold font-mono text-[11px]">+₹${item.itemProfit}</span>
+                      </div>
+                      <div class="flex items-center gap-2 text-[10px] text-slate-500 mt-0.5">
+                        ${item.size ? `<span class="bg-slate-100 px-1.5 py-0.2 rounded font-semibold text-slate-700">Variant: ${item.size}</span>` : ''}
+                        <span>Qty: ${item.quantity}</span>
+                        <span>•</span>
+                        <span>Sell: <strong class="text-slate-800">₹${item.sellingPrice}</strong></span>
+                        <span>•</span>
+                        <span class="text-rose-600 font-medium">Source Cost: ₹${item.privateSourceCost}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Source Link row -->
+                  <div class="flex items-center justify-between pt-1 border-t border-slate-100 text-[10px]">
+                    ${item.sourceProductUrl ? `
+                      <span class="text-slate-500 font-mono truncate max-w-[200px]"><i class="fa-solid fa-link text-indigo-500 mr-1"></i>${item.sourceProductUrl}</span>
+                      <a href="${item.sourceProductUrl}" target="_blank" class="px-2 py-0.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold rounded-md flex items-center gap-1 flex-shrink-0">
+                        <span>Open Supplier Link</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-[8px]"></i>
+                      </a>
+                    ` : `
+                      <span class="text-amber-600 font-medium"><i class="fa-solid fa-triangle-exclamation mr-1"></i> No supplier URL in catalog</span>
+                    `}
+                  </div>
+                  ${item.supplierReference ? `
+                    <div class="text-[10px] text-slate-500">Supplier Ref: <code class="font-mono text-slate-800 font-semibold">${item.supplierReference}</code></div>
+                  ` : ''}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
           <!-- COD & Payment Details -->
           <div class="flex items-center justify-between text-[11px] px-1">
-            <span class="text-slate-500 font-medium">Payment: <strong class="text-slate-800">Cash on Delivery (COD)</strong></span>
+            <span class="text-slate-500 font-medium">Payment Mode: <strong class="text-slate-800">Cash on Delivery (COD)</strong></span>
             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${o.status === 'Delivered' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
-              ${o.status === 'Delivered' ? '✓ Cash Collected' : 'Doorstep Collection'}
+              ${o.status === 'Delivered' ? '✓ Cash Collected' : 'Doorstep Collection (₹' + m.totalRevenue + ')'}
             </span>
           </div>
 
@@ -2875,56 +3236,38 @@
             </button>
           ` : ''}
         </div>
-      `).join('');
+      `;}).join('');
     }
 
     async function updateOrderCourierDetails(orderId) {
-      const statusSel = document.getElementById(`status-sel-${orderId}`);
-      const courierSel = document.getElementById(`courier-sel-${orderId}`);
-      const awbInp = document.getElementById(`awb-inp-${orderId}`);
-      const locInp = document.getElementById(`loc-inp-${orderId}`);
-      const estInp = document.getElementById(`est-inp-${orderId}`);
-      const btn = document.getElementById(`btn-update-${orderId}`);
-
-      const status = statusSel ? statusSel.value : 'Shipped via Courier';
-      const courier = courierSel ? courierSel.value : '';
-      const awb = awbInp ? awbInp.value.trim() : '';
-      const location = locInp ? locInp.value.trim() : '';
-      const days = estInp ? estInp.value.trim() : '';
-
-      // Strict validation: If Admin marks as Shipped, courier and AWB must be specified manually
-      if (status === 'Shipped via Courier') {
-        if (!courier || !awb) {
-          alert('Validation Error: Please select an official courier partner and enter a valid AWB number before marking the order as Shipped.');
-          return;
-        }
-      }
-
-      if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Saving to Cloud...';
-      }
+      const status = document.getElementById(`status-sel-${orderId}`).value;
+      const courier = document.getElementById(`courier-sel-${orderId}`).value;
+      const awb = document.getElementById(`awb-inp-${orderId}`).value.trim();
+      const deliveryDays = document.getElementById(`est-inp-${orderId}`).value.trim();
+      const locationStatus = document.getElementById(`loc-inp-${orderId}`).value.trim();
 
       let orders = getStoredOrders();
       const order = orders.find(o => o.orderId === orderId);
       if (order) {
+        const btn = document.getElementById(`btn-update-${orderId}`);
+        if (btn) {
+          btn.disabled = true;
+          btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Syncing...';
+        }
+
         order.status = status;
         order.courier = courier;
         order.awb = awb;
-        order.locationStatus = location;
-        order.deliveryDays = days;
-        if (status === 'Delivered') {
-          order.paymentStatus = 'COLLECTED_AT_DOORSTEP';
-        }
+        order.deliveryDays = deliveryDays;
+        order.locationStatus = locationStatus;
 
         if (!order.history) order.history = [];
         order.history.push({
-          status: `${status}${courier ? ' via ' + courier : ''}${awb ? ' (AWB: ' + awb + ')' : ''}`,
+          status: status + (courier ? ` via ${courier}` : '') + (locationStatus ? ` (${locationStatus})` : ''),
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           date: new Date().toLocaleDateString()
         });
 
-        // Persist to Firestore first
         try {
           await syncOrderUpdateToFirestore(order);
         } catch (err) {
@@ -3035,7 +3378,7 @@
     }
 
     async function completeOrderAction(orderId) {
-      if (confirm(`Mark Order #${orderId} as Completed & Delivered?\nThis will transfer the order to History and permanently add profit to Net Profit.`)) {
+      if (confirm(`Mark Order #${orderId} as Completed & Delivered?\nThis will transfer the order to History and permanently record profit.`)) {
         let orders = getStoredOrders();
         const order = orders.find(o => o.orderId === orderId);
         if (order) {
@@ -3084,13 +3427,15 @@
         return;
       }
 
-      container.innerHTML = orders.map(o => `
+      container.innerHTML = orders.map(o => {
+        const m = getAdminOrderPrivateData(o);
+        return `
         <div class="bg-white rounded-3xl p-4 border border-slate-200 shadow-sm space-y-3 text-xs">
           <div class="flex items-center justify-between border-b border-slate-100 pb-2">
             <span class="font-mono font-bold text-brand-navy">Order Sheet: #${o.orderId}</span>
             <div class="flex items-center gap-1.5">
-              <button onclick="copyMeeshoOrderSnippet('${o.orderId}')" class="px-2 py-1 bg-amber-500 text-white font-bold rounded-lg text-[10px] hover:bg-amber-600 transition flex items-center gap-1" title="Copy formatted customer info for placing order on Meesho">
-                <i class="fa-solid fa-truck-fast"></i> Copy for Meesho
+              <button onclick="copySourceSupplierOrderSnippet('${o.orderId}')" class="px-2.5 py-1 bg-indigo-600 text-white font-bold rounded-lg text-[10px] hover:bg-indigo-700 transition flex items-center gap-1 shadow-sm" title="Copy formatted supplier order sheet with private links and costs">
+                <i class="fa-solid fa-lock"></i> Source / Supplier Order Details
               </button>
               <button onclick="copyFullOrderData('${o.orderId}')" class="px-2 py-1 bg-brand-orange text-white font-bold rounded-lg text-[10px] hover:bg-orange-600 transition flex items-center gap-1">
                 <i class="fa-regular fa-copy"></i> Full Row
@@ -3139,11 +3484,11 @@
 
             <div class="flex items-center justify-between py-1 font-bold">
               <span class="text-slate-700">COD Total:</span>
-              <span class="font-poppins text-brand-navy">₹${o.totalAmount}</span>
+              <span class="font-poppins text-brand-navy">₹${m.totalRevenue}</span>
             </div>
           </div>
         </div>
-      `).join('');
+      `;}).join('');
     }
 
     function renderCompletedOrdersList(orders) {
@@ -3155,7 +3500,9 @@
         return;
       }
 
-      container.innerHTML = orders.map(o => `
+      container.innerHTML = orders.map(o => {
+        const m = getAdminOrderPrivateData(o);
+        return `
         <div class="bg-white rounded-3xl p-4 border border-slate-200 shadow-sm space-y-2 text-xs">
           <div class="flex items-center justify-between">
             <span class="font-mono font-bold text-slate-900">#${o.orderId}</span>
@@ -3165,14 +3512,14 @@
           </div>
           <div class="flex items-center justify-between text-slate-600">
             <span>${o.customerName} (${o.phone})</span>
-            <span class="font-bold font-poppins text-slate-900">₹${o.totalAmount}</span>
+            <span class="font-bold font-poppins text-slate-900">₹${m.totalRevenue}</span>
           </div>
           <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
             <span>Dispatched via ${o.courier || 'Courier'} • AWB: ${o.awb || 'N/A'}</span>
-            <span class="text-emerald-600 font-bold font-poppins">Net Profit: ₹${o.netProfit || (o.totalAmount - (o.meeshoCost || 0))}</span>
+            <span class="text-emerald-600 font-bold font-poppins">Net Profit: +₹${m.netProfit}</span>
           </div>
         </div>
-      `).join('');
+      `;}).join('');
     }
 
     function copyToClipboard(text, label) {
@@ -3187,18 +3534,54 @@
       const orders = getStoredOrders();
       const o = orders.find(x => x.orderId === orderId);
       if (!o) return;
-      const row = `Order #${o.orderId}\t${o.customerName}\t${o.phone}\t${o.address}\t${o.pincode}\t₹${o.totalAmount}\tCOD`;
+      const m = getAdminOrderPrivateData(o);
+      const row = `Order #${o.orderId}\t${o.customerName}\t${o.phone}\t${o.address}\t${o.pincode}\t₹${m.totalRevenue}\tCOD`;
       copyToClipboard(row, 'Full Order Data Row');
     }
 
-    function copyMeeshoOrderSnippet(orderId) {
+    /* Formatted Private Source & Supplier Order Snippet for Admin Fulfillment */
+    function copySourceSupplierOrderSnippet(orderId) {
       const orders = getStoredOrders();
       const o = orders.find(x => x.orderId === orderId);
       if (!o) return;
-      const itemsList = (o.items || []).map(i => `• ${i.title}${i.size ? ' (Size: ' + i.size + ')' : ''} x Qty ${i.quantity || 1} [Cost: ₹${i.meeshoCostPrice || 0} | Sell: ₹${i.sellingPrice || i.price || 0}]${i.supplierUrl ? ' -> Link: ' + i.supplierUrl : ''}`).join('\n');
-      const snippet = `BUYERO ORDER DISPATCH (MEESHO ORDERING)\n----------------------------------------\nOrder ID: #${o.orderId}\nCustomer Name: ${o.customerName}\nMobile: ${o.phone}\nAddress: ${o.address || ''}, ${o.city || ''}, ${o.state || ''} - ${o.pincode || ''}\nCOD Amount to Collect: ₹${o.totalAmount}\nItems:\n${itemsList}\nEst. Net Profit: ₹${o.netProfit || (o.totalAmount - (o.meeshoCost || 0))}`;
-      copyToClipboard(snippet, 'Meesho Ordering Sheet');
+      const m = getAdminOrderPrivateData(o);
+
+      const itemsList = m.enrichedItems.map((i, idx) => {
+        return `[${idx + 1}] ${i.title} ${i.size ? '(Variant: ' + i.size + ')' : ''}
+    • Quantity: ${i.quantity}
+    • Selling Price: ₹${i.sellingPrice}
+    • Private Source Cost: ₹${i.privateSourceCost}
+    • Supplier Source URL: ${i.sourceProductUrl || 'N/A'}
+    • Supplier Reference: ${i.supplierReference || 'N/A'}`;
+      }).join('\n\n');
+
+      const snippet = `BUYERO PRIVATE ORDER FULFILLMENT SHEET
+========================================
+Order ID: #${o.orderId}
+Status: ${o.status || 'Pending'}
+Order Date: ${new Date(o.timestamp || Date.now()).toLocaleString()}
+
+CUSTOMER DELIVERY DETAILS:
+• Customer Name: ${o.customerName}
+• Mobile Number: ${o.phone}
+• Delivery Address: ${o.address || ''}, ${o.city || ''}, ${o.state || ''} - ${o.pincode || ''}
+• Payment Mode: Cash on Delivery (COD)
+• COD Amount to Collect: ₹${m.totalRevenue}
+
+ORDERED PRODUCTS & SUPPLIER SOURCE:
+${itemsList}
+
+FINANCIAL BREAKDOWN:
+• Total COD Collection: ₹${m.totalRevenue}
+• Total Source Cost: ₹${m.totalCost}
+• Estimated Order Profit: ₹${m.netProfit}
+========================================`;
+
+      copyToClipboard(snippet, 'Source / Supplier Order Details');
     }
+
+    // Alias for backward compatibility
+    window.copyMeeshoOrderSnippet = copySourceSupplierOrderSnippet;
 
     /* Deep Customer Profile Modal */
     function openCustomerProfileModal(phone, name, address) {

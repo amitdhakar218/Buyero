@@ -1,0 +1,122 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Master Administrator verification
+    function isAdmin() {
+      return request.auth != null && (
+        request.auth.token.email == "amitdhakar218@gmail.com" ||
+        request.auth.uid == "1nIwLbkuClStOyJmwnfw951EiMq2"
+      );
+    }
+
+    // Helper: Enforce that private business fields are never stored in customer documents
+    function hasNoPrivateFields(data) {
+      return !('privateSourceCost' in data) &&
+             !('sourceProductUrl' in data) &&
+             !('supplierReference' in data) &&
+             !('supplierUrl' in data) &&
+             !('meeshoCostPrice' in data) &&
+             !('adminNotes' in data) &&
+             !('profit' in data) &&
+             !('margin' in data);
+    }
+
+    // 1. PUBLIC PRODUCT CATALOG
+    // Accessible to all customers for browsing. Must contain only sanitized customer-facing data.
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 2. ADMIN-CONFIDENTIAL PRODUCT DATA (SOURCE COSTS, SUPPLIER URLS, MARGINS)
+    // STRICTLY PROTECTED: Customers have ZERO read or write access under any circumstances.
+    match /admin_product_data/{productId} {
+      allow read, write: if isAdmin();
+    }
+
+    // 3. CUSTOMER ORDERS (CASH ON DELIVERY ONLY)
+    match /orders/{orderId} {
+      // Customer creation: Authenticated user creating their own order with valid customer-safe COD data
+      allow create: if isAdmin() || (
+        request.auth != null &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.paymentMode == 'Cash on Delivery (COD)' &&
+        request.resource.data.status == 'Order Placed' &&
+        request.resource.data.courier == '' &&
+        request.resource.data.awb == '' &&
+        hasNoPrivateFields(request.resource.data)
+      );
+
+      // Customer read: Authenticated owner or master admin
+      allow read: if isAdmin() || (
+        request.auth != null && resource.data.userId == request.auth.uid
+      );
+
+      // Customer update: Limited strictly to cancellation/return requests on own orders
+      allow update: if isAdmin() || (
+        request.auth != null &&
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.status in ['Cancelled', 'Order Placed', 'Return Pickup Scheduled'] &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['cancellationReason', 'returnDetails', 'status', 'history']) &&
+        hasNoPrivateFields(request.resource.data)
+      );
+
+      // Deletion: Admin only
+      allow delete: if isAdmin();
+    }
+
+    // 4. USER PROFILES & USER-SPECIFIC SUBCOLLECTIONS
+    match /users/{userId} {
+      allow read, write: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+      
+      match /{allSubcollections=**} {
+        allow read, write: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+      }
+    }
+
+    // 5. LIVE SUPPORT CHAT & TICKETS
+    match /support_chats/{chatId} {
+      // Customer can only read their own chat messages; admin can read all
+      allow read: if isAdmin() || (
+        request.auth != null && (
+          resource.data.userId == request.auth.uid ||
+          resource.data.clientId == request.auth.uid
+        )
+      );
+      // Customer can only send messages as themselves (cannot impersonate admin)
+      allow create: if isAdmin() || (
+        request.auth != null &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.isAdmin == false
+      );
+      allow update, delete: if isAdmin();
+    }
+    
+    match /support_tickets/{ticketId} {
+      // Customer can only read and manage their own tickets
+      allow read: if isAdmin() || (
+        request.auth != null && resource.data.userId == request.auth.uid
+      );
+      allow create: if isAdmin() || (
+        request.auth != null && request.resource.data.userId == request.auth.uid
+      );
+      allow update: if isAdmin() || (
+        request.auth != null && resource.data.userId == request.auth.uid
+      );
+      allow delete: if isAdmin();
+    }
+
+    // 6. ANALYTICS & VISIT TRACKING
+    match /analytics_visits/{visitId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /analytics_summary/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

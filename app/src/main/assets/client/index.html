@@ -1389,166 +1389,7 @@
     </div>
   </div>
 
-  <!-- ========================================== -->
-  <!-- CHECKOUT & USER DATA COLLECTION MODAL (2-STEP MEESHO STYLE) -->
-  <!-- ========================================== -->
-  <div id="checkout-modal" class="hidden fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-3">
-    <div class="bg-white w-full max-w-md rounded-2xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-      <!-- Modal Header with 2-Step Indicator -->
-      <div class="p-4 bg-brand-navy text-white flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <i class="fa-solid fa-truck text-brand-orange"></i>
-          <div>
-            <h3 class="font-poppins font-bold text-sm">Buyero Fast 2-Step Checkout</h3>
-            <p class="text-[10px] text-slate-300" id="checkout-step-subtitle">Step 1 of 2: Customer Identity</p>
-          </div>
-        </div>
-        <button onclick="closeCheckoutModal()" class="text-white/80 hover:text-white p-1">
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
-      </div>
-
-      <!-- Step Progress Bar -->
-      <div class="grid grid-cols-2 text-center text-[11px] font-bold border-b border-slate-200 bg-slate-50">
-        <div id="step-tab-1" class="py-2.5 text-brand-navy border-b-2 border-brand-orange bg-white flex items-center justify-center gap-1.5">
-          <span class="w-4 h-4 rounded-full bg-brand-navy text-white text-[10px] flex items-center justify-center">1</span>
-          <span>Name & Mobile</span>
-        </div>
-        <div id="step-tab-2" class="py-2.5 text-slate-400 flex items-center justify-center gap-1.5">
-          <span class="w-4 h-4 rounded-full bg-slate-300 text-white text-[10px] flex items-center justify-center">2</span>
-          <span>Address & Payment</span>
-        </div>
-      </div>
-
-      <div class="p-4 overflow-y-auto flex-1 space-y-4">
-        <form id="checkout-form" onsubmit="handleCheckoutSubmit(event)">
-          <!-- ================= STEP 1: NAME & MOBILE ================= -->
-          <div id="checkout-step-1" class="space-y-3.5">
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Full Customer Name *</label>
-              <input type="text" id="cust-name" required placeholder="e.g. Amit Dhakar" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy outline-none">
-            </div>
-
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">10-Digit Mobile Number *</label>
-              <div class="flex">
-                <span class="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-slate-300 bg-slate-50 text-slate-600 text-xs font-semibold">+91</span>
-                <input type="tel" id="cust-phone" required maxlength="10" pattern="[0-9]{10}" placeholder="Enter 10-digit mobile number" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-r-xl focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy outline-none font-mono">
-              </div>
-              <p class="text-[10px] text-slate-500 mt-1">Our courier executive will call this number at the time of delivery.</p>
-            </div>
-
-            <!-- Quick Auto-Fill Hint if profile exists -->
-            <div id="checkout-autofill-hint" class="hidden p-2.5 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900 flex items-center justify-between">
-              <span>Auto-filled from your registered profile</span>
-              <button type="button" onclick="applySavedProfileToCheckout()" class="text-[11px] font-bold text-brand-orange hover:underline">Apply</button>
-            </div>
-
-            <button type="button" onclick="goToCheckoutStep2()" class="w-full mt-2 py-3 bg-brand-navy hover:bg-brand-deep text-white font-bold rounded-xl text-xs transition shadow flex items-center justify-center gap-2">
-              <span>Next: Address & Payment</span>
-              <i class="fa-solid fa-arrow-right"></i>
-            </button>
-          </div>
-
-          <!-- ================= STEP 2: ADDRESS & PAYMENT ================= -->
-          <div id="checkout-step-2" class="hidden space-y-3.5">
-            <div class="grid grid-cols-2 gap-2">
-              <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">House / Flat / No. *</label>
-                <input type="text" id="cust-house" placeholder="House/Flat No." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:outline-none focus:border-brand-navy">
-              </div>
-              <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">6-Digit Pincode *</label>
-                <input type="text" id="cust-pincode" maxlength="6" pattern="[0-9]{6}" placeholder="6-digit pincode" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:outline-none focus:border-brand-navy font-mono">
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Road / Street / Colony / Area *</label>
-              <input type="text" id="cust-street" placeholder="Colony, street or sector" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:outline-none focus:border-brand-navy">
-            </div>
-
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Nearby Landmark (Optional)</label>
-              <input type="text" id="cust-landmark" placeholder="Near school, temple, hospital" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:outline-none focus:border-brand-navy">
-            </div>
-
-            <div class="grid grid-cols-2 gap-2">
-              <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">City / Town *</label>
-                <input type="text" id="cust-city" placeholder="City name" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:outline-none focus:border-brand-navy">
-              </div>
-              <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">State *</label>
-                <select id="cust-state" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:outline-none focus:border-brand-navy bg-white">
-                  <option value="Madhya Pradesh">Madhya Pradesh</option>
-                  <option value="Rajasthan">Rajasthan</option>
-                  <option value="Uttar Pradesh">Uttar Pradesh</option>
-                  <option value="Maharashtra">Maharashtra</option>
-                  <option value="Delhi">Delhi</option>
-                  <option value="Gujarat">Gujarat</option>
-                  <option value="Karnataka">Karnataka</option>
-                  <option value="Tamil Nadu">Tamil Nadu</option>
-                  <option value="West Bengal">West Bengal</option>
-                  <option value="Haryana">Haryana</option>
-                  <option value="Bihar">Bihar</option>
-                  <option value="Punjab">Punjab</option>
-                  <option value="Other">Other State</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Buyero Coins Redemption Checkbox (50 Coins = ₹50 OFF) -->
-            <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between">
-              <label class="flex items-center gap-2 cursor-pointer text-xs">
-                <input type="checkbox" id="checkout-use-coins" onchange="toggleBuyeroCoinsDiscount()" class="w-4 h-4 text-brand-orange rounded focus:ring-brand-orange">
-                <span class="font-bold text-amber-950">Redeem 50 Buyero Coins (₹50 Discount)</span>
-              </label>
-              <span class="text-xs font-mono font-bold text-emerald-700" id="coins-discount-badge">-₹50</span>
-            </div>
-
-            <!-- Payment Method Selection: COD ONLY -->
-            <div class="pt-2 border-t border-slate-200">
-              <label class="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">Payment Method</label>
-              
-              <div class="p-3.5 bg-emerald-50 border-2 border-emerald-500 rounded-2xl flex items-center justify-between shadow-sm">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg shadow-inner">
-                    <i class="fa-solid fa-hand-holding-dollar"></i>
-                  </div>
-                  <div>
-                    <span class="block text-xs font-bold text-slate-900">Cash on Delivery (COD)</span>
-                    <span class="block text-[11px] text-emerald-700 font-medium">Pay cash to courier executive upon doorstep delivery</span>
-                  </div>
-                </div>
-                <span class="px-2.5 py-1 bg-emerald-600 text-white font-bold text-[10px] rounded-full uppercase tracking-wider">Free Delivery</span>
-              </div>
-              <input type="hidden" name="payment-mode" id="checkout-payment-mode-cod" value="COD" checked>
-            </div>
-
-            <!-- Total Amount Payable -->
-            <div class="bg-slate-100 p-3 rounded-xl flex items-center justify-between">
-              <div>
-                <span class="text-xs font-medium text-slate-600">Total Payable:</span>
-                <span id="checkout-coins-deducted-text" class="text-[10px] text-emerald-600 block hidden font-semibold">Coins applied (-₹50)</span>
-              </div>
-              <span id="checkout-amount-display" class="font-poppins font-bold text-lg text-brand-orange">₹0</span>
-            </div>
-
-            <!-- Action Buttons: Back to Step 1 & Submit -->
-            <div class="grid grid-cols-2 gap-2 pt-1">
-              <button type="button" onclick="goToCheckoutStep1()" class="py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5">
-                <i class="fa-solid fa-arrow-left"></i> Step 1: Back
-              </button>
-              <button type="submit" id="btn-submit-order" class="py-3 bg-brand-orange hover:bg-orange-600 text-white font-bold rounded-xl text-xs transition shadow-lg flex items-center justify-center gap-1.5">
-                <i class="fa-solid fa-lock text-xs"></i> Place Order
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
+  <!-- Note: Authoritative checkout operates exclusively via #view-checkout page -->
 
 
   <!-- ========================================== -->
@@ -2865,7 +2706,6 @@
     "title": "Anarkali Embroidered Kurta & Dupatta Set",
     "category": "Fashion",
     "image": "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 380,
     "sellingPrice": 799,
     "mrp": 1599,
     "description": "Pure georgette stitched flared kurta with heavy zari embroidery border and matching organza dupatta.",
@@ -2881,7 +2721,6 @@
     "title": "TWS Wireless Earbuds with ANC & 40H Battery",
     "category": "Electronics",
     "image": "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 420,
     "sellingPrice": 949,
     "mrp": 2499,
     "description": "True Wireless Stereo earphones featuring quad mic Environmental Noise Cancellation, IPX5 sweat resistance, and instant Type-C fast charging.",
@@ -2897,7 +2736,6 @@
     "title": "Air Cushion Lightweight Running Sneakers",
     "category": "Footwear",
     "image": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 510,
     "sellingPrice": 1199,
     "mrp": 2899,
     "description": "Ergonomic shock-absorbing running sneakers with breathable flyknit mesh upper and high-grip rubber sole.",
@@ -2913,7 +2751,6 @@
     "title": "Cast Iron 3-Piece Non-Stick Cookware Set",
     "category": "Home & Kitchen",
     "image": "https://images.unsplash.com/photo-1584990347449-33827ec3cfb6?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 650,
     "sellingPrice": 1399,
     "mrp": 2999,
     "description": "Heavy-gauge pre-seasoned cast iron skillet, dosa tawa, and kadhai set for induction and gas stoves.",
@@ -2929,7 +2766,6 @@
     "title": "Smart Stainless Steel Vacuum Flask 500ml",
     "category": "Home & Kitchen",
     "image": "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 190,
     "sellingPrice": 499,
     "mrp": 999,
     "description": "LED touch digital temperature display insulated water bottle keeping liquids hot/cold for 24 hours.",
@@ -2945,7 +2781,6 @@
     "title": "Men's Slim Fit Casual Denim Jacket",
     "category": "Fashion",
     "image": "https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 490,
     "sellingPrice": 1099,
     "mrp": 2299,
     "description": "Classic washed distressed indigo denim jacket with metal shank buttons and twin flap chest pockets.",
@@ -2961,7 +2796,6 @@
     "title": "Kanjivaram Soft Silk Woven Zari Saree",
     "category": "Fashion",
     "image": "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 580,
     "sellingPrice": 1299,
     "mrp": 3499,
     "description": "Traditional South Indian rich jacquard weave silk saree with contrast pallu and unstitched blouse piece.",
@@ -2977,7 +2811,6 @@
     "title": "Bluetooth Calling Smartwatch with AMOLED Screen",
     "category": "Electronics",
     "image": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 690,
     "sellingPrice": 1499,
     "mrp": 3999,
     "description": "1.96-inch AMOLED display smartwatch with Bluetooth calling, 120+ sports modes, SpO2 & 24/7 heart rate monitor.",
@@ -2993,7 +2826,6 @@
     "title": "Men's Handcrafted Casual Leather Loafers",
     "category": "Footwear",
     "image": "https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 410,
     "sellingPrice": 899,
     "mrp": 1999,
     "description": "Slip-on casual driving shoes with cushioned insole and flexible anti-skid rubber sole for all-day comfort.",
@@ -3009,7 +2841,6 @@
     "title": "Pure Glace Cotton King Size Double Bedsheet",
     "category": "Home & Kitchen",
     "image": "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 280,
     "sellingPrice": 649,
     "mrp": 1499,
     "description": "210 TC breathable glace cotton printed bedsheet with 2 matching pillow covers. Color fade resistant.",
@@ -3025,7 +2856,6 @@
     "title": "Men's Slim Stretch Cotton Lycra Chinos",
     "category": "Fashion",
     "image": "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 320,
     "sellingPrice": 699,
     "mrp": 1599,
     "description": "Modern slim fit stretchable cotton chinos for formal and casual office wear. Wrinkle free fabric.",
@@ -3041,7 +2871,6 @@
     "title": "10000mAh Ultra Slim 22.5W Fast Power Bank",
     "category": "Electronics",
     "image": "https://images.unsplash.com/photo-1609592426507-6f8a846c4342?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 390,
     "sellingPrice": 799,
     "mrp": 1799,
     "description": "Dual USB and Type-C PD output power bank with LED battery level display and multi-layer device protection.",
@@ -3057,7 +2886,6 @@
     "title": "Handcrafted Jaipuri Embroidered Leather Juttis",
     "category": "Footwear",
     "image": "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 240,
     "sellingPrice": 549,
     "mrp": 1299,
     "description": "Traditional handmade Punjabi/Jaipuri mojari jutti with thread embroidery and cushioned sole.",
@@ -3073,7 +2901,6 @@
     "title": "Automatic Rechargeable Electric Water Dispenser",
     "category": "Home & Kitchen",
     "image": "https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 150,
     "sellingPrice": 349,
     "mrp": 799,
     "description": "Wireless USB rechargeable water pump for standard 20-litre cans. One-touch automatic water dispensing.",
@@ -3089,7 +2916,6 @@
     "title": "Women's Floral Print Flared A-Line Rayon Kurti",
     "category": "Fashion",
     "image": "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 210,
     "sellingPrice": 449,
     "mrp": 999,
     "description": "Comfortable breathable rayon printed kurti with 3/4 sleeves and mandarin collar for daily college/office use.",
@@ -3105,7 +2931,6 @@
     "title": "10-Inch RGB LED Ring Light with 7ft Metal Tripod",
     "category": "Electronics",
     "image": "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 320,
     "sellingPrice": 699,
     "mrp": 1899,
     "description": "Color changing RGB ring light with mobile holder and wireless shutter remote for video recording and reels.",
@@ -3121,7 +2946,6 @@
     "title": "Ultra Lightweight Orthopedic Sports Running Shoes",
     "category": "Footwear",
     "image": "https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 460,
     "sellingPrice": 999,
     "mrp": 2199,
     "description": "Memory foam arch support orthopedic gym and walking sneakers designed to relieve heel stress.",
@@ -3137,7 +2961,6 @@
     "title": "360 Rotating Multi-Tier Kitchen Spice Rack",
     "category": "Home & Kitchen",
     "image": "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 270,
     "sellingPrice": 599,
     "mrp": 1299,
     "description": "Revolving 16-jar spice carousel organizer with airtight sprinkler lids for mess-free modern kitchen counters.",
@@ -3153,7 +2976,6 @@
     "title": "Men's Genuine Hunter Leather RFID Bifold Wallet",
     "category": "Accessories",
     "image": "https://images.unsplash.com/photo-1627123424574-724758594e93?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 180,
     "sellingPrice": 399,
     "mrp": 899,
     "description": "Handmade oil pull-up vintage leather purse wallet with RFID blocking technology, coin pocket and 8 card slots.",
@@ -3169,7 +2991,6 @@
     "title": "Polarized UV400 Metal Aviator Sunglasses",
     "category": "Accessories",
     "image": "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 190,
     "sellingPrice": 449,
     "mrp": 1199,
     "description": "Classic teardrop gold-rim aviator sunglasses with polarized anti-glare scratch-resistant glass lenses.",
@@ -3185,7 +3006,6 @@
     "title": "Professional 13-Piece Soft Bristle Makeup Brush Kit",
     "category": "Beauty",
     "image": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 170,
     "sellingPrice": 399,
     "mrp": 999,
     "description": "Super soft synthetic bristle makeup brushes for foundation, blending, eyeshadow, and blush with pouch.",
@@ -3201,7 +3021,6 @@
     "title": "Water-Resistant Anti-Theft Laptop Backpack 30L",
     "category": "Accessories",
     "image": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 390,
     "sellingPrice": 849,
     "mrp": 1999,
     "description": "Durable Oxford fabric laptop bag with external USB charging port, hidden back pocket, and 15.6-inch sleeve.",
@@ -3217,7 +3036,6 @@
     "title": "Oversized Graphic Fleece Unisex Streetwear Hoodie",
     "category": "Fashion",
     "image": "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 420,
     "sellingPrice": 899,
     "mrp": 1999,
     "description": "320 GSM heavyweight brushed fleece cotton hoodie with drop shoulder aesthetic and kangaroo pouch.",
@@ -3233,7 +3051,6 @@
     "title": "Wireless Bluetooth Soundbar with Deep Bass Subwoofer",
     "category": "Electronics",
     "image": "https://images.unsplash.com/photo-1545454675-3531b543be5d?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 370,
     "sellingPrice": 799,
     "mrp": 1999,
     "description": "16W RMS portable soundbar speaker with dual bass radiators, FM radio, AUX, USB & 8-hour battery backup.",
@@ -3249,7 +3066,6 @@
     "title": "Hand-Woven Bohemian Cotton Macrame Wall Hanging",
     "category": "Home & Kitchen",
     "image": "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=600&auto=format&fit=crop&q=80",
-    "meeshoCostPrice": 210,
     "sellingPrice": 499,
     "mrp": 1199,
     "description": "Eco-friendly handmade bohemian chic geometric tapestry wall hanging for living room and bedroom aesthetics.",
@@ -3265,6 +3081,44 @@
     /* =========================================================
        APPLICATION LOCAL STORAGE CACHE HELPERS
        ========================================================= */
+    /* =========================================================
+       CUSTOMER-SAFE PRODUCT MODEL SANITIZER (PHASE 2B)
+       Strictly guarantees NO private business fields ever enter
+       customer browser memory, localStorage, cart, or UI.
+       ========================================================= */
+    function sanitizeCustomerProduct(p) {
+      if (!p || typeof p !== 'object') return null;
+      const sellingPrice = Math.max(0, Number(p.sellingPrice) || Number(p.price) || 0);
+      const mrp = Math.max(sellingPrice, Number(p.mrp) || sellingPrice);
+      const discountAmount = Math.max(0, mrp - sellingPrice);
+      const discountPercent = mrp > 0 ? Math.round((discountAmount / mrp) * 100) : 0;
+
+      return {
+        id: String(p.id || ''),
+        title: String(p.title || ''),
+        category: String(p.category || 'General'),
+        badge: p.badge || null,
+        material: p.material || '',
+        mrp: mrp,
+        sellingPrice: sellingPrice,
+        discountAmount: discountAmount,
+        discountPercent: discountPercent,
+        image: p.image || '',
+        images: Array.isArray(p.images) && p.images.length > 0 ? p.images : (p.image ? [p.image] : []),
+        videoUrl: p.videoUrl || '',
+        reelUrl: p.reelUrl || '',
+        description: p.description || '',
+        variants: p.variants || '',
+        inStock: p.inStock !== false && p.status !== 'OUT_OF_STOCK' && p.status !== 'HIDDEN',
+        status: p.status || (p.inStock !== false ? 'PUBLISHED' : 'OUT_OF_STOCK'),
+        rating: Number(p.rating) || 4.7,
+        likesCount: Number(p.likesCount) || 0,
+        reviewCount: Number(p.reviewCount) || 24,
+        createdAt: p.createdAt || '',
+        updatedAt: p.updatedAt || ''
+      };
+    }
+
     function getStoredCatalog() {
       const data = localStorage.getItem('buyero_catalog');
       let catalog = DEFAULT_CATALOG;
@@ -3291,10 +3145,14 @@
         }
         return item;
       });
-      if (hasUpdates) {
-        try { localStorage.setItem('buyero_catalog', JSON.stringify(merged)); } catch(e) {}
-      }
-      return merged;
+      // Guarantee only sanitized customer-safe products exist in memory & cache
+      const safeCatalog = merged
+        .filter(item => item && item.status !== 'HIDDEN' && !item.deleted)
+        .map(sanitizeCustomerProduct)
+        .filter(Boolean);
+
+      try { localStorage.setItem('buyero_catalog', JSON.stringify(safeCatalog)); } catch(e) {}
+      return safeCatalog;
     }
 
     function getStoredCart() {
@@ -3477,7 +3335,10 @@
           let remoteProds = [];
           snapshot.forEach(doc => {
             const p = doc.data();
-            if (p && p.id && !p.deleted) remoteProds.push(p);
+            if (p && p.id && !p.deleted && p.status !== 'HIDDEN') {
+              const safe = sanitizeCustomerProduct(p);
+              if (safe) remoteProds.push(safe);
+            }
           });
           if (remoteProds.length > 0) {
             let local = getStoredCatalog();
@@ -3519,17 +3380,22 @@
         try { supportChatUnsubscribe(); } catch(e) {}
         supportChatUnsubscribe = null;
       }
-      const identity = getClientChatIdentity();
+      const authUid = (fbAuth && fbAuth.currentUser) 
+        ? fbAuth.currentUser.uid 
+        : ((currentUser && (currentUser.authUid || currentUser.uuid || currentUser.userId)) ? (currentUser.authUid || currentUser.uuid || currentUser.userId) : null);
+      if (!authUid) return;
+
       try {
-        supportChatUnsubscribe = fbFirestore.collection('support_chats').onSnapshot((snapshot) => {
-          if (!snapshot) return;
-          let messages = getStoredSupportMessages();
-          let changed = false;
-          snapshot.docChanges().forEach(change => {
-            if (change.type === 'added') {
-              const msg = change.doc.data();
-              if (!msg || !msg.text) return;
-              if (msg.clientId === identity.clientId || msg.clientId === 'ALL' || !msg.clientId) {
+        supportChatUnsubscribe = fbFirestore.collection('support_chats')
+          .where('userId', '==', authUid)
+          .onSnapshot((snapshot) => {
+            if (!snapshot) return;
+            let messages = getStoredSupportMessages();
+            let changed = false;
+            snapshot.docChanges().forEach(change => {
+              if (change.type === 'added') {
+                const msg = change.doc.data();
+                if (!msg || !msg.text) return;
                 const exists = messages.some(m => m.id === msg.id || (m.timestamp === msg.timestamp && m.text === msg.text));
                 if (!exists) {
                   messages.push(msg);
@@ -3547,13 +3413,12 @@
                   }
                 }
               }
+            });
+            if (changed) {
+              saveSupportMessages(messages);
+              loadClientChatMessages();
             }
-          });
-          if (changed) {
-            saveSupportMessages(messages);
-            loadClientChatMessages();
-          }
-        }, (err) => console.warn("[Support Chat Listener]", err));
+          }, (err) => console.warn("[Support Chat Listener]", err));
       } catch (e) {}
     }
 
@@ -3589,10 +3454,55 @@
     let activeModalProduct = null;
 
     /* =========================================================
+       PRIVATE DATA PURGE & SANITIZATION ENGINE
+       Guarantees customer localStorage contains zero private fields
+       ========================================================= */
+    function sanitizeClientLocalStorage() {
+      const privateFields = [
+        'privateSourceCost',
+        'sourceProductUrl',
+        'supplierReference',
+        'supplierUrl',
+        'meeshoCostPrice',
+        'adminNotes',
+        'profit',
+        'margin'
+      ];
+
+      function cleanObject(obj) {
+        if (!obj || typeof obj !== 'object') return obj;
+        if (Array.isArray(obj)) {
+          return obj.map(cleanObject);
+        }
+        const cleaned = {};
+        for (const key of Object.keys(obj)) {
+          if (!privateFields.includes(key)) {
+            cleaned[key] = cleanObject(obj[key]);
+          }
+        }
+        return cleaned;
+      }
+
+      ['buyero_catalog', 'buyero_cart', 'buyero_orders', 'buyero_liked_products', 'buyero_recently_viewed', 'buyero_direct_item'].forEach(key => {
+        try {
+          const raw = localStorage.getItem(key);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            const cleaned = cleanObject(parsed);
+            localStorage.setItem(key, JSON.stringify(cleaned));
+          }
+        } catch(e) {}
+      });
+    }
+
+    /* =========================================================
        INITIALIZATION ROUTINE & SPLASH SCREEN TIMING
        Runs splash screen for exactly 3 seconds with bounce animation
        ========================================================= */
     window.addEventListener('DOMContentLoaded', () => {
+      // 0. Security Sanitization: Scrub any private business fields from customer local storage
+      sanitizeClientLocalStorage();
+
       // 1. Setup Categories
       setupCategoryPills();
 
@@ -3724,15 +3634,10 @@
         console.warn("[Buyero SyncBus] Visitor post skipped:", e);
       }
 
-      // Record in Firestore if available
+      // Record in Firestore if available (anonymous visitor visit document)
       if (fbFirestore) {
         try {
           fbFirestore.collection('analytics_visits').add(visitPayload).catch(() => {});
-          // Also bump aggregate counter
-          fbFirestore.collection('analytics_summary').doc('live_counters').set({
-            totalVisits: firebase.firestore.FieldValue.increment(1),
-            lastVisitTime: new Date().toISOString()
-          }, { merge: true }).catch(() => {});
         } catch (e) {
           console.warn("[Buyero Analytics] Fallback mode:", e);
         }
@@ -4726,23 +4631,23 @@
       const buyBtn = document.getElementById('pdetail-btn-buynow');
       const badgeEl = document.getElementById('pdetail-badge');
 
-      const isOutOfStock = product.inStock === false;
+      const isOutOfStock = (product.inStock === false || product.status === 'OUT_OF_STOCK' || product.status === 'HIDDEN');
 
       // Handle out of stock state on buttons
       if (isOutOfStock) {
         if (badgeEl) {
-          badgeEl.textContent = 'Out of Stock';
+          badgeEl.textContent = 'Currently Unavailable';
           badgeEl.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-rose-600 text-white';
         }
         if (cartBtn) {
           cartBtn.disabled = true;
           cartBtn.className = 'flex-1 py-3 bg-slate-200 text-slate-400 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-not-allowed';
-          cartBtn.innerHTML = '<i class="fa-solid fa-ban"></i> Out of Stock';
+          cartBtn.innerHTML = '<i class="fa-solid fa-ban"></i> Currently Unavailable';
         }
         if (buyBtn) {
           buyBtn.disabled = true;
           buyBtn.className = 'flex-1 py-3 bg-slate-200 text-slate-400 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-not-allowed';
-          buyBtn.innerHTML = 'Unavailable';
+          buyBtn.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Currently Unavailable';
         }
       } else {
         if (badgeEl) {
@@ -4842,8 +4747,8 @@
 
     function addProductToCartFromDetail() {
       if (!activeDetailProduct) return;
-      if (activeDetailProduct.inStock === false) {
-        alert("This item is currently out of stock.");
+      if (activeDetailProduct.inStock === false || activeDetailProduct.status === 'OUT_OF_STOCK' || activeDetailProduct.status === 'HIDDEN') {
+        alert("This item is currently unavailable and cannot be ordered.");
         return;
       }
       quickAddToCart(activeDetailProduct.id, selectedDetailSize);
@@ -4852,8 +4757,8 @@
 
     function directBuyNowFromDetail() {
       if (!activeDetailProduct) return;
-      if (activeDetailProduct.inStock === false) {
-        alert("This item is currently out of stock.");
+      if (activeDetailProduct.inStock === false || activeDetailProduct.status === 'OUT_OF_STOCK' || activeDetailProduct.status === 'HIDDEN') {
+        alert("This item is currently unavailable and cannot be ordered.");
         return;
       }
       directCheckoutItem = {
@@ -4863,8 +4768,7 @@
         image: activeDetailProduct.image,
         sellingPrice: activeDetailProduct.sellingPrice,
         mrp: activeDetailProduct.mrp,
-        meeshoCostPrice: activeDetailProduct.meeshoCostPrice || Math.round(activeDetailProduct.sellingPrice * 0.55),
-        supplierUrl: activeDetailProduct.supplierUrl || '',
+
         size: selectedDetailSize || 'Standard',
         quantity: 1
       };
@@ -5577,8 +5481,7 @@
         title: `${activeModalProduct.title} (${selectedProductSize || 'M'})`,
         image: activeModalProduct.image,
         sellingPrice: activeModalProduct.sellingPrice,
-        meeshoCostPrice: activeModalProduct.meeshoCostPrice || Math.round(activeModalProduct.sellingPrice * 0.5),
-        supplierUrl: activeModalProduct.supplierUrl || '',
+
         quantity: 1,
         size: selectedProductSize || 'M'
       };
@@ -5752,8 +5655,8 @@
       const product = catalog.find(p => p.id === productId);
       if (!product) return;
 
-      if (product.inStock === false) {
-        alert("This item is currently out of stock.");
+      if (product.inStock === false || product.status === 'OUT_OF_STOCK' || product.status === 'HIDDEN') {
+        alert("This item is currently unavailable and cannot be added to cart.");
         return;
       }
 
@@ -5774,8 +5677,7 @@
           image: product.image,
           sellingPrice: product.sellingPrice,
           mrp: product.mrp,
-          meeshoCostPrice: product.meeshoCostPrice || Math.round(product.sellingPrice * 0.55),
-          supplierUrl: product.supplierUrl || '',
+
           size: size,
           quantity: 1
         });
@@ -6055,14 +5957,13 @@
     }
 
     function openCheckoutModal(isDirect = false) {
-      // Delegate cleanly to authoritative single checkout flow (view-checkout)
+      // Authoritative single checkout architecture
       openCheckoutPage(isDirect);
     }
 
     function closeCheckoutModal() {
-      const modal = document.getElementById('checkout-modal');
-      if (modal) modal.classList.add('hidden');
       directCheckoutItem = null;
+      navigateBack();
     }
 
     /* =========================================================
@@ -6418,6 +6319,13 @@
     async function submitCheckoutOrder() {
       if (isSubmittingOrder) return;
 
+      // Order creation requires authenticated user
+      if (!currentUser) {
+        pendingAuthAction = { type: 'checkout', isDirect: !!directCheckoutItem };
+        openAuthModal('checkout_gate');
+        return;
+      }
+
       const name = (document.getElementById('chk-cust-name') ? document.getElementById('chk-cust-name').value : '').trim();
       const phone = (document.getElementById('chk-cust-phone') ? document.getElementById('chk-cust-phone').value : '').trim();
       const house = (document.getElementById('chk-cust-house') ? document.getElementById('chk-cust-house').value : '').trim();
@@ -6474,35 +6382,67 @@
 
       try {
         // Mandatory COD payment configuration
-        const paymentMode = 'COD';
+        const paymentMode = 'Cash on Delivery (COD)';
         const paymentStatus = 'COD_PENDING_DOORSTEP';
-        const transactionId = 'COD-DOORSTEP';
 
         const subtotal = itemsToOrder.reduce((sum, i) => sum + (i.sellingPrice * i.quantity), 0);
-        const totalMeeshoCost = itemsToOrder.reduce((sum, i) => sum + ((i.meeshoCostPrice || Math.round(i.sellingPrice * 0.55)) * i.quantity), 0);
 
         // Calculations with loyalty and coupons
         const coinsDiscount = checkoutState.coinsDiscount || 0;
         const couponDiscount = checkoutState.couponDiscount || 0;
         const finalAmount = Math.max(1, subtotal - coinsDiscount - couponDiscount);
-        const netCalculatedProfit = Math.max(0, finalAmount - totalMeeshoCost);
 
-        const newOrderId = 'BYR-' + Math.floor(100000 + Math.random() * 900000);
+        // Guaranteed collision-resistant unique order ID
+        function generateUniqueOrderId() {
+          const timestampPart = Date.now().toString(36).toUpperCase();
+          let randomPart = '';
+          if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            randomPart = crypto.randomUUID().replace(/-/g, '').slice(0, 6).toUpperCase();
+          } else {
+            randomPart = Math.random().toString(36).slice(2, 8).toUpperCase();
+          }
+          return 'BYR-' + timestampPart + '-' + randomPart;
+        }
+        let newOrderId = generateUniqueOrderId();
+        const existingLocalOrders = getAllStoredOrders();
+        while (existingLocalOrders.some(o => o.orderId === newOrderId)) {
+          newOrderId = generateUniqueOrderId();
+        }
         const timestamp = new Date().toISOString();
         const fullAddress = `${house}, ${street}${landmark ? ', Near ' + landmark : ''}, ${city}, ${state} - ${pincode}`;
 
         const currentEmail = (currentUser && currentUser.email) ? currentUser.email : '';
-        const currentUuid = (currentUser && (currentUser.authUid || currentUser.uuid || currentUser.userId)) 
-          ? (currentUser.authUid || currentUser.uuid || currentUser.userId) 
-          : (currentEmail ? generateDeterministicUserUuid(currentEmail) : generateUuidV4());
+        const currentUuid = (fbAuth && fbAuth.currentUser && fbAuth.currentUser.uid)
+          ? fbAuth.currentUser.uid
+          : (currentUser && (currentUser.authUid || currentUser.uuid || currentUser.userId)) 
+            ? (currentUser.authUid || currentUser.uuid || currentUser.userId) 
+            : (currentEmail ? generateDeterministicUserUuid(currentEmail) : generateUuidV4());
 
-        // Prepare order items
-        const orderItems = itemsToOrder.map((item, index) => ({
-          ...item,
-          itemIndex: index,
-          itemStatus: 'ACTIVE',
-          returnRequest: null
-        }));
+        // Prepare customer-safe order item snapshots (NO private cost or supplier fields)
+        const orderItems = itemsToOrder.map((item, index) => {
+          const sell = Number(item.sellingPrice) || Number(item.price) || 0;
+          const mrp = Math.max(sell, Number(item.mrp) || sell);
+          const discount = Math.max(0, mrp - sell);
+          return {
+            itemIndex: index,
+            productId: item.id || '',
+            productName: item.baseTitle || item.title || '',
+            title: item.title || '',
+            productImage: item.image || '',
+            image: item.image || '',
+            quantity: item.quantity || 1,
+            selectedVariants: item.size || 'Standard',
+            size: item.size || 'Standard',
+            sellingPriceAtPurchase: sell,
+            sellingPrice: sell,
+            price: sell,
+            mrpAtPurchase: mrp,
+            mrp: mrp,
+            discountAtPurchase: discount,
+            itemStatus: 'ACTIVE',
+            returnRequest: null
+          };
+        });
 
         const newOrder = {
           orderId: newOrderId,
@@ -6524,8 +6464,6 @@
           coinsDiscount: coinsDiscount,
           couponDiscount: couponDiscount,
           appliedCoupon: checkoutState.appliedCouponCode || null,
-          meeshoCost: totalMeeshoCost,
-          netProfit: netCalculatedProfit,
           paymentMode: 'Cash on Delivery (COD)',
           transactionId: null,
           paymentStatus: 'COD_PENDING_DOORSTEP',
@@ -6949,8 +6887,6 @@
         fullAddress: order.address,
         itemsSummary: order.items.map(i => `${i.title} (x${i.quantity})`).join("; "),
         totalAmount: order.totalAmount,
-        meeshoCost: order.meeshoCost,
-        netProfit: order.netProfit,
         paymentMode: order.paymentMode,
         transactionId: order.transactionId,
         paymentStatus: order.paymentStatus,
@@ -8952,30 +8888,6 @@
       });
     }
 
-    function handleGoogleSignIn() {
-      // Fast, zero-friction 1-click Google Sign-in simulation with email fallback
-      const googleUser = {
-        name: "Verified Shopper",
-        email: "shopper@buyero.com",
-        phone: "9174573889",
-        provider: "Google",
-        verified: true
-      };
-
-      currentUser = googleUser;
-      localStorage.setItem('buyero_user', JSON.stringify(currentUser));
-      
-      const users = getRegisteredUsers();
-      if (!users.some(u => u.email === googleUser.email)) {
-        users.push(googleUser);
-        saveRegisteredUsers(users);
-      }
-
-      renderUserProfile();
-      closeAuthModal();
-      alert(`🎉 Signed in with Google as ${googleUser.name}!`);
-      resumePendingAuthAction();
-    }
 
     /* =========================================================
        HELP & SUPPORT CHAT CONTROLLER
@@ -8988,14 +8900,20 @@
     }
 
     function getClientChatIdentity() {
-      let clientId = localStorage.getItem('buyero_client_chat_id');
+      const authUid = (fbAuth && fbAuth.currentUser) 
+        ? fbAuth.currentUser.uid 
+        : ((currentUser && (currentUser.authUid || currentUser.uuid || currentUser.userId)) ? (currentUser.authUid || currentUser.uuid || currentUser.userId) : null);
+      let clientId = authUid;
       if (!clientId) {
-        clientId = 'USR_' + Math.floor(100000 + Math.random() * 900000);
-        localStorage.setItem('buyero_client_chat_id', clientId);
+        clientId = localStorage.getItem('buyero_client_chat_id');
+        if (!clientId) {
+          clientId = 'USR_' + Math.floor(100000 + Math.random() * 900000);
+          localStorage.setItem('buyero_client_chat_id', clientId);
+        }
       }
       const clientName = (currentUser && currentUser.name) ? currentUser.name : ('Customer ' + clientId.slice(-4));
       const clientPhone = (currentUser && currentUser.phone) ? currentUser.phone : '';
-      return { clientId, clientName, clientPhone };
+      return { clientId, userId: authUid || clientId, clientName, clientPhone };
     }
 
     function getStoredSupportMessages() {
@@ -9059,11 +8977,18 @@
       const text = input.value.trim();
       if (!text) return;
 
+      if (!currentUser) {
+        openAuthModal('support');
+        alert("Please sign in to send messages to customer support.");
+        return;
+      }
+
       const identity = getClientChatIdentity();
 
       const newMsg = {
         id: 'msg_' + Date.now(),
         clientId: identity.clientId,
+        userId: identity.userId,
         sender: identity.clientName,
         userPhone: identity.clientPhone,
         userEmail: currentUser ? currentUser.email : '',
@@ -9102,7 +9027,10 @@
       }
       try {
         if (fbFirestore) {
-          const snapshot = await fbFirestore.collection('support_chats').get();
+          const identity = getClientChatIdentity();
+          const snapshot = await fbFirestore.collection('support_chats')
+            .where('userId', '==', identity.userId)
+            .get();
           if (snapshot && !snapshot.empty) {
             let messages = getStoredSupportMessages();
             snapshot.forEach(doc => {
@@ -9143,6 +9071,12 @@
     }
 
     async function submitUrgentSupportTicket() {
+      if (!currentUser) {
+        openAuthModal('support');
+        alert("Please sign in to submit a support ticket.");
+        return;
+      }
+
       const orderSelect = document.getElementById('support-order-select');
       const orderId = orderSelect ? orderSelect.value.trim() : '';
       if (!orderId) {
@@ -9158,7 +9092,9 @@
       const custName = (currentUser && currentUser.name) || 'Valued Customer';
       const custPhone = (currentUser && currentUser.phone) || '';
       const custEmail = (currentUser && currentUser.email) || '';
-      const userId = (currentUser && (currentUser.uuid || currentUser.userId || currentUser.authUid)) || '';
+      const authUid = (fbAuth && fbAuth.currentUser && fbAuth.currentUser.uid)
+        ? fbAuth.currentUser.uid
+        : ((currentUser && (currentUser.authUid || currentUser.uuid || currentUser.userId)) ? (currentUser.authUid || currentUser.uuid || currentUser.userId) : 'USR_GUEST');
 
       const ticketId = 'TCK-' + Date.now().toString(36).toUpperCase();
       const ticket = {
@@ -9169,7 +9105,7 @@
         customerName: custName,
         phone: custPhone,
         email: custEmail,
-        userId: userId,
+        userId: authUid,
         status: 'OPEN',
         createdAt: new Date().toISOString()
       };
@@ -9322,7 +9258,6 @@
         { id: 'modal-share-product', close: () => closeShareProductModal() },
         { id: 'modal-catalog-filters', close: () => closeCatalogFiltersModal() },
         { id: 'product-modal', close: () => closeProductModal() },
-        { id: 'checkout-modal', close: () => closeCheckoutModal() },
         { id: 'modal-cancel-order', close: () => closeCancelOrderModal() },
         { id: 'modal-return-item', close: () => closeReturnItemModal() },
         { id: 'modal-order-details', close: () => closeOrderDetailsModal() },
@@ -9372,11 +9307,6 @@
     /* =========================================================
        DATA RESETS
        ========================================================= */
-    function seedDemoOrders() {
-      // Intentionally deactivated to strictly enforce real user and Firestore orders only
-      console.log("[Buyero] Demo order seeding is disabled. Orders must come from actual customer checkout or Firestore.");
-    }
-
     function clearAllLocalData() {
       if (confirm("Reset all local cart, order history, and product cache to default?")) {
         localStorage.clear();
