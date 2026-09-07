@@ -4864,6 +4864,7 @@
         sellingPrice: activeDetailProduct.sellingPrice,
         mrp: activeDetailProduct.mrp,
         meeshoCostPrice: activeDetailProduct.meeshoCostPrice || Math.round(activeDetailProduct.sellingPrice * 0.55),
+        supplierUrl: activeDetailProduct.supplierUrl || '',
         size: selectedDetailSize || 'Standard',
         quantity: 1
       };
@@ -5577,6 +5578,7 @@
         image: activeModalProduct.image,
         sellingPrice: activeModalProduct.sellingPrice,
         meeshoCostPrice: activeModalProduct.meeshoCostPrice || Math.round(activeModalProduct.sellingPrice * 0.5),
+        supplierUrl: activeModalProduct.supplierUrl || '',
         quantity: 1,
         size: selectedProductSize || 'M'
       };
@@ -5773,6 +5775,7 @@
           sellingPrice: product.sellingPrice,
           mrp: product.mrp,
           meeshoCostPrice: product.meeshoCostPrice || Math.round(product.sellingPrice * 0.55),
+          supplierUrl: product.supplierUrl || '',
           size: size,
           quantity: 1
         });

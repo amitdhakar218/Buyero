@@ -443,6 +443,20 @@
             ></textarea>
           </div>
 
+          <!-- Meesho / Supplier Product Link or Code (Admin Private) -->
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-xs font-bold text-slate-700">Meesho / Supplier Link or Code</label>
+              <span class="text-[10px] text-brand-navy font-semibold flex items-center gap-1"><i class="fa-solid fa-lock text-[9px]"></i> Private to Admin</span>
+            </div>
+            <input 
+              type="text" 
+              id="inp-prod-supplier" 
+              placeholder="e.g. https://www.meesho.com/s/p/... or Product Code s-94821034" 
+              class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl outline-none focus:border-brand-navy"
+            />
+          </div>
+
           <!-- Image Management (Home Image Link + Add More Image) -->
           <div class="space-y-2">
             <div class="flex items-center justify-between">
@@ -892,41 +906,91 @@
         <input type="hidden" id="edit-prod-id" />
         
         <div>
-          <label class="block font-bold text-slate-700 mb-0.5">Title</label>
-          <input type="text" id="edit-prod-title" required class="w-full px-3 py-1.5 border border-slate-300 rounded-xl" />
+          <label class="block font-bold text-slate-700 mb-0.5">Title *</label>
+          <input type="text" id="edit-prod-title" required class="w-full px-3 py-1.5 border border-slate-300 rounded-xl outline-none focus:border-brand-navy" />
         </div>
 
         <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="block font-bold text-slate-700 mb-0.5">Meesho Cost (₹)</label>
-            <input type="number" id="edit-prod-cost" required class="w-full px-3 py-1.5 border border-slate-300 rounded-xl" />
+            <label class="block font-bold text-slate-700 mb-0.5">Category *</label>
+            <select id="edit-prod-category" required class="w-full px-3 py-1.5 border border-slate-300 rounded-xl outline-none focus:border-brand-navy bg-white">
+              <option value="Fashion">Fashion</option>
+              <option value="Electronics">Electronics</option>
+              <option value="Footwear">Footwear</option>
+              <option value="Home & Kitchen">Home & Kitchen</option>
+              <option value="Accessories">Accessories</option>
+              <option value="Beauty">Beauty</option>
+            </select>
           </div>
           <div>
-            <label class="block font-bold text-slate-700 mb-0.5">Selling Price (₹)</label>
-            <input type="number" id="edit-prod-price" required class="w-full px-3 py-1.5 border border-slate-300 rounded-xl" />
+            <label class="block font-bold text-slate-700 mb-0.5">Badge (Optional)</label>
+            <input type="text" id="edit-prod-badge" placeholder="Best Seller / Hot Deal" class="w-full px-3 py-1.5 border border-slate-300 rounded-xl outline-none focus:border-brand-navy" />
           </div>
         </div>
 
+        <!-- Live Profit Calculator (Cost & Selling Price) -->
+        <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-1.5">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-600 block">Pricing & Profit Margin</span>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block font-bold text-slate-700 mb-0.5">Meesho Cost (₹) *</label>
+              <input type="number" id="edit-prod-cost" required min="1" oninput="calculateEditProductMarginLive()" class="w-full px-3 py-1.5 border border-slate-300 rounded-xl outline-none focus:border-brand-navy bg-white" />
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-0.5">Selling Price (₹) *</label>
+              <input type="number" id="edit-prod-price" required min="1" oninput="calculateEditProductMarginLive()" class="w-full px-3 py-1.5 border border-slate-300 rounded-xl outline-none focus:border-brand-navy bg-white" />
+            </div>
+          </div>
+          <div class="pt-1 border-t border-slate-200 flex items-center justify-between text-[11px]">
+            <span class="text-slate-500">Estimated Profit:</span>
+            <span id="badge-edit-prod-margin" class="font-bold text-emerald-600">₹0 (0% margin)</span>
+          </div>
+        </div>
+
+        <!-- Stock Status & Meesho Supplier Link -->
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-slate-700 mb-0.5">Stock Status</label>
+            <select id="edit-prod-instock" class="w-full px-3 py-1.5 border border-slate-300 rounded-xl outline-none focus:border-brand-navy bg-white">
+              <option value="true">In Stock</option>
+              <option value="false">Out of Stock</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-0.5 flex items-center gap-1">
+              <span>Meesho Link / Code</span>
+              <i class="fa-solid fa-lock text-[8px] text-brand-navy" title="Private to Admin"></i>
+            </label>
+            <input type="text" id="edit-prod-supplier" placeholder="e.g. s-94821034" class="w-full px-3 py-1.5 border border-slate-300 rounded-xl outline-none focus:border-brand-navy" />
+          </div>
+        </div>
+
+        <!-- Variants & Supplier Notes -->
         <div>
-          <label class="block font-bold text-slate-700 mb-0.5">Image URL</label>
-          <input type="url" id="edit-prod-image" required class="w-full px-3 py-1.5 border border-slate-300 rounded-xl" />
+          <label class="block font-bold text-slate-700 mb-0.5">Variant Availability & Supplier Notes</label>
+          <input type="text" id="edit-prod-variants" placeholder="e.g. Sizes S, M, L, XL" class="w-full px-3 py-1.5 border border-slate-300 rounded-xl outline-none focus:border-brand-navy" />
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-0.5">Image URL *</label>
+          <input type="url" id="edit-prod-image" required class="w-full px-3 py-1.5 border border-slate-300 rounded-xl outline-none focus:border-brand-navy" />
         </div>
 
         <div>
           <label class="block font-bold text-rose-700 mb-0.5 flex items-center gap-1">
             <i class="fa-solid fa-circle-play text-rose-500"></i> Video / Reel Link (Instagram Reel / YouTube Short)
           </label>
-          <input type="url" id="edit-prod-video" placeholder="https://www.youtube.com/shorts/... ya https://www.instagram.com/reel/..." class="w-full px-3 py-1.5 border border-pink-300 rounded-xl" />
+          <input type="url" id="edit-prod-video" placeholder="https://www.youtube.com/shorts/... ya https://www.instagram.com/reel/..." class="w-full px-3 py-1.5 border border-pink-300 rounded-xl outline-none focus:border-rose-500" />
         </div>
 
         <div>
-          <label class="block font-bold text-slate-700 mb-0.5">Description</label>
-          <textarea id="edit-prod-desc" rows="3" required class="w-full px-3 py-1.5 border border-slate-300 rounded-xl"></textarea>
+          <label class="block font-bold text-slate-700 mb-0.5">Description *</label>
+          <textarea id="edit-prod-desc" rows="3" required class="w-full px-3 py-1.5 border border-slate-300 rounded-xl outline-none focus:border-brand-navy"></textarea>
         </div>
 
         <div class="flex gap-2 pt-2">
-          <button type="button" onclick="closeEditProductModal()" class="flex-1 py-2 bg-slate-200 text-slate-700 font-bold rounded-xl">Cancel</button>
-          <button type="submit" class="flex-1 py-2 bg-brand-navy text-white font-bold rounded-xl shadow">Save Changes</button>
+          <button type="button" onclick="closeEditProductModal()" class="flex-1 py-2 bg-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-300 transition">Cancel</button>
+          <button type="submit" class="flex-1 py-2 bg-brand-navy text-white font-bold rounded-xl shadow hover:bg-brand-deep transition">Save Changes</button>
         </div>
       </form>
     </div>
@@ -2193,17 +2257,37 @@
           <div class="flex items-center gap-3 min-w-0">
             <img src="${p.image}" alt="${p.title}" class="w-14 h-14 object-cover rounded-xl border border-slate-100 flex-shrink-0" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'" />
             <div class="min-w-0">
-              <h5 class="font-bold text-xs text-slate-900 truncate">${p.title}</h5>
+              <div class="flex items-center gap-2">
+                <h5 class="font-bold text-xs text-slate-900 truncate">${p.title}</h5>
+                <span class="px-1.5 py-0.2 text-[9px] font-bold rounded-full ${p.inStock !== false ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">
+                  ${p.inStock !== false ? 'In Stock' : 'Out of Stock'}
+                </span>
+              </div>
               <div class="flex items-center gap-2 mt-0.5 text-[11px]">
                 <span class="font-bold text-brand-navy">Sell: ₹${p.sellingPrice}</span>
                 <span class="text-slate-400 font-medium">Cost: ₹${p.meeshoCostPrice || 0}</span>
                 <span class="text-emerald-600 font-bold">Profit: ₹${p.sellingPrice - (p.meeshoCostPrice || 0)}</span>
               </div>
-              <span class="text-[10px] text-slate-400 block mt-0.5">${p.category} • ${p.likesCount || 0} Likes</span>
+              <div class="flex items-center gap-2 mt-0.5 text-[10px] text-slate-400">
+                <span>${p.category}</span>
+                ${p.supplierUrl ? `
+                  <span>•</span>
+                  <a href="${p.supplierUrl}" target="_blank" class="text-brand-orange hover:underline font-semibold flex items-center gap-0.5">
+                    <i class="fa-solid fa-link text-[9px]"></i> Meesho Source
+                  </a>
+                ` : ''}
+              </div>
             </div>
           </div>
 
           <div class="flex items-center gap-1.5 flex-shrink-0">
+            <button 
+              onclick="toggleProductStock('${p.id}')"
+              class="w-8 h-8 rounded-xl ${p.inStock !== false ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'} flex items-center justify-center text-xs transition"
+              title="${p.inStock !== false ? 'Click to mark Out of Stock' : 'Click to mark In Stock'}"
+            >
+              <i class="fa-solid ${p.inStock !== false ? 'fa-toggle-on text-base text-emerald-600' : 'fa-toggle-off text-base text-slate-400'}"></i>
+            </button>
             <button 
               onclick="openEditProductModal('${p.id}')"
               class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center text-xs transition"
@@ -2221,6 +2305,28 @@
           </div>
         </div>
       `).join('');
+    }
+
+    /* 1-Click Stock Toggle */
+    async function toggleProductStock(prodId) {
+      let catalog = getStoredCatalog();
+      const prod = catalog.find(p => p.id === prodId);
+      if (!prod) return;
+      prod.inStock = prod.inStock === false ? true : false;
+
+      if (fbFirestore) {
+        try {
+          await fbFirestore.collection('products').doc(prodId).set({ inStock: prod.inStock }, { merge: true });
+        } catch (e) {
+          console.warn("[Stock Sync Error]", e);
+        }
+      }
+      saveCatalog(catalog);
+      try {
+        syncChannel.postMessage({ type: 'CATALOG_UPDATED' });
+      } catch(e) {}
+      loadAdminCatalogList();
+      logActivityEvent('CATALOG', `Changed "${prod.title}" stock status to ${prod.inStock ? 'In Stock' : 'Out of Stock'}`);
     }
 
     /* Auto Unique ID Generation from Title */
@@ -2262,7 +2368,7 @@
     }
 
     /* Save New Product */
-    function handleAdminAddProduct(event) {
+    async function handleAdminAddProduct(event) {
       event.preventDefault();
       const title = document.getElementById('inp-prod-title').value.trim();
       const prodId = document.getElementById('inp-prod-id').value.trim() || ('prod-' + Math.floor(1000 + Math.random() * 9000));
@@ -2271,6 +2377,7 @@
       const cost = Number(document.getElementById('inp-prod-cost').value) || 0;
       const price = Number(document.getElementById('inp-prod-price').value) || 0;
       const variants = document.getElementById('inp-prod-variants').value.trim();
+      const supplierUrl = document.getElementById('inp-prod-supplier') ? document.getElementById('inp-prod-supplier').value.trim() : '';
       const image = document.getElementById('inp-prod-image').value.trim();
       const video = (document.getElementById('inp-prod-video') ? document.getElementById('inp-prod-video').value.trim() : '') || "https://www.youtube.com/shorts/3Z9eYpB0tQY";
       const desc = document.getElementById('inp-prod-desc').value.trim();
@@ -2284,6 +2391,7 @@
         sellingPrice: price,
         mrp: Math.round(price * 1.8),
         variants: variants,
+        supplierUrl: supplierUrl,
         image: image,
         videoUrl: video,
         reelUrl: video,
@@ -2370,15 +2478,35 @@
 
       document.getElementById('edit-prod-id').value = prod.id;
       document.getElementById('edit-prod-title').value = prod.title;
+      if (document.getElementById('edit-prod-category')) document.getElementById('edit-prod-category').value = prod.category || 'Fashion';
+      if (document.getElementById('edit-prod-badge')) document.getElementById('edit-prod-badge').value = prod.badge || '';
       document.getElementById('edit-prod-cost').value = prod.meeshoCostPrice || 0;
       document.getElementById('edit-prod-price').value = prod.sellingPrice;
+      if (document.getElementById('edit-prod-instock')) document.getElementById('edit-prod-instock').value = prod.inStock === false ? 'false' : 'true';
+      if (document.getElementById('edit-prod-supplier')) document.getElementById('edit-prod-supplier').value = prod.supplierUrl || '';
+      if (document.getElementById('edit-prod-variants')) document.getElementById('edit-prod-variants').value = prod.variants || '';
       document.getElementById('edit-prod-image').value = prod.image;
       const editVideoEl = document.getElementById('edit-prod-video');
       if (editVideoEl) editVideoEl.value = prod.videoUrl || prod.reelUrl || '';
       document.getElementById('edit-prod-desc').value = prod.description;
 
+      calculateEditProductMarginLive();
+
       const modal = document.getElementById('modal-edit-product');
       if (modal) modal.classList.remove('hidden');
+    }
+
+    function calculateEditProductMarginLive() {
+      const cost = Number(document.getElementById('edit-prod-cost').value) || 0;
+      const price = Number(document.getElementById('edit-prod-price').value) || 0;
+      const profit = price - cost;
+      const margin = price > 0 ? Math.round((profit / price) * 100) : 0;
+
+      const badge = document.getElementById('badge-edit-prod-margin');
+      if (badge) {
+        badge.textContent = `₹${profit} (${margin}% margin)`;
+        badge.className = profit >= 0 ? "font-bold text-emerald-600" : "font-bold text-rose-600";
+      }
     }
 
     function closeEditProductModal() {
@@ -2390,8 +2518,13 @@
       event.preventDefault();
       const id = document.getElementById('edit-prod-id').value;
       const title = document.getElementById('edit-prod-title').value.trim();
+      const category = document.getElementById('edit-prod-category') ? document.getElementById('edit-prod-category').value : 'Fashion';
+      const badge = document.getElementById('edit-prod-badge') ? document.getElementById('edit-prod-badge').value.trim() : '';
       const cost = Number(document.getElementById('edit-prod-cost').value) || 0;
       const price = Number(document.getElementById('edit-prod-price').value) || 0;
+      const inStock = document.getElementById('edit-prod-instock') ? (document.getElementById('edit-prod-instock').value === 'true') : true;
+      const supplierUrl = document.getElementById('edit-prod-supplier') ? document.getElementById('edit-prod-supplier').value.trim() : '';
+      const variants = document.getElementById('edit-prod-variants') ? document.getElementById('edit-prod-variants').value.trim() : '';
       const image = document.getElementById('edit-prod-image').value.trim();
       const editVideoEl = document.getElementById('edit-prod-video');
       const video = editVideoEl ? editVideoEl.value.trim() : '';
@@ -2407,9 +2540,14 @@
         }
 
         prod.title = title;
+        prod.category = category;
+        prod.badge = badge || null;
         prod.meeshoCostPrice = cost;
         prod.sellingPrice = price;
         prod.mrp = Math.round(price * 1.8);
+        prod.inStock = inStock;
+        prod.supplierUrl = supplierUrl;
+        prod.variants = variants;
         prod.image = image;
         if (video) {
           prod.videoUrl = video;
@@ -2571,16 +2709,43 @@
 
           <!-- Ordered Items Breakdown -->
           <div class="space-y-1.5 bg-slate-50/70 p-2.5 rounded-2xl border border-slate-100">
-            <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Ordered Items (${(o.items || []).length})</div>
-            ${(o.items || []).map(item => `
-              <div class="flex items-center gap-2 text-xs">
-                <img src="${item.image || ''}" class="w-8 h-8 rounded-lg object-cover border border-slate-200" onerror="this.style.display='none'"/>
-                <div class="flex-1 min-w-0">
-                  <span class="font-bold text-slate-800 truncate block">${item.title}</span>
-                  <span class="text-[10px] text-slate-500">${item.size ? 'Size: ' + item.size + ' • ' : ''}Qty: ${item.quantity || 1} • ₹${item.sellingPrice || item.price}</span>
+            <div class="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+              <span>Ordered Items (${(o.items || []).length})</span>
+              <span class="text-slate-600 font-semibold">Cost & Profit Breakdown</span>
+            </div>
+            ${(o.items || []).map(item => {
+              const itemCost = item.meeshoCostPrice || Math.round((item.sellingPrice || item.price || 0) * 0.55);
+              const itemSell = item.sellingPrice || item.price || 0;
+              const itemProfit = (itemSell - itemCost) * (item.quantity || 1);
+              return `
+              <div class="p-2 bg-white rounded-xl border border-slate-200/80 space-y-1">
+                <div class="flex items-center gap-2 text-xs">
+                  <img src="${item.image || ''}" class="w-10 h-10 rounded-lg object-cover border border-slate-200" onerror="this.style.display='none'"/>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between">
+                      <span class="font-bold text-slate-800 truncate block">${item.title}</span>
+                      <span class="text-emerald-600 font-bold font-mono text-[11px]">+₹${itemProfit}</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-[10px] text-slate-500 mt-0.5">
+                      ${item.size ? `<span class="bg-slate-100 px-1.5 py-0.5 rounded font-semibold text-slate-700">Size: ${item.size}</span>` : ''}
+                      <span>Qty: ${item.quantity || 1}</span>
+                      <span>•</span>
+                      <span>Sell: <strong class="text-slate-800">₹${itemSell}</strong></span>
+                      <span>•</span>
+                      <span class="text-rose-600 font-medium">Cost: ₹${itemCost}</span>
+                    </div>
+                  </div>
                 </div>
+                ${item.supplierUrl ? `
+                  <div class="flex items-center justify-between pt-1 border-t border-slate-100 text-[10px]">
+                    <span class="text-slate-500 truncate max-w-[200px] font-mono"><i class="fa-solid fa-link text-brand-orange mr-1"></i>${item.supplierUrl}</span>
+                    <a href="${item.supplierUrl}" target="_blank" class="text-brand-navy font-bold hover:underline flex items-center gap-1">
+                      Open Meesho Source <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+                    </a>
+                  </div>
+                ` : ''}
               </div>
-            `).join('')}
+            `;}).join('')}
           </div>
 
           <!-- Customer Delivery Address -->
@@ -2923,9 +3088,14 @@
         <div class="bg-white rounded-3xl p-4 border border-slate-200 shadow-sm space-y-3 text-xs">
           <div class="flex items-center justify-between border-b border-slate-100 pb-2">
             <span class="font-mono font-bold text-brand-navy">Order Sheet: #${o.orderId}</span>
-            <button onclick="copyFullOrderData('${o.orderId}')" class="px-2.5 py-1 bg-brand-orange text-white font-bold rounded-lg text-[10px] hover:bg-orange-600 transition flex items-center gap-1">
-              <i class="fa-regular fa-copy"></i> Copy Full Row
-            </button>
+            <div class="flex items-center gap-1.5">
+              <button onclick="copyMeeshoOrderSnippet('${o.orderId}')" class="px-2 py-1 bg-amber-500 text-white font-bold rounded-lg text-[10px] hover:bg-amber-600 transition flex items-center gap-1" title="Copy formatted customer info for placing order on Meesho">
+                <i class="fa-solid fa-truck-fast"></i> Copy for Meesho
+              </button>
+              <button onclick="copyFullOrderData('${o.orderId}')" class="px-2 py-1 bg-brand-orange text-white font-bold rounded-lg text-[10px] hover:bg-orange-600 transition flex items-center gap-1">
+                <i class="fa-regular fa-copy"></i> Full Row
+              </button>
+            </div>
           </div>
 
           <!-- Customer Data with 1-Click Copy Badges -->
@@ -3019,6 +3189,15 @@
       if (!o) return;
       const row = `Order #${o.orderId}\t${o.customerName}\t${o.phone}\t${o.address}\t${o.pincode}\t₹${o.totalAmount}\tCOD`;
       copyToClipboard(row, 'Full Order Data Row');
+    }
+
+    function copyMeeshoOrderSnippet(orderId) {
+      const orders = getStoredOrders();
+      const o = orders.find(x => x.orderId === orderId);
+      if (!o) return;
+      const itemsList = (o.items || []).map(i => `• ${i.title}${i.size ? ' (Size: ' + i.size + ')' : ''} x Qty ${i.quantity || 1} [Cost: ₹${i.meeshoCostPrice || 0} | Sell: ₹${i.sellingPrice || i.price || 0}]${i.supplierUrl ? ' -> Link: ' + i.supplierUrl : ''}`).join('\n');
+      const snippet = `BUYERO ORDER DISPATCH (MEESHO ORDERING)\n----------------------------------------\nOrder ID: #${o.orderId}\nCustomer Name: ${o.customerName}\nMobile: ${o.phone}\nAddress: ${o.address || ''}, ${o.city || ''}, ${o.state || ''} - ${o.pincode || ''}\nCOD Amount to Collect: ₹${o.totalAmount}\nItems:\n${itemsList}\nEst. Net Profit: ₹${o.netProfit || (o.totalAmount - (o.meeshoCost || 0))}`;
+      copyToClipboard(snippet, 'Meesho Ordering Sheet');
     }
 
     /* Deep Customer Profile Modal */
