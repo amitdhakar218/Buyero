@@ -72,8 +72,14 @@
   <!-- ========================================================= -->
   <div id="admin-auth-guard" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
     <div id="auth-modal-card" class="bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl border border-slate-100">
-      <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-brand-navy to-brand-orange text-white flex items-center justify-center text-2xl mx-auto shadow-lg mb-4">
-        <i class="fa-solid fa-shield-halved"></i>
+      <div class="relative w-16 h-16 rounded-2xl bg-slate-900 text-white flex items-center justify-center mx-auto shadow-lg mb-4 border border-slate-700">
+        <svg class="w-10 h-10" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <g><polygon points="12,46 22,41 22,90 12,88" fill="#13a388" /><polygon points="22,41 56,43 56,92 22,90" fill="#20d5a3" /><path d="M 28,42 C 28,26 48,26 48,42" stroke="#68ffd8" stroke-width="3.5" stroke-linecap="round" fill="none" /></g>
+          <g><path d="M 47,58 C 47,44 65,44 65,58" stroke="#ffaec3" stroke-width="3.5" stroke-linecap="round" fill="none" /><polygon points="38,62 48,58 48,99 38,96" fill="#d84f7b" /><polygon points="48,58 78,57 78,96 48,99" fill="#ff8ba0" /></g>
+        </svg>
+        <span class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-brand-orange text-white flex items-center justify-center text-[10px] shadow ring-2 ring-white">
+          <i class="fa-solid fa-shield-halved"></i>
+        </span>
       </div>
 
       <h2 class="font-poppins font-bold text-xl text-slate-900">Buyero Admin Studio</h2>
@@ -84,7 +90,7 @@
         <i class="fa-solid fa-triangle-exclamation mr-1"></i> Access Denied! Please check your credentials.
       </div>
 
-      <!-- Single Direct Email & Password Form (Connected to Owner Firebase UID: 1nIwLbkuClStOyJmwnfw951EiMq2) -->
+      <!-- Single Direct Email & Password Form (Connected to Owner Firebase UID: GDEA30X3AjXuAMShGpr8wAVUWsD3) -->
       <form id="admin-login-form" onsubmit="handleAdminEmailPasswordLogin(event)" class="space-y-3.5 text-left">
         <div>
           <label class="block text-xs font-bold text-slate-700 mb-1">Owner Email ID</label>
@@ -1626,7 +1632,14 @@
     }
 
     const MASTER_OWNER_EMAIL = "amitdhakar218@gmail.com";
-    const MASTER_OWNER_UID = "1nIwLbkuClStOyJmwnfw951EiMq2";
+    const MASTER_OWNER_UID = "GDEA30X3AjXuAMShGpr8wAVUWsD3";
+    const ALLOWED_ADMIN_UIDS = ["GDEA30X3AjXuAMShGpr8wAVUWsD3", "1nIwLbkuClStOyJmwnfw951EiMq2"];
+
+    function isAuthorizedAdmin(email, uid) {
+      if (uid && ALLOWED_ADMIN_UIDS.includes(uid)) return true;
+      if (email && email.toLowerCase() === MASTER_OWNER_EMAIL.toLowerCase()) return true;
+      return false;
+    }
 
     let activeAdminTab = 'analysis';
     let selectedChatClientId = null;
@@ -1706,7 +1719,7 @@
           if (user) {
             const email = (user.email || '').toLowerCase().trim();
             const uid = user.uid;
-            if (email === MASTER_OWNER_EMAIL.toLowerCase() || uid === MASTER_OWNER_UID) {
+            if (isAuthorizedAdmin(email, uid)) {
               sessionStorage.setItem('buyero_admin_authenticated', 'true');
               sessionStorage.setItem('buyero_admin_user', email);
               sessionStorage.setItem('buyero_admin_uid', uid);
@@ -1736,7 +1749,7 @@
       if (fbAuth && fbAuth.currentUser) {
         const email = (fbAuth.currentUser.email || '').toLowerCase().trim();
         const uid = fbAuth.currentUser.uid;
-        if (email === MASTER_OWNER_EMAIL.toLowerCase() || uid === MASTER_OWNER_UID) {
+        if (isAuthorizedAdmin(email, uid)) {
           sessionStorage.setItem('buyero_admin_authenticated', 'true');
           sessionStorage.setItem('buyero_admin_user', email);
           sessionStorage.setItem('buyero_admin_uid', uid);
@@ -1781,7 +1794,7 @@
           if (userCredential && userCredential.user) {
             const userEmail = (userCredential.user.email || '').toLowerCase().trim();
             const userUid = userCredential.user.uid;
-            if (userEmail === MASTER_OWNER_EMAIL.toLowerCase() || userUid === MASTER_OWNER_UID) {
+            if (isAuthorizedAdmin(userEmail, userUid)) {
               authenticated = true;
               authenticatedUid = userUid;
             } else {
