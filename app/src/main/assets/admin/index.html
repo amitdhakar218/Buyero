@@ -197,53 +197,53 @@
       <!-- 7 REAL-TIME MAGIC ANALYTICS CARDS (डिब्बे) -->
       <div class="grid grid-cols-2 gap-2.5">
         <!-- 1. Total Orders -->
-        <div class="bg-white rounded-2xl p-3.5 border border-slate-200/90 shadow-sm">
+        <div onclick="switchAdminBottomNav('order'); switchOrderSubTab('live');" class="bg-white rounded-2xl p-3.5 border border-slate-200/90 shadow-sm cursor-pointer hover:border-brand-navy hover:shadow-md transition active:scale-98" title="Click to view all orders">
           <div class="flex items-center justify-between text-slate-500 mb-1">
             <span class="text-[11px] font-bold uppercase tracking-wider">Total Orders</span>
             <i class="fa-solid fa-box text-blue-500"></i>
           </div>
           <h3 class="font-poppins font-bold text-xl text-slate-900" id="stat-total-orders">0</h3>
-          <span class="text-[10px] text-slate-400">All-time customer orders</span>
+          <span class="text-[10px] text-slate-400">All-time customer orders →</span>
         </div>
 
         <!-- 2. Pending Orders -->
-        <div class="bg-white rounded-2xl p-3.5 border border-amber-200/90 bg-amber-50/30 shadow-sm">
+        <div onclick="switchAdminBottomNav('order'); switchOrderSubTab('live');" class="bg-white rounded-2xl p-3.5 border border-amber-200/90 bg-amber-50/30 shadow-sm cursor-pointer hover:border-amber-400 hover:shadow-md transition active:scale-98" title="Click to view pending orders">
           <div class="flex items-center justify-between text-amber-700 mb-1">
             <span class="text-[11px] font-bold uppercase tracking-wider">Pending Orders</span>
             <i class="fa-solid fa-clock text-amber-500"></i>
           </div>
           <h3 class="font-poppins font-bold text-xl text-amber-900" id="stat-pending-orders">0</h3>
-          <span class="text-[10px] text-amber-600 font-medium">To be processed on Meesho</span>
+          <span class="text-[10px] text-amber-600 font-medium">To be processed on Meesho →</span>
         </div>
 
         <!-- 3. Total Revenue -->
-        <div class="bg-white rounded-2xl p-3.5 border border-slate-200/90 shadow-sm">
+        <div onclick="switchAdminBottomNav('order'); switchOrderSubTab('completed');" class="bg-white rounded-2xl p-3.5 border border-slate-200/90 shadow-sm cursor-pointer hover:border-emerald-400 hover:shadow-md transition active:scale-98" title="Click to view completed orders revenue">
           <div class="flex items-center justify-between text-slate-500 mb-1">
             <span class="text-[11px] font-bold uppercase tracking-wider">Total Revenue</span>
             <i class="fa-solid fa-sack-dollar text-emerald-500"></i>
           </div>
           <h3 class="font-poppins font-bold text-xl text-slate-900" id="stat-total-revenue">₹0</h3>
-          <span class="text-[10px] text-slate-400">Gross customer billings</span>
+          <span class="text-[10px] text-slate-400">Gross customer billings →</span>
         </div>
 
         <!-- 4. Total Cost (NEW BOX: Meesho COGS) -->
-        <div class="bg-white rounded-2xl p-3.5 border border-rose-200/90 bg-rose-50/30 shadow-sm">
+        <div onclick="openProductPerformanceModal()" class="bg-white rounded-2xl p-3.5 border border-rose-200/90 bg-rose-50/30 shadow-sm cursor-pointer hover:border-rose-400 hover:shadow-md transition active:scale-98" title="Click to view product margins">
           <div class="flex items-center justify-between text-rose-700 mb-1">
-            <span class="text-[11px] font-bold uppercase tracking-wider">Total Cost</span>
+            <span class="text-[11px] font-bold uppercase tracking-wider">Total Sourcing Cost</span>
             <i class="fa-solid fa-chart-line-down text-rose-500"></i>
           </div>
           <h3 class="font-poppins font-bold text-xl text-rose-900" id="stat-total-cost">₹0</h3>
-          <span class="text-[10px] text-rose-600 font-medium">Meesho sourcing price</span>
+          <span class="text-[10px] text-rose-600 font-medium">Meesho sourcing price →</span>
         </div>
 
-        <!-- 5. Net Profit (Full Width Highlight) -->
-        <div class="col-span-2 bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-4 text-white shadow-md">
+        <!-- 5. Estimated Product Profit (Full Width Highlight) -->
+        <div onclick="openProductPerformanceModal()" class="col-span-2 bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-4 text-white shadow-md cursor-pointer hover:brightness-105 transition active:scale-98" title="Click to view detailed profit analytics">
           <div class="flex items-center justify-between mb-1">
             <div class="flex items-center gap-1.5">
-              <i class="fa-solid fa-fire-flame-curved text-amber-300 text-lg"></i>
-              <span class="text-xs font-bold uppercase tracking-wider text-emerald-100">Net Profit (शुद्ध मुनाफा)</span>
+              <i class="fa-solid fa-chart-line text-amber-300 text-lg"></i>
+              <span class="text-xs font-bold uppercase tracking-wider text-emerald-100">Estimated Product Profit (अनुमानित उत्पाद लाभ)</span>
             </div>
-            <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-bold">Revenue - Cost</span>
+            <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-bold">Revenue - Source Cost</span>
           </div>
           <div class="flex items-baseline justify-between mt-1">
             <h3 class="font-poppins font-extrabold text-2xl" id="stat-net-profit">₹0</h3>
@@ -252,13 +252,13 @@
         </div>
 
         <!-- 6. Total Users -->
-        <div class="bg-white rounded-2xl p-3.5 border border-slate-200/90 shadow-sm">
+        <div onclick="switchAdminBottomNav('users')" class="bg-white rounded-2xl p-3.5 border border-slate-200/90 shadow-sm cursor-pointer hover:border-indigo-400 hover:shadow-md transition active:scale-98" title="Click to manage customer profiles">
           <div class="flex items-center justify-between text-slate-500 mb-1">
             <span class="text-[11px] font-bold uppercase tracking-wider">Total Users</span>
             <i class="fa-solid fa-users text-indigo-500"></i>
           </div>
           <h3 class="font-poppins font-bold text-xl text-slate-900" id="stat-total-users">0</h3>
-          <span class="text-[10px] text-slate-400">Registered app profiles</span>
+          <span class="text-[10px] text-slate-400">Customer directory →</span>
         </div>
 
         <!-- 7. Total Visits -->
@@ -811,38 +811,85 @@
       </div>
     </section>
 
+    <!-- ========================================================= -->
+    <!-- VIEW 5: 👥 USERS (CUSTOMER DIRECTORY & PROFILES)          -->
+    <!-- ========================================================= -->
+    <section id="view-users" class="hidden space-y-4">
+      <!-- Users Header with Refresh -->
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="font-poppins font-bold text-sm text-slate-800">Customer Management</h2>
+          <p class="text-[10px] text-slate-500">Registered users, orders, saved addresses & activity</p>
+        </div>
+        <button onclick="refreshAdminUsers(this)" class="text-xs text-brand-navy font-bold hover:underline flex items-center gap-1 px-2.5 py-1 bg-slate-100 rounded-lg hover:bg-slate-200 transition">
+          <i class="fa-solid fa-rotate"></i> Refresh Users
+        </button>
+      </div>
+
+      <!-- Universal User Search -->
+      <div class="relative">
+        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+        <input 
+          type="text" 
+          id="universal-user-search" 
+          oninput="handleUniversalUserSearch(this.value)"
+          placeholder="Search by Name, Email, Phone, UID..." 
+          class="w-full pl-9 pr-8 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs shadow-sm outline-none focus:border-brand-navy"
+        />
+        <button 
+          id="clear-user-search" 
+          onclick="clearUserSearch()" 
+          class="hidden absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 text-xs"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- User List Container -->
+      <div id="admin-users-list-container" class="space-y-2.5">
+        <!-- Populated dynamically -->
+      </div>
+    </section>
+
   </main>
 
   <!-- ========================================================= -->
   <!-- 🗺️ PERMANENT BOTTOM TAB BAR (CHIPKE RAHENGE NEECHE)       -->
-  <!-- 1. Analysis | 2. Product | 3. Order | 4. Support          -->
+  <!-- 1. Analysis | 2. Product | 3. Order | 4. Users | 5. Support -->
   <!-- ========================================================= -->
-  <nav class="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-2xl py-2 px-3">
-    <div class="max-w-xl mx-auto grid grid-cols-4 gap-1 text-center">
+  <nav class="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-2xl py-2 px-2">
+    <div class="max-w-xl mx-auto grid grid-cols-5 gap-0.5 text-center">
       <!-- Button 1: Analysis -->
       <button onclick="switchAdminBottomNav('analysis')" id="nav-btn-analysis" class="flex flex-col items-center justify-center py-1 text-brand-navy font-bold transition">
         <i class="fa-solid fa-chart-pie text-lg mb-0.5"></i>
-        <span class="text-[10px]">Analysis</span>
+        <span class="text-[9px]">Analysis</span>
       </button>
 
       <!-- Button 2: Product -->
       <button onclick="switchAdminBottomNav('product')" id="nav-btn-product" class="flex flex-col items-center justify-center py-1 text-slate-400 hover:text-slate-700 transition">
         <i class="fa-solid fa-boxes-stacked text-lg mb-0.5"></i>
-        <span class="text-[10px]">Product</span>
+        <span class="text-[9px]">Product</span>
       </button>
 
       <!-- Button 3: Order -->
       <button onclick="switchAdminBottomNav('order')" id="nav-btn-order" class="flex flex-col items-center justify-center py-1 text-slate-400 hover:text-slate-700 transition relative">
         <i class="fa-solid fa-truck-fast text-lg mb-0.5"></i>
-        <span class="text-[10px]">Order</span>
-        <span id="nav-orders-badge" class="hidden absolute top-0 right-3 bg-brand-orange text-white text-[9px] font-bold px-1.5 py-0.2 rounded-full">0</span>
+        <span class="text-[9px]">Order</span>
+        <span id="nav-orders-badge" class="hidden absolute top-0 right-2 bg-brand-orange text-white text-[8px] font-bold px-1.5 py-0.2 rounded-full">0</span>
       </button>
 
-      <!-- Button 4: Support -->
+      <!-- Button 4: Users -->
+      <button onclick="switchAdminBottomNav('users')" id="nav-btn-users" class="flex flex-col items-center justify-center py-1 text-slate-400 hover:text-slate-700 transition relative">
+        <i class="fa-solid fa-users text-lg mb-0.5"></i>
+        <span class="text-[9px]">Users</span>
+        <span id="nav-users-badge" class="hidden absolute top-0 right-2 bg-indigo-600 text-white text-[8px] font-bold px-1.5 py-0.2 rounded-full">0</span>
+      </button>
+
+      <!-- Button 5: Support -->
       <button onclick="switchAdminBottomNav('support')" id="nav-btn-support" class="flex flex-col items-center justify-center py-1 text-slate-400 hover:text-slate-700 transition relative">
         <i class="fa-solid fa-comments text-lg mb-0.5"></i>
-        <span class="text-[10px]">Support</span>
-        <span id="nav-support-badge" class="hidden absolute top-0 right-3 bg-brand-orange text-white text-[9px] font-bold px-1.5 py-0.2 rounded-full">New</span>
+        <span class="text-[9px]">Support</span>
+        <span id="nav-support-badge" class="hidden absolute top-0 right-2 bg-brand-orange text-white text-[8px] font-bold px-1.5 py-0.2 rounded-full">New</span>
       </button>
     </div>
   </nav>
@@ -925,41 +972,73 @@
   <!-- MODAL: DEEP CUSTOMER PROFILE VIEW                         -->
   <!-- ========================================================= -->
   <div id="modal-customer-profile" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3">
-    <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border border-slate-100 space-y-3">
-      <div class="flex items-center justify-between border-b border-slate-100 pb-2">
-        <h3 class="font-poppins font-bold text-sm text-slate-900">👑 Deep Customer Profile</h3>
-        <button onclick="closeCustomerProfileModal()" class="text-slate-400 hover:text-slate-700">
+    <div class="bg-white rounded-3xl max-w-lg w-full max-h-[88vh] flex flex-col p-5 shadow-2xl border border-slate-100 space-y-3 overflow-hidden">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2 flex-shrink-0">
+        <div class="flex items-center gap-2">
+          <span class="text-base">👑</span>
+          <h3 class="font-poppins font-bold text-sm text-slate-900">Customer Full Profile</h3>
+        </div>
+        <button onclick="closeCustomerProfileModal()" class="text-slate-400 hover:text-slate-700 text-base">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
 
-      <div class="text-center py-2">
-        <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-brand-navy to-brand-orange text-white flex items-center justify-center text-xl font-bold mx-auto shadow-md" id="modal-cust-avatar">
-          C
+      <div class="flex-1 overflow-y-auto space-y-3 pr-1">
+        <!-- Avatar & Basic Identity -->
+        <div class="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200/80 rounded-2xl">
+          <div class="w-14 h-14 rounded-full bg-gradient-to-tr from-brand-navy to-brand-orange text-white flex items-center justify-center text-xl font-bold shadow-md flex-shrink-0" id="modal-cust-avatar">
+            C
+          </div>
+          <div class="min-w-0 flex-1">
+            <h4 class="font-bold text-sm text-slate-900 truncate" id="modal-cust-name">Customer Name</h4>
+            <p class="text-xs text-slate-600 truncate" id="modal-cust-phone">+91 9876543210</p>
+            <p class="text-[11px] text-slate-500 truncate" id="modal-cust-email">customer@gmail.com</p>
+            <span class="text-[9px] font-mono text-slate-400 truncate block mt-0.5" id="modal-cust-uid">UID: usr_12345</span>
+          </div>
         </div>
-        <h4 class="font-bold text-base text-slate-900 mt-2" id="modal-cust-name">Customer Name</h4>
-        <p class="text-xs text-slate-500" id="modal-cust-phone">+91 9876543210</p>
+
+        <!-- Metrics Grid -->
+        <div class="grid grid-cols-3 gap-2 text-xs">
+          <div class="p-2.5 bg-blue-50 border border-blue-200 rounded-2xl text-center">
+            <span class="text-[9px] text-blue-700 font-bold block uppercase">Total Orders</span>
+            <span class="font-bold text-sm text-blue-900" id="modal-cust-orders-count">0</span>
+          </div>
+          <div class="p-2.5 bg-emerald-50 border border-emerald-200 rounded-2xl text-center">
+            <span class="text-[9px] text-emerald-700 font-bold block uppercase">Total Spent</span>
+            <span class="font-bold text-sm text-emerald-900" id="modal-cust-total-spent">₹0</span>
+          </div>
+          <div class="p-2.5 bg-amber-50 border border-amber-200 rounded-2xl text-center">
+            <span class="text-[9px] text-amber-700 font-bold block uppercase">Coins Balance</span>
+            <span class="font-bold text-sm text-amber-900" id="modal-cust-wallet">50 Coins</span>
+          </div>
+        </div>
+
+        <!-- Primary Delivery Address -->
+        <div class="p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs space-y-1">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] text-slate-500 font-bold uppercase block">Primary Address</span>
+            <span class="text-[9px] bg-white px-2 py-0.5 rounded-full border border-slate-200 text-slate-600 font-semibold" id="modal-cust-pincode">PIN: -</span>
+          </div>
+          <p class="text-slate-800 text-xs" id="modal-cust-address">Loading address...</p>
+        </div>
+
+        <!-- Customer Orders List -->
+        <div class="space-y-1.5">
+          <h5 class="font-bold text-xs text-slate-700 flex items-center justify-between">
+            <span>Orders History</span>
+            <span class="text-[10px] text-slate-400 font-normal" id="modal-cust-orders-summary">0 Orders</span>
+          </h5>
+          <div id="modal-cust-orders-list" class="space-y-2 text-xs max-h-48 overflow-y-auto">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
       </div>
 
-      <div class="grid grid-cols-2 gap-2 text-xs">
-        <div class="p-3 bg-slate-50 border border-slate-200 rounded-2xl text-center">
-          <span class="text-[10px] text-slate-400 font-bold block uppercase">Total Orders</span>
-          <span class="font-bold text-base text-brand-navy" id="modal-cust-orders-count">0</span>
-        </div>
-        <div class="p-3 bg-amber-50 border border-amber-200 rounded-2xl text-center">
-          <span class="text-[10px] text-amber-700 font-bold block uppercase">Wallet Balance</span>
-          <span class="font-bold text-base text-amber-900" id="modal-cust-wallet">50 Coins</span>
-        </div>
+      <div class="pt-2 border-t border-slate-100 flex-shrink-0">
+        <button onclick="closeCustomerProfileModal()" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition">
+          Close Profile
+        </button>
       </div>
-
-      <div class="p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs space-y-1">
-        <span class="text-[10px] text-slate-400 font-bold uppercase block">Delivery Address</span>
-        <p class="text-slate-700" id="modal-cust-address">Loading address...</p>
-      </div>
-
-      <button onclick="closeCustomerProfileModal()" class="w-full py-2 bg-slate-200 text-slate-700 font-bold rounded-xl text-xs">
-        Close Profile
-      </button>
     </div>
   </div>
 
@@ -1793,13 +1872,50 @@
     async function syncOrderUpdateToFirestore(order) {
       if (!order || !order.orderId || !fbFirestore) return Promise.resolve();
       try {
-        await fbFirestore.collection('orders').doc(order.orderId).set(order, { merge: true });
-        if (order.userId) {
-          await fbFirestore.collection('users').doc(order.userId).collection('orders').doc(order.orderId).set(order, { merge: true }).catch(() => {});
+        // Strip private fields to ensure rules compliance
+        const safeOrder = Object.assign({}, order);
+        const privateKeys = ['privateSourceCost', 'sourceProductUrl', 'supplierReference', 'supplierUrl', 'meeshoCostPrice', 'adminNotes', 'profit', 'margin', 'sourceCost', 'privateSourceUrl', 'supplierInfo', 'estimatedProductProfit', 'internalProfit'];
+        privateKeys.forEach(k => delete safeOrder[k]);
+        if (Array.isArray(safeOrder.items)) {
+          safeOrder.items = safeOrder.items.map(it => {
+            const cleanIt = Object.assign({}, it);
+            privateKeys.forEach(k => delete cleanIt[k]);
+            return cleanIt;
+          });
         }
+
+        await fbFirestore.collection('orders').doc(order.orderId).set(safeOrder, { merge: true });
+        if (order.userId) {
+          await fbFirestore.collection('users').doc(order.userId).collection('orders').doc(order.orderId).set(safeOrder, { merge: true }).catch(() => {});
+        }
+
+        // Store private admin order fulfillment snapshot in admin_order_data
+        const m = calculateOrderProfitMetrics(order);
+        await fbFirestore.collection('admin_order_data').doc(order.orderId).set({
+          orderId: order.orderId,
+          totalSourceCost: m.totalCost,
+          estimatedProductProfit: m.netProfit,
+          supplierInfo: order.supplierReference || '',
+          updatedAt: new Date().toISOString()
+        }, { merge: true }).catch(() => {});
       } catch (err) {
         console.warn("[Admin Firestore Order Sync Error]", err);
         throw err;
+      }
+    }
+
+    async function createCustomerNotificationInFirestore(userId, notif) {
+      if (!fbFirestore || !userId) return;
+      try {
+        const notifId = notif.id || ('notif_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6));
+        const payload = Object.assign({}, notif, {
+          id: notifId,
+          timestamp: notif.timestamp || new Date().toISOString(),
+          read: false
+        });
+        await fbFirestore.collection('users').doc(userId).collection('notifications').doc(notifId).set(payload);
+      } catch(err) {
+        console.warn("[Customer Notification Write Error]", err);
       }
     }
 
@@ -2149,7 +2265,7 @@
        ========================================================= */
     function switchAdminBottomNav(tab) {
       activeAdminTab = tab;
-      const views = ['analysis', 'product', 'order', 'support'];
+      const views = ['analysis', 'product', 'order', 'users', 'support'];
 
       views.forEach(v => {
         const viewEl = document.getElementById(`view-${v}`);
@@ -2167,6 +2283,7 @@
       if (tab === 'analysis') calculateAnalysisMetrics();
       if (tab === 'product') loadAdminCatalogList();
       if (tab === 'order') loadAdminOrders();
+      if (tab === 'users') loadAdminUsersList();
       if (tab === 'support') loadAdminChatThreads();
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2179,6 +2296,7 @@
       calculateAnalysisMetrics();
       loadAdminCatalogList();
       loadAdminOrders();
+      loadAdminUsersList();
       loadAdminChatThreads();
       loadAdminSupportTickets();
       updateNotificationBadge();
@@ -2993,9 +3111,11 @@
         return (
           (o.orderId && o.orderId.toLowerCase().includes(query)) ||
           (o.customerName && o.customerName.toLowerCase().includes(query)) ||
+          (o.customerEmail && o.customerEmail.toLowerCase().includes(query)) ||
           (o.phone && o.phone.includes(query)) ||
           (o.pincode && o.pincode.includes(query)) ||
-          (o.city && o.city.toLowerCase().includes(query))
+          (o.city && o.city.toLowerCase().includes(query)) ||
+          ((o.items || []).some(item => (item.title || item.name || item.productTitle || '').toLowerCase().includes(query)))
         );
       });
 
@@ -3249,12 +3369,23 @@
       let orders = getStoredOrders();
       const order = orders.find(o => o.orderId === orderId);
       if (order) {
+        // If status changed to Cancelled, require cancellation reason
+        if (status === 'Cancelled' && !order.cancellationReason) {
+          const reason = prompt("Enter cancellation reason for customer notification:\n(e.g., 'Product currently unavailable at supplier warehouse')", "Supplier out of stock");
+          if (reason === null) {
+            alert("Order cancellation aborted.");
+            return;
+          }
+          order.cancellationReason = reason.trim() || 'Cancelled by store operations';
+        }
+
         const btn = document.getElementById(`btn-update-${orderId}`);
         if (btn) {
           btn.disabled = true;
           btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Syncing...';
         }
 
+        const oldStatus = order.status;
         order.status = status;
         order.courier = courier;
         order.awb = awb;
@@ -3263,13 +3394,46 @@
 
         if (!order.history) order.history = [];
         order.history.push({
-          status: status + (courier ? ` via ${courier}` : '') + (locationStatus ? ` (${locationStatus})` : ''),
+          status: status + (courier ? ` via ${courier}` : '') + (locationStatus ? ` (${locationStatus})` : '') + (status === 'Cancelled' && order.cancellationReason ? ` [Reason: ${order.cancellationReason}]` : ''),
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           date: new Date().toLocaleDateString()
         });
 
         try {
           await syncOrderUpdateToFirestore(order);
+
+          // Send real-time in-app notification to customer
+          if (order.userId && oldStatus !== status) {
+            let notifTitle = `Order Status: ${status}`;
+            let notifMsg = `Your Order #${orderId} is now ${status}.`;
+            let notifIcon = '📦';
+
+            if (status === 'Shipped via Courier') {
+              notifTitle = `🚀 Order Dispatched`;
+              notifMsg = `Order #${orderId} shipped via ${courier || 'Courier'}.${awb ? ` Tracking AWB: ${awb}` : ''}`;
+              notifIcon = '🚚';
+            } else if (status === 'Out for Delivery') {
+              notifTitle = `🛵 Out for Delivery`;
+              notifMsg = `Order #${orderId} is out for delivery today. Keep cash ready for COD.`;
+              notifIcon = '🛵';
+            } else if (status === 'Delivered') {
+              notifTitle = `🎉 Order Delivered`;
+              notifMsg = `Order #${orderId} has been successfully delivered. Thank you!`;
+              notifIcon = '✅';
+            } else if (status === 'Cancelled') {
+              notifTitle = `❌ Order Cancelled`;
+              notifMsg = `Order #${orderId} has been cancelled. Reason: ${order.cancellationReason || 'Store operations'}`;
+              notifIcon = '⚠️';
+            }
+
+            await createCustomerNotificationInFirestore(order.userId, {
+              title: notifTitle,
+              message: notifMsg,
+              icon: notifIcon,
+              orderId: orderId,
+              type: 'ORDER_UPDATE'
+            });
+          }
         } catch (err) {
           console.error("Firestore sync error:", err);
           alert("Failed to sync order update to Firebase: " + (err.message || "Network error") + ". Please retry.");
@@ -3304,39 +3468,51 @@
     }
 
     async function approveOrderCancellation(orderId) {
-      if (confirm(`Approve cancellation for Order #${orderId}?`)) {
-        let orders = getStoredOrders();
-        const order = orders.find(o => o.orderId === orderId);
-        if (order) {
-          order.status = 'Cancelled';
-          if (!order.history) order.history = [];
-          order.history.push({
-            status: 'Cancelled by Admin per Customer Request',
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            date: new Date().toLocaleDateString()
-          });
+      const reason = prompt(`Approve cancellation for Order #${orderId}?\nPlease enter reason for customer notification:`, "Cancelled per customer request");
+      if (reason === null) return;
 
-          try {
-            await syncOrderUpdateToFirestore(order);
-          } catch (err) {
-            console.error("Cancel order sync error:", err);
-            alert("Failed to sync cancellation to Firebase: " + (err.message || "Network error") + ". Please retry.");
-            return;
-          }
+      let orders = getStoredOrders();
+      const order = orders.find(o => o.orderId === orderId);
+      if (order) {
+        order.status = 'Cancelled';
+        order.cancellationReason = reason.trim() || 'Cancelled per customer request';
+        if (!order.history) order.history = [];
+        order.history.push({
+          status: `Cancelled by Admin: ${order.cancellationReason}`,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          date: new Date().toLocaleDateString()
+        });
 
-          saveOrders(orders);
-          logActivityEvent('ORDER', `Approved Cancellation for Order #${orderId}`);
-          try {
-            syncChannel.postMessage({
-              type: 'ORDER_STATUS_UPDATED',
+        try {
+          await syncOrderUpdateToFirestore(order);
+
+          if (order.userId) {
+            await createCustomerNotificationInFirestore(order.userId, {
+              title: `❌ Order Cancelled`,
+              message: `Order #${orderId} cancellation was approved. Reason: ${order.cancellationReason}`,
+              icon: '⚠️',
               orderId: orderId,
-              status: 'Cancelled'
+              type: 'ORDER_CANCELLED'
             });
-          } catch(e) {}
-          calculateAnalysisMetrics();
-          renderFilteredOrders();
-          alert(`Order #${orderId} has been cancelled.`);
+          }
+        } catch (err) {
+          console.error("Cancel order sync error:", err);
+          alert("Failed to sync cancellation to Firebase: " + (err.message || "Network error") + ". Please retry.");
+          return;
         }
+
+        saveOrders(orders);
+        logActivityEvent('ORDER', `Approved Cancellation for Order #${orderId}`);
+        try {
+          syncChannel.postMessage({
+            type: 'ORDER_STATUS_UPDATED',
+            orderId: orderId,
+            status: 'Cancelled'
+          });
+        } catch(e) {}
+        calculateAnalysisMetrics();
+        renderFilteredOrders();
+        alert(`Order #${orderId} has been cancelled.`);
       }
     }
 
@@ -3355,6 +3531,16 @@
 
           try {
             await syncOrderUpdateToFirestore(order);
+
+            if (order.userId) {
+              await createCustomerNotificationInFirestore(order.userId, {
+                title: `🔄 Return Pickup Scheduled`,
+                message: `Return pickup for Order #${orderId} has been scheduled. Our logistics partner will arrive soon.`,
+                icon: '🔄',
+                orderId: orderId,
+                type: 'ORDER_RETURN'
+              });
+            }
           } catch (err) {
             console.error("Return pickup sync error:", err);
             alert("Failed to sync return pickup to Firebase: " + (err.message || "Network error") + ". Please retry.");
@@ -3393,6 +3579,16 @@
 
           try {
             await syncOrderUpdateToFirestore(order);
+
+            if (order.userId) {
+              await createCustomerNotificationInFirestore(order.userId, {
+                title: `🎉 Order Delivered`,
+                message: `Order #${orderId} has been successfully delivered. COD payment collected.`,
+                icon: '✅',
+                orderId: orderId,
+                type: 'ORDER_DELIVERED'
+              });
+            }
           } catch (err) {
             console.error("Complete order sync error:", err);
             alert("Failed to sync delivery to Firebase: " + (err.message || "Network error") + ". Please retry.");
@@ -3583,20 +3779,292 @@ FINANCIAL BREAKDOWN:
     // Alias for backward compatibility
     window.copyMeeshoOrderSnippet = copySourceSupplierOrderSnippet;
 
+    /* =========================================================
+       SECTION: 👥 CUSTOMER DIRECTORY & DEEP PROFILE VIEWER
+       ========================================================= */
+    let userSearchQuery = '';
+    let cachedAdminUsers = [];
+
+    async function fetchAdminUsersFromFirestore() {
+      if (!fbFirestore) return [];
+      try {
+        const snap = await fbFirestore.collection('users').get();
+        const list = [];
+        snap.forEach(doc => {
+          const d = doc.data();
+          list.push(Object.assign({ uid: doc.id }, d));
+        });
+        return list;
+      } catch(e) {
+        console.warn("[Admin users fetch error]", e);
+        return [];
+      }
+    }
+
+    async function loadAdminUsersList() {
+      const container = document.getElementById('admin-users-list-container');
+      if (!container) return;
+
+      container.innerHTML = '<div class="py-8 text-center text-slate-400 text-xs"><i class="fa-solid fa-spinner fa-spin mr-1 text-brand-navy"></i> Loading customer directory...</div>';
+
+      const remoteUsers = await fetchAdminUsersFromFirestore();
+      const orders = getStoredOrders();
+      const userMap = new Map();
+
+      // Index remote users first
+      remoteUsers.forEach(u => {
+        const key = u.uid || u.phone || u.email;
+        if (key) {
+          userMap.set(key, {
+            uid: u.uid || '',
+            name: u.name || u.displayName || 'Customer',
+            phone: u.phone || u.phoneNumber || '',
+            email: u.email || '',
+            walletBalance: u.walletBalance !== undefined ? u.walletBalance : (u.coins !== undefined ? u.coins : 50),
+            savedAddresses: u.addresses || (u.address ? [u.address] : []),
+            createdAt: u.createdAt || '',
+            orders: []
+          });
+        }
+      });
+
+      // Enrich or add from existing orders
+      orders.forEach(o => {
+        const key = o.userId || o.phone || o.customerEmail || o.customerName;
+        if (!key) return;
+        let entry = userMap.get(key);
+        if (!entry && o.phone) {
+          for (let val of userMap.values()) {
+            if (val.phone && val.phone === o.phone) {
+              entry = val;
+              break;
+            }
+          }
+        }
+
+        if (!entry) {
+          entry = {
+            uid: o.userId || `usr_${o.phone || Math.random().toString(36).slice(2, 7)}`,
+            name: o.customerName || 'Customer',
+            phone: o.phone || '',
+            email: o.customerEmail || '',
+            walletBalance: 50,
+            savedAddresses: o.address ? [o.address] : [],
+            createdAt: o.timestamp || '',
+            orders: []
+          };
+          userMap.set(key, entry);
+        }
+
+        entry.orders.push(o);
+        if (!entry.phone && o.phone) entry.phone = o.phone;
+        if (!entry.email && o.customerEmail) entry.email = o.customerEmail;
+        if ((!entry.name || entry.name === 'Customer') && o.customerName) entry.name = o.customerName;
+        if (o.address && !entry.savedAddresses.some(a => (typeof a === 'string' ? a : a.street || '') === o.address)) {
+          entry.savedAddresses.push(o.address);
+        }
+      });
+
+      cachedAdminUsers = Array.from(userMap.values());
+
+      // Update badge
+      const badge = document.getElementById('nav-users-badge');
+      if (badge) {
+        badge.textContent = cachedAdminUsers.length;
+        badge.classList.toggle('hidden', cachedAdminUsers.length === 0);
+      }
+
+      renderFilteredUsers();
+    }
+
+    function handleUniversalUserSearch(val) {
+      userSearchQuery = (val || '').trim().toLowerCase();
+      const clearBtn = document.getElementById('clear-user-search');
+      if (clearBtn) clearBtn.classList.toggle('hidden', userSearchQuery.length === 0);
+      renderFilteredUsers();
+    }
+
+    function clearUserSearch() {
+      const inp = document.getElementById('universal-user-search');
+      if (inp) inp.value = '';
+      userSearchQuery = '';
+      const clearBtn = document.getElementById('clear-user-search');
+      if (clearBtn) clearBtn.classList.add('hidden');
+      renderFilteredUsers();
+    }
+
+    function refreshAdminUsers(btn) {
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Refreshing...';
+      }
+      loadAdminUsersList().finally(() => {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Refresh Users';
+        }
+      });
+    }
+
+    function renderFilteredUsers() {
+      const container = document.getElementById('admin-users-list-container');
+      if (!container) return;
+
+      const q = userSearchQuery;
+      const filtered = cachedAdminUsers.filter(u => {
+        if (!q) return true;
+        return (
+          (u.name && u.name.toLowerCase().includes(q)) ||
+          (u.phone && u.phone.includes(q)) ||
+          (u.email && u.email.toLowerCase().includes(q)) ||
+          (u.uid && u.uid.toLowerCase().includes(q))
+        );
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="py-12 text-center bg-white rounded-2xl border border-slate-200">
+            <i class="fa-solid fa-user-slash text-3xl text-slate-300 mb-2"></i>
+            <p class="text-xs text-slate-500 font-medium">No customers found matching "${q || ''}"</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(u => {
+        const totalSpent = u.orders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+        const latestOrder = u.orders[0];
+        const primaryAddress = (u.savedAddresses && u.savedAddresses.length > 0) 
+          ? (typeof u.savedAddresses[0] === 'string' ? u.savedAddresses[0] : (u.savedAddresses[0].street || u.savedAddresses[0].fullAddress || 'Saved Address'))
+          : (latestOrder?.address || 'No address on file');
+
+        const safeUid = (u.uid || '').replace(/'/g, "\\'");
+        const safeName = (u.name || '').replace(/'/g, "\\'");
+        const safePhone = (u.phone || '').replace(/'/g, "\\'");
+        const safeEmail = (u.email || '').replace(/'/g, "\\'");
+        const safeAddr = primaryAddress.replace(/'/g, "\\'");
+
+        return `
+          <div class="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-sm hover:border-indigo-300 transition space-y-2.5">
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-brand-navy to-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0">
+                  ${(u.name || 'C')[0].toUpperCase()}
+                </div>
+                <div class="min-w-0">
+                  <h4 class="font-bold text-xs text-slate-900 truncate">${u.name}</h4>
+                  <p class="text-[11px] text-slate-600 truncate">${u.phone ? `+91 ${u.phone}` : 'No phone recorded'}</p>
+                  ${u.email ? `<p class="text-[10px] text-slate-400 truncate">${u.email}</p>` : ''}
+                </div>
+              </div>
+              <span class="px-2 py-0.5 bg-indigo-50 border border-indigo-200 text-indigo-700 text-[10px] font-bold rounded-full flex-shrink-0">
+                ${u.orders.length} ${u.orders.length === 1 ? 'Order' : 'Orders'}
+              </span>
+            </div>
+
+            <!-- Mini stats row -->
+            <div class="grid grid-cols-3 gap-1.5 text-center bg-slate-50 p-2 rounded-xl border border-slate-100 text-[10px]">
+              <div>
+                <span class="text-slate-400 block text-[9px]">Total Spend</span>
+                <strong class="text-slate-800 font-poppins">₹${totalSpent}</strong>
+              </div>
+              <div>
+                <span class="text-slate-400 block text-[9px]">Coins</span>
+                <strong class="text-amber-700 font-poppins">${u.walletBalance || 50} 🪙</strong>
+              </div>
+              <div>
+                <span class="text-slate-400 block text-[9px]">Latest Status</span>
+                <strong class="text-indigo-600 truncate block">${latestOrder ? latestOrder.status : 'No Orders'}</strong>
+              </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="flex items-center gap-2 pt-1">
+              <button 
+                onclick="openCustomerProfileModal('${safePhone}', '${safeName}', '${safeAddr}', '${safeUid}', '${safeEmail}')" 
+                class="flex-1 py-1.5 px-3 bg-brand-navy hover:bg-brand-deep text-white font-bold rounded-xl text-[11px] transition flex items-center justify-center gap-1.5 active:scale-98"
+              >
+                <i class="fa-solid fa-address-card"></i> View Full Profile
+              </button>
+              ${u.phone ? `
+                <a 
+                  href="https://wa.me/91${u.phone}?text=Hello%20${encodeURIComponent(u.name)}%2C%20this%20is%20Buyero%20Customer%20Support." 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  class="py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-[11px] transition flex items-center gap-1"
+                  title="WhatsApp Customer"
+                >
+                  <i class="fa-brands fa-whatsapp"></i> Chat
+                </a>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
     /* Deep Customer Profile Modal */
-    function openCustomerProfileModal(phone, name, address) {
-      const orders = getStoredOrders().filter(o => o.phone === phone);
+    function openCustomerProfileModal(phone, name, address, uid, email) {
+      const allOrders = getStoredOrders();
+      const customerOrders = allOrders.filter(o => (phone && o.phone === phone) || (uid && o.userId === uid) || (email && o.customerEmail === email));
+      
       const avatarEl = document.getElementById('modal-cust-avatar');
       const nameEl = document.getElementById('modal-cust-name');
       const phoneEl = document.getElementById('modal-cust-phone');
+      const emailEl = document.getElementById('modal-cust-email');
+      const uidEl = document.getElementById('modal-cust-uid');
       const countEl = document.getElementById('modal-cust-orders-count');
+      const spentEl = document.getElementById('modal-cust-total-spent');
       const addressEl = document.getElementById('modal-cust-address');
+      const pincodeEl = document.getElementById('modal-cust-pincode');
+      const ordersSummaryEl = document.getElementById('modal-cust-orders-summary');
+      const ordersListEl = document.getElementById('modal-cust-orders-list');
 
-      if (avatarEl) avatarEl.textContent = (name || 'C')[0].toUpperCase();
-      if (nameEl) nameEl.textContent = name || 'Customer';
-      if (phoneEl) phoneEl.textContent = phone ? `+91 ${phone}` : 'No mobile registered';
-      if (countEl) countEl.textContent = orders.length;
-      if (addressEl) addressEl.textContent = address || 'No saved address recorded';
+      const displayName = name || customerOrders[0]?.customerName || 'Customer';
+      const displayPhone = phone || customerOrders[0]?.phone || '';
+      const displayEmail = email || customerOrders[0]?.customerEmail || 'No email registered';
+      const displayUid = uid || customerOrders[0]?.userId || 'usr_guest';
+      const displayAddr = address || customerOrders[0]?.address || 'No saved address recorded';
+      const displayPin = customerOrders[0]?.pincode || '-';
+
+      const totalSpent = customerOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+
+      if (avatarEl) avatarEl.textContent = (displayName || 'C')[0].toUpperCase();
+      if (nameEl) nameEl.textContent = displayName;
+      if (phoneEl) phoneEl.textContent = displayPhone ? `+91 ${displayPhone}` : 'No mobile registered';
+      if (emailEl) emailEl.textContent = displayEmail;
+      if (uidEl) uidEl.textContent = `UID: ${displayUid}`;
+      if (countEl) countEl.textContent = customerOrders.length;
+      if (spentEl) spentEl.textContent = `₹${totalSpent}`;
+      if (addressEl) addressEl.textContent = displayAddr;
+      if (pincodeEl) pincodeEl.textContent = `PIN: ${displayPin}`;
+      if (ordersSummaryEl) ordersSummaryEl.textContent = `${customerOrders.length} ${customerOrders.length === 1 ? 'Order' : 'Orders'}`;
+
+      if (ordersListEl) {
+        if (customerOrders.length === 0) {
+          ordersListEl.innerHTML = '<div class="p-3 text-center text-slate-400 bg-slate-50 rounded-xl">No orders placed yet</div>';
+        } else {
+          ordersListEl.innerHTML = customerOrders.map(o => `
+            <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+              <div class="flex items-center justify-between text-[11px]">
+                <span class="font-bold text-slate-900 font-mono">#${o.orderId}</span>
+                <span class="px-2 py-0.2 rounded-full font-bold text-[9px] ${
+                  o.status === 'Delivered' ? 'bg-emerald-100 text-emerald-800' :
+                  o.status === 'Cancelled' ? 'bg-rose-100 text-rose-800' :
+                  'bg-blue-100 text-blue-800'
+                }">${o.status}</span>
+              </div>
+              <div class="flex items-center justify-between text-[10px] text-slate-500">
+                <span>${new Date(o.timestamp || Date.now()).toLocaleDateString()}</span>
+                <span class="font-bold text-slate-800 font-poppins">Total: ₹${o.total}</span>
+              </div>
+              <p class="text-[10px] text-slate-600 truncate">
+                ${(o.items || []).map(i => `${i.title} (x${i.quantity || 1})`).join(', ')}
+              </p>
+            </div>
+          `).join('');
+        }
+      }
 
       const modal = document.getElementById('modal-customer-profile');
       if (modal) modal.classList.remove('hidden');

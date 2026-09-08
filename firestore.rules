@@ -13,39 +13,53 @@ service cloud.firestore {
     // Helper: Enforce that private business fields are never stored in customer documents
     function hasNoPrivateFields(data) {
       return !('privateSourceCost' in data) &&
+             !('sourceCost' in data) &&
              !('sourceProductUrl' in data) &&
+             !('privateSourceUrl' in data) &&
              !('supplierReference' in data) &&
              !('supplierUrl' in data) &&
+             !('supplierInfo' in data) &&
              !('meeshoCostPrice' in data) &&
              !('adminNotes' in data) &&
              !('profit' in data) &&
-             !('margin' in data);
+             !('margin' in data) &&
+             !('estimatedProductProfit' in data) &&
+             !('internalProfit' in data);
     }
 
     // 1. PUBLIC PRODUCT CATALOG
-    // Accessible to all customers for browsing. Must contain only sanitized customer-facing data.
+    // Accessible to all customers for browsing.
+    // Writes (even by Admin) are strictly rejected if the document contains ANY private business field.
     match /products/{productId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow create, update: if isAdmin() && hasNoPrivateFields(request.resource.data);
+      allow delete: if isAdmin();
     }
 
-    // 2. ADMIN-CONFIDENTIAL PRODUCT DATA (SOURCE COSTS, SUPPLIER URLS, MARGINS)
+    // 2. ADMIN-CONFIDENTIAL PRODUCT & ORDER DATA (SOURCE COSTS, SUPPLIER URLS, MARGINS)
     // STRICTLY PROTECTED: Customers have ZERO read or write access under any circumstances.
     match /admin_product_data/{productId} {
       allow read, write: if isAdmin();
     }
 
+    match /admin_order_data/{orderId} {
+      allow read, write: if isAdmin();
+    }
+
     // 3. CUSTOMER ORDERS (CASH ON DELIVERY ONLY)
+    // Both customer-created and admin-managed order documents must NEVER contain private business fields.
     match /orders/{orderId} {
       // Customer creation: Authenticated user creating their own order with valid customer-safe COD data
-      allow create: if isAdmin() || (
-        request.auth != null &&
-        request.resource.data.userId == request.auth.uid &&
-        request.resource.data.paymentMode == 'Cash on Delivery (COD)' &&
-        request.resource.data.status == 'Order Placed' &&
-        request.resource.data.courier == '' &&
-        request.resource.data.awb == '' &&
-        hasNoPrivateFields(request.resource.data)
+      // Admin creation: Must also be free of private business fields
+      allow create: if hasNoPrivateFields(request.resource.data) && (
+        isAdmin() || (
+          request.auth != null &&
+          request.resource.data.userId == request.auth.uid &&
+          request.resource.data.paymentMode == 'Cash on Delivery (COD)' &&
+          request.resource.data.status == 'Order Placed' &&
+          request.resource.data.courier == '' &&
+          request.resource.data.awb == ''
+        )
       );
 
       // Customer read: Authenticated owner or master admin
@@ -53,14 +67,16 @@ service cloud.firestore {
         request.auth != null && resource.data.userId == request.auth.uid
       );
 
-      // Customer update: Limited strictly to cancellation/return requests on own orders
-      allow update: if isAdmin() || (
-        request.auth != null &&
-        resource.data.userId == request.auth.uid &&
-        request.resource.data.userId == request.auth.uid &&
-        request.resource.data.status in ['Cancelled', 'Order Placed', 'Return Pickup Scheduled'] &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['cancellationReason', 'returnDetails', 'status', 'history']) &&
-        hasNoPrivateFields(request.resource.data)
+      // Updates: Both Admin status/tracking updates and Customer cancellation/return updates
+      // MUST NEVER contain private business fields
+      allow update: if hasNoPrivateFields(request.resource.data) && (
+        isAdmin() || (
+          request.auth != null &&
+          resource.data.userId == request.auth.uid &&
+          request.resource.data.userId == request.auth.uid &&
+          request.resource.data.status in ['Cancelled', 'Order Placed', 'Return Pickup Scheduled'] &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['cancellationReason', 'returnDetails', 'status', 'history'])
+        )
       );
 
       // Deletion: Admin only
@@ -108,15 +124,31 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // 6. ANALYTICS & VISIT TRACKING
+    // 6. PRODUCT REVIEWS
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if request.auth != null &&
+                       request.resource.data.userId == request.auth.uid &&
+                       hasNoPrivateFields(request.resource.data);
+      allow update, delete: if isAdmin();
+    }
+
+    // 7. ANALYTICS & VISIT TRACKING
+    // Anonymous storefront visitors can only create visit logs matching the strict schema.
+    // Arbitrary injection is prevented by validating keys and field types.
     match /analytics_visits/{visitId} {
-      allow create: if true;
+      allow create: if request.resource.data.keys().hasOnly(['visitorId', 'userAgent', 'timestamp', 'page', 'userName']) &&
+                       request.resource.data.visitorId is string &&
+                       request.resource.data.visitorId.size() <= 64 &&
+                       request.resource.data.timestamp is string &&
+                       hasNoPrivateFields(request.resource.data);
       allow read, update, delete: if isAdmin();
     }
 
+    // Business intelligence, revenues, margins, and visit aggregates are STRICTLY ADMIN-ONLY.
+    // Customers have ZERO read or write access.
     match /analytics_summary/{docId} {
-      allow read: if true;
-      allow write: if isAdmin();
+      allow read, write: if isAdmin();
     }
   }
 }
