@@ -2345,6 +2345,11 @@
       };
     }
 
+    // Profit metrics helper alias
+    function calculateOrderProfitMetrics(order) {
+      return getAdminOrderPrivateData(order);
+    }
+
     function calculateAnalysisMetrics() {
       const orders = getStoredOrders();
       const users = getStoredUsers();
@@ -3865,7 +3870,12 @@ FINANCIAL BREAKDOWN:
         }
       });
 
-      cachedAdminUsers = Array.from(userMap.values());
+      cachedAdminUsers = Array.from(userMap.values()).map(u => {
+        if (Array.isArray(u.orders)) {
+          u.orders.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+        }
+        return u;
+      });
 
       // Update badge
       const badge = document.getElementById('nav-users-badge');
@@ -3932,7 +3942,10 @@ FINANCIAL BREAKDOWN:
       }
 
       container.innerHTML = filtered.map(u => {
-        const totalSpent = u.orders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+        const totalSpent = u.orders.reduce((sum, o) => {
+          const amt = Number(o.totalAmount !== undefined ? o.totalAmount : (o.total !== undefined ? o.total : (o.finalAmount || 0))) || 0;
+          return sum + amt;
+        }, 0);
         const latestOrder = u.orders[0];
         const primaryAddress = (u.savedAddresses && u.savedAddresses.length > 0) 
           ? (typeof u.savedAddresses[0] === 'string' ? u.savedAddresses[0] : (u.savedAddresses[0].street || u.savedAddresses[0].fullAddress || 'Saved Address'))
@@ -4006,7 +4019,9 @@ FINANCIAL BREAKDOWN:
     /* Deep Customer Profile Modal */
     function openCustomerProfileModal(phone, name, address, uid, email) {
       const allOrders = getStoredOrders();
-      const customerOrders = allOrders.filter(o => (phone && o.phone === phone) || (uid && o.userId === uid) || (email && o.customerEmail === email));
+      const customerOrders = allOrders
+        .filter(o => (phone && o.phone === phone) || (uid && o.userId === uid) || (email && o.customerEmail === email))
+        .sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
       
       const avatarEl = document.getElementById('modal-cust-avatar');
       const nameEl = document.getElementById('modal-cust-name');
@@ -4027,7 +4042,10 @@ FINANCIAL BREAKDOWN:
       const displayAddr = address || customerOrders[0]?.address || 'No saved address recorded';
       const displayPin = customerOrders[0]?.pincode || '-';
 
-      const totalSpent = customerOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+      const totalSpent = customerOrders.reduce((sum, o) => {
+        const amt = Number(o.totalAmount !== undefined ? o.totalAmount : (o.total !== undefined ? o.total : (o.finalAmount || 0))) || 0;
+        return sum + amt;
+      }, 0);
 
       if (avatarEl) avatarEl.textContent = (displayName || 'C')[0].toUpperCase();
       if (nameEl) nameEl.textContent = displayName;
@@ -4044,7 +4062,9 @@ FINANCIAL BREAKDOWN:
         if (customerOrders.length === 0) {
           ordersListEl.innerHTML = '<div class="p-3 text-center text-slate-400 bg-slate-50 rounded-xl">No orders placed yet</div>';
         } else {
-          ordersListEl.innerHTML = customerOrders.map(o => `
+          ordersListEl.innerHTML = customerOrders.map(o => {
+            const orderTotal = Number(o.totalAmount !== undefined ? o.totalAmount : (o.total !== undefined ? o.total : (o.finalAmount || 0))) || 0;
+            return `
             <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
               <div class="flex items-center justify-between text-[11px]">
                 <span class="font-bold text-slate-900 font-mono">#${o.orderId}</span>
@@ -4052,17 +4072,17 @@ FINANCIAL BREAKDOWN:
                   o.status === 'Delivered' ? 'bg-emerald-100 text-emerald-800' :
                   o.status === 'Cancelled' ? 'bg-rose-100 text-rose-800' :
                   'bg-blue-100 text-blue-800'
-                }">${o.status}</span>
+                }">${o.status || 'Pending'}</span>
               </div>
               <div class="flex items-center justify-between text-[10px] text-slate-500">
                 <span>${new Date(o.timestamp || Date.now()).toLocaleDateString()}</span>
-                <span class="font-bold text-slate-800 font-poppins">Total: ₹${o.total}</span>
+                <span class="font-bold text-slate-800 font-poppins">Total: ₹${orderTotal}</span>
               </div>
               <p class="text-[10px] text-slate-600 truncate">
-                ${(o.items || []).map(i => `${i.title} (x${i.quantity || 1})`).join(', ')}
+                ${(o.items || []).map(i => `${i.title || i.productName || 'Item'} (x${i.quantity || 1})`).join(', ')}
               </p>
             </div>
-          `).join('');
+          `;}).join('');
         }
       }
 
