@@ -108,7 +108,16 @@
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">Password</label>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-xs font-bold text-slate-700">Password</label>
+            <button 
+              type="button" 
+              onclick="handleAdminForgotPassword()" 
+              class="text-[11px] text-brand-orange hover:underline font-bold"
+            >
+              Forgot Password?
+            </button>
+          </div>
           <div class="relative flex items-center">
             <i class="fa-solid fa-lock absolute left-3 text-slate-400 text-xs"></i>
             <input 
@@ -116,8 +125,16 @@
               id="admin-password-input" 
               required 
               placeholder="Enter your password"
-              class="w-full pl-9 pr-3 py-2.5 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy outline-none font-mono"
+              class="w-full pl-9 pr-10 py-2.5 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy outline-none font-mono"
             />
+            <button 
+              type="button" 
+              onclick="toggleAdminPasswordVisibility()" 
+              class="absolute right-3 text-slate-400 hover:text-slate-600 p-1"
+              title="Show/Hide Password"
+            >
+              <i id="admin-password-eye" class="fa-regular fa-eye text-xs"></i>
+            </button>
           </div>
         </div>
 
@@ -128,6 +145,26 @@
         >
           <i class="fa-solid fa-arrow-right-to-bracket text-amber-400"></i>
           <span>Sign In to Admin Studio</span>
+        </button>
+
+        <div class="relative my-3 flex items-center justify-center">
+          <div class="border-t border-slate-200 w-full"></div>
+          <span class="bg-white px-3 text-[10px] text-slate-400 font-bold uppercase tracking-wider">OR</span>
+        </div>
+
+        <button 
+          type="button" 
+          onclick="handleAdminGoogleLogin()" 
+          id="btn-admin-google"
+          class="w-full py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-bold rounded-2xl text-xs transition shadow-xs flex items-center justify-center gap-2 active:scale-95"
+        >
+          <svg class="w-4 h-4" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          <span>Sign In with Google (1-Click)</span>
         </button>
       </form>
 
@@ -1840,11 +1877,121 @@
       }
     }
 
+    function toggleAdminPasswordVisibility() {
+      const input = document.getElementById('admin-password-input');
+      const eye = document.getElementById('admin-password-eye');
+      if (!input || !eye) return;
+      if (input.type === 'password') {
+        input.type = 'text';
+        eye.className = 'fa-regular fa-eye-slash text-xs text-brand-orange';
+      } else {
+        input.type = 'password';
+        eye.className = 'fa-regular fa-eye text-xs text-slate-400';
+      }
+    }
+
+    async function handleAdminForgotPassword() {
+      const emailInput = document.getElementById('admin-email-input');
+      const email = (emailInput ? emailInput.value : '').trim() || MASTER_OWNER_EMAIL;
+
+      if (!fbAuth) {
+        alert("Firebase Auth service is connecting. Please check your internet connection.");
+        return;
+      }
+
+      const confirmed = confirm(`Do you want to send a Password Reset link to:\n${email}?\n\nYou will receive an email from Firebase to set a new password.`);
+      if (!confirmed) return;
+
+      try {
+        await fbAuth.sendPasswordResetEmail(email);
+        alert(`✅ Password reset link has been sent to ${email}!\n\nPlease check your Gmail Inbox/Spam folder, click the link to set your new password, then return here to login.`);
+      } catch (err) {
+        console.warn("[Admin Forgot Password]", err);
+        alert(`Could not send reset email: ${err.message || err.code || 'Unknown error'}`);
+      }
+    }
+
+    async function handleAdminGoogleLogin() {
+      const googleBtn = document.getElementById('btn-admin-google');
+      const origHtml = googleBtn ? googleBtn.innerHTML : '';
+      if (googleBtn) {
+        googleBtn.disabled = true;
+        googleBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin text-blue-500"></i> Connecting with Google...';
+      }
+
+      if (!fbAuth) {
+        showAuthError("Firebase Authentication service unavailable.");
+        if (googleBtn) {
+          googleBtn.disabled = false;
+          googleBtn.innerHTML = origHtml;
+        }
+        return;
+      }
+
+      const provider = new firebase.auth.GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+
+      try {
+        let result;
+        try {
+          result = await fbAuth.signInWithPopup(provider);
+        } catch (popupErr) {
+          if (popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/cancelled-popup-request') {
+            await fbAuth.signInWithRedirect(provider);
+            return;
+          }
+          throw popupErr;
+        }
+
+        if (result && result.user) {
+          const userEmail = (result.user.email || '').toLowerCase().trim();
+          const userUid = result.user.uid;
+
+          if (isAuthorizedAdmin(userEmail, userUid)) {
+            sessionStorage.setItem('buyero_admin_authenticated', 'true');
+            sessionStorage.setItem('buyero_admin_user', userEmail);
+            sessionStorage.setItem('buyero_admin_uid', userUid);
+            logActivityEvent('AUTH', `Owner logged in via Google: ${userEmail} (UID: ${userUid})`);
+            checkAdminAuthentication();
+            refreshAllAdminData();
+          } else {
+            await fbAuth.signOut().catch(() => {});
+            showAuthError(`Access Denied: Google account (${userEmail}) is not authorized as Admin.`);
+          }
+        }
+      } catch (err) {
+        console.warn("[Admin Google Auth Error]", err);
+        if (err.code !== 'auth/popup-closed-by-user') {
+          showAuthError(err.message || "Google sign-in failed. Please try with Email & Password.");
+        }
+      } finally {
+        if (googleBtn) {
+          googleBtn.disabled = false;
+          googleBtn.innerHTML = origHtml;
+        }
+      }
+    }
+
     function showAuthError(msg) {
       const errBox = document.getElementById('auth-denied-box');
       const card = document.getElementById('auth-modal-card');
       if (errBox) {
-        errBox.textContent = msg;
+        if (msg && (msg.includes('auth/invalid-credential') || msg.includes('auth/wrong-password') || msg.includes('incorrect, malformed or has expired'))) {
+          errBox.innerHTML = `
+            <div class="space-y-1">
+              <div class="font-bold text-rose-700 flex items-center gap-1.5">
+                <i class="fa-solid fa-circle-exclamation"></i> Incorrect Password
+              </div>
+              <p class="text-[11px] text-slate-600 font-normal leading-relaxed">
+                The password entered does not match Firebase Auth. You can click 
+                <button type="button" onclick="handleAdminForgotPassword()" class="text-brand-orange font-bold underline">Forgot Password</button> 
+                to receive a reset link on your Gmail, or sign in with Google below.
+              </p>
+            </div>
+          `;
+        } else {
+          errBox.textContent = msg;
+        }
         errBox.classList.remove('hidden');
       }
       if (card) {
