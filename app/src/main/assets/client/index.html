@@ -346,11 +346,16 @@
     <!-- VIEW: MY WISHLIST SCREEN -->
     <section id="view-wishlist" class="hidden p-4 space-y-4">
       <div class="flex items-center justify-between">
-        <div>
-          <h2 class="font-poppins font-bold text-lg text-slate-900 flex items-center gap-2">
-            <i class="fa-solid fa-heart text-rose-500"></i> My Wishlist
-          </h2>
-          <p class="text-xs text-slate-500">Saved items you love • Move to cart anytime</p>
+        <div class="flex items-center gap-2.5">
+          <button onclick="handleWishlistBack()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center text-xs shadow-xs transition active:scale-95" title="Go Back">
+            <i class="fa-solid fa-arrow-left"></i>
+          </button>
+          <div>
+            <h2 class="font-poppins font-bold text-lg text-slate-900 flex items-center gap-2">
+              <i class="fa-solid fa-heart text-rose-500"></i> My Wishlist
+            </h2>
+            <p class="text-xs text-slate-500">Saved items you love • Move to cart anytime</p>
+          </div>
         </div>
         <span id="wishlist-count-pill" class="text-xs font-bold px-2.5 py-1 bg-rose-50 text-rose-600 border border-rose-200 rounded-full">0 Items</span>
       </div>
@@ -533,11 +538,6 @@
         <button onclick="handleAuthActionClick()" id="auth-main-btn" class="w-full py-3 bg-brand-navy hover:bg-brand-deep text-white font-semibold rounded-xl text-xs transition shadow flex items-center justify-center gap-2">
           <i class="fa-solid fa-right-to-bracket"></i> <span>Login / Register Account</span>
         </button>
-
-        <!-- Admin Studio Direct Access -->
-        <a href="../admin/index.html" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition flex items-center justify-center gap-2">
-          <i class="fa-solid fa-shield-halved text-brand-orange"></i> Switch to Admin Studio (Owner Panel)
-        </a>
       </div>
 
       <!-- Privacy Policy & Terms Link -->
@@ -2693,6 +2693,24 @@
           time: 'Just now',
           read: false
         });
+      } else if (event.data && event.data.type === 'NEW_SUPPORT_MESSAGE') {
+        let messages = getStoredSupportMessages();
+        if (event.data.message) {
+          const idx = messages.findIndex(m => m.id === event.data.message.id);
+          if (idx >= 0) messages[idx] = event.data.message;
+          else messages.push(event.data.message);
+          saveSupportMessages(messages);
+          loadClientChatMessages();
+        }
+      } else if (event.data && event.data.type === 'SUPPORT_MESSAGE_EDITED') {
+        let messages = getStoredSupportMessages();
+        const msg = messages.find(m => m.id === event.data.msgId);
+        if (msg) {
+          msg.text = event.data.text;
+          msg.isEdited = true;
+          saveSupportMessages(messages);
+          loadClientChatMessages();
+        }
       }
     };
 
@@ -3739,6 +3757,14 @@
         } else {
           badge.classList.add('hidden');
         }
+      }
+    }
+
+    function handleWishlistBack() {
+      if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        switchClientView('shop');
       }
     }
 
@@ -9015,7 +9041,10 @@
               <span class="font-bold text-[10px] ${msg.isAdmin ? 'text-brand-orange' : 'text-slate-300'}">
                 ${msg.isAdmin ? 'Support Team' : identity.clientName}
               </span>
-              <span class="text-[9px] opacity-70">${msg.timestamp || ''}</span>
+              <div class="flex items-center gap-1.5 text-[9px] opacity-70">
+                ${msg.isEdited ? '<span class="italic text-brand-orange font-medium">(Edited)</span>' : ''}
+                <span>${msg.timestamp || ''}</span>
+              </div>
             </div>
             <p class="leading-relaxed whitespace-pre-wrap">${msg.text}</p>
           </div>

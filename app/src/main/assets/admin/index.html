@@ -279,18 +279,26 @@
           <span class="text-[10px] text-rose-600 font-medium">Supplier / Source Cost →</span>
         </div>
 
-        <!-- 5. Estimated Product Profit (Full Width Highlight) -->
+        <!-- 5. Estimated & Realized Product Profit (Full Width Highlight) -->
         <div onclick="openProductPerformanceModal()" class="col-span-2 bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-4 text-white shadow-md cursor-pointer hover:brightness-105 transition active:scale-98" title="Click to view detailed profit analytics">
           <div class="flex items-center justify-between mb-1">
             <div class="flex items-center gap-1.5">
               <i class="fa-solid fa-chart-line text-amber-300 text-lg"></i>
-              <span class="text-xs font-bold uppercase tracking-wider text-emerald-100">Estimated Product Profit (अनुमानित उत्पाद लाभ)</span>
+              <span class="text-xs font-bold uppercase tracking-wider text-emerald-100">Product Profit Analytics (उत्पाद लाभ विश्लेषण)</span>
             </div>
             <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-bold">Revenue - Source Cost</span>
           </div>
-          <div class="flex items-baseline justify-between mt-1">
-            <h3 class="font-poppins font-extrabold text-2xl" id="stat-net-profit">₹0</h3>
-            <span class="text-xs text-emerald-100 font-medium" id="stat-profit-margin-percent">0% Margin</span>
+          <div class="grid grid-cols-2 gap-3 mt-2 pt-2 border-t border-emerald-500/50">
+            <div>
+              <span class="text-[10px] uppercase font-bold text-emerald-200 block">Realized Profit (7-Day Done)</span>
+              <h3 class="font-poppins font-extrabold text-xl text-white" id="stat-realized-profit">₹0</h3>
+              <span class="text-[10px] text-emerald-100" id="stat-realized-count">0 Completed Orders</span>
+            </div>
+            <div class="border-l border-emerald-500/50 pl-3">
+              <span class="text-[10px] uppercase font-bold text-amber-200 block">Potential Profit (Live)</span>
+              <h3 class="font-poppins font-extrabold text-xl text-amber-100" id="stat-net-profit">₹0</h3>
+              <span class="text-[10px] text-emerald-100" id="stat-profit-margin-percent">0% Margin</span>
+            </div>
           </div>
         </div>
 
@@ -384,6 +392,32 @@
           <button onclick="loadAdminCatalogList()" class="text-xs text-brand-navy font-bold hover:underline flex items-center gap-1">
             <i class="fa-solid fa-rotate"></i> Refresh
           </button>
+        </div>
+
+        <!-- Product Search & Category Filter Bar -->
+        <div class="flex items-center gap-2 bg-white p-2.5 rounded-2xl border border-slate-200 shadow-xs">
+          <div class="relative flex-1">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+            <input 
+              type="text" 
+              id="admin-prod-search-input" 
+              oninput="filterAdminCatalogList()" 
+              placeholder="Search product by title, ID, category..." 
+              class="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:border-brand-navy focus:bg-white transition"
+            />
+          </div>
+          <select 
+            id="admin-prod-category-filter" 
+            onchange="filterAdminCatalogList()" 
+            class="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-brand-navy"
+          >
+            <option value="ALL">All Categories</option>
+            <option value="Fashion">Fashion</option>
+            <option value="Footwear">Footwear</option>
+            <option value="Electronics">Electronics</option>
+            <option value="Home & Kitchen">Home & Kitchen</option>
+            <option value="Beauty">Beauty</option>
+          </select>
         </div>
 
         <div id="admin-product-list-container" class="space-y-2.5">
@@ -564,13 +598,24 @@
 
           <!-- Variant Availability (Customer Visible) -->
           <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">Variant Options (Customer Visible)</label>
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-xs font-bold text-slate-700">Variant Options (Customer Visible)</label>
+              <span class="text-[10px] text-slate-400">Optional</span>
+            </div>
             <input 
               type="text" 
               id="inp-prod-variants" 
               placeholder="e.g. Sizes S, M, L, XL or Standard" 
               class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl outline-none focus:border-brand-navy"
             />
+            <!-- Quick Variant Presets -->
+            <div class="flex flex-wrap gap-1.5 mt-1.5 text-[10px]">
+              <span class="text-slate-400 self-center">Presets:</span>
+              <button type="button" onclick="setProductVariantPreset('inp-prod-variants', 'Sizes S, M, L, XL, XXL')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md transition">👗 S, M, L, XL, XXL</button>
+              <button type="button" onclick="setProductVariantPreset('inp-prod-variants', 'Sizes 6, 7, 8, 9, 10')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md transition">👟 6, 7, 8, 9, 10</button>
+              <button type="button" onclick="setProductVariantPreset('inp-prod-variants', 'Sizes 38, 40, 42, 44')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md transition">👔 38, 40, 42, 44</button>
+              <button type="button" onclick="setProductVariantPreset('inp-prod-variants', 'Standard')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md transition">🚫 Standard (No sizes)</button>
+            </div>
           </div>
 
           <!-- Image Management (Home Image Link + Add More Image) -->
@@ -1203,8 +1248,19 @@
 
         <!-- Variant Availability (Customer Visible) -->
         <div>
-          <label class="block font-bold text-slate-700 mb-0.5">Variant Options (Customer Visible)</label>
-          <input type="text" id="edit-prod-variants" placeholder="e.g. Sizes S, M, L, XL" class="w-full px-3 py-1.5 border border-slate-300 rounded-xl outline-none focus:border-brand-navy" />
+          <div class="flex items-center justify-between mb-1">
+            <label class="block font-bold text-slate-700 text-xs">Variant Options (Customer Visible)</label>
+            <span class="text-[10px] text-slate-400">Optional</span>
+          </div>
+          <input type="text" id="edit-prod-variants" placeholder="e.g. Sizes S, M, L, XL" class="w-full px-3 py-1.5 border border-slate-300 rounded-xl outline-none focus:border-brand-navy text-xs" />
+          <!-- Quick Variant Presets -->
+          <div class="flex flex-wrap gap-1.5 mt-1.5 text-[10px]">
+            <span class="text-slate-400 self-center">Presets:</span>
+            <button type="button" onclick="setProductVariantPreset('edit-prod-variants', 'Sizes S, M, L, XL, XXL')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md transition">👗 S, M, L, XL, XXL</button>
+            <button type="button" onclick="setProductVariantPreset('edit-prod-variants', 'Sizes 6, 7, 8, 9, 10')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md transition">👟 6, 7, 8, 9, 10</button>
+            <button type="button" onclick="setProductVariantPreset('edit-prod-variants', 'Sizes 38, 40, 42, 44')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md transition">👔 38, 40, 42, 44</button>
+            <button type="button" onclick="setProductVariantPreset('edit-prod-variants', 'Standard')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md transition">🚫 Standard</button>
+          </div>
         </div>
 
         <div>
@@ -1226,7 +1282,7 @@
 
         <div class="flex gap-2 pt-2">
           <button type="button" onclick="closeEditProductModal()" class="flex-1 py-2 bg-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-300 transition">Cancel</button>
-          <button type="submit" class="flex-1 py-2 bg-brand-navy text-white font-bold rounded-xl shadow hover:bg-brand-deep transition">Save Changes</button>
+          <button type="submit" id="btn-edit-prod-submit" class="flex-1 py-2 bg-brand-navy text-white font-bold rounded-xl shadow hover:bg-brand-deep transition flex items-center justify-center gap-1">Save Changes</button>
         </div>
       </form>
     </div>
@@ -2787,17 +2843,36 @@
       const visits = localStorage.getItem('buyero_total_visits') || '0';
 
       const totalOrders = orders.length;
-      const pendingOrders = orders.filter(o => o.status !== 'Delivered' && o.status !== 'Completed' && o.status !== 'Cancelled').length;
+      const pendingOrders = orders.filter(o => o.status !== 'Completed' && o.status !== 'Cancelled' && o.status !== 'Returned').length;
       
       let totalRevenue = 0;
       let totalCost = 0;
+      let realizedRevenue = 0;
+      let realizedCost = 0;
+      let potentialRevenue = 0;
+      let potentialCost = 0;
+      let completedCount = 0;
 
       orders.forEach(o => {
+        const isExcluded = ['Cancelled', 'Returned'].includes(o.status);
+        if (isExcluded) return;
+
         const m = getAdminOrderPrivateData(o);
         totalRevenue += m.totalRevenue;
         totalCost += m.totalCost;
+
+        if (o.status === 'Completed') {
+          realizedRevenue += m.totalRevenue;
+          realizedCost += m.totalCost;
+          completedCount++;
+        } else {
+          potentialRevenue += m.totalRevenue;
+          potentialCost += m.totalCost;
+        }
       });
 
+      const realizedProfit = Math.max(0, realizedRevenue - realizedCost);
+      const potentialProfit = Math.max(0, potentialRevenue - potentialCost);
       const netProfit = totalRevenue - totalCost;
       const marginPercent = totalRevenue > 0 ? Math.round((netProfit / totalRevenue) * 100) : 0;
 
@@ -2807,6 +2882,8 @@
       const elRevenue = document.getElementById('stat-total-revenue');
       const elCost = document.getElementById('stat-total-cost');
       const elProfit = document.getElementById('stat-net-profit');
+      const elRealizedProfit = document.getElementById('stat-realized-profit');
+      const elRealizedCount = document.getElementById('stat-realized-count');
       const elProfitMargin = document.getElementById('stat-profit-margin-percent');
       const elUsers = document.getElementById('stat-total-users');
       const elVisits = document.getElementById('stat-total-visits');
@@ -2815,7 +2892,9 @@
       if (elPendingOrders) elPendingOrders.textContent = pendingOrders;
       if (elRevenue) elRevenue.textContent = '₹' + totalRevenue.toLocaleString('en-IN');
       if (elCost) elCost.textContent = '₹' + totalCost.toLocaleString('en-IN');
-      if (elProfit) elProfit.textContent = '₹' + netProfit.toLocaleString('en-IN');
+      if (elRealizedProfit) elRealizedProfit.textContent = '₹' + realizedProfit.toLocaleString('en-IN');
+      if (elRealizedCount) elRealizedCount.textContent = `${completedCount} Completed Order${completedCount !== 1 ? 's' : ''}`;
+      if (elProfit) elProfit.textContent = '₹' + potentialProfit.toLocaleString('en-IN');
       if (elProfitMargin) elProfitMargin.textContent = `${marginPercent}% Margin`;
       if (elUsers) elUsers.textContent = users.length;
       if (elVisits) elVisits.textContent = visits;
@@ -3136,28 +3215,59 @@
       }
     }
 
-    function loadAdminCatalogList() {
+    function setProductVariantPreset(targetId, preset) {
+      const inp = document.getElementById(targetId);
+      if (inp) {
+        inp.value = preset;
+        inp.focus();
+      }
+    }
+
+    function filterAdminCatalogList() {
+      const searchInput = document.getElementById('admin-prod-search-input');
+      const catSelect = document.getElementById('admin-prod-category-filter');
+      const query = (searchInput?.value || '').trim().toLowerCase();
+      const selectedCategory = catSelect?.value || 'ALL';
+
       const container = document.getElementById('admin-product-list-container');
       const countEl = document.getElementById('admin-catalog-count');
       const catalog = getStoredCatalog();
 
-      if (countEl) countEl.textContent = catalog.length;
+      const filtered = catalog.filter(p => {
+        const matchesCategory = (selectedCategory === 'ALL') || ((p.category || '').toLowerCase() === selectedCategory.toLowerCase());
+        if (!matchesCategory) return false;
+
+        if (!query) return true;
+        const idMatch = (p.id || '').toLowerCase().includes(query);
+        const titleMatch = (p.title || '').toLowerCase().includes(query);
+        const catMatch = (p.category || '').toLowerCase().includes(query);
+        const refMatch = (p.supplierReference || '').toLowerCase().includes(query);
+        return idMatch || titleMatch || catMatch || refMatch;
+      });
+
+      if (countEl) countEl.textContent = filtered.length;
       if (!container) return;
 
-      if (catalog.length === 0) {
+      if (filtered.length === 0) {
         container.innerHTML = `
           <div class="bg-white rounded-2xl p-8 text-center border border-slate-200">
             <i class="fa-solid fa-boxes-stacked text-3xl text-slate-300 mb-2"></i>
-            <p class="text-xs text-slate-500 font-bold">No products in catalog yet.</p>
-            <button onclick="switchProductSubTab('add')" class="mt-3 px-4 py-2 bg-brand-orange text-white text-xs font-bold rounded-xl shadow">
-              <i class="fa-solid fa-plus mr-1"></i> Add First Product
-            </button>
+            <p class="text-xs text-slate-500 font-bold">${catalog.length === 0 ? 'No products in catalog yet.' : 'No products match your search/filter.'}</p>
+            ${catalog.length === 0 ? `
+              <button onclick="switchProductSubTab('add')" class="mt-3 px-4 py-2 bg-brand-orange text-white text-xs font-bold rounded-xl shadow">
+                <i class="fa-solid fa-plus mr-1"></i> Add First Product
+              </button>
+            ` : `
+              <button onclick="document.getElementById('admin-prod-search-input').value=''; document.getElementById('admin-prod-category-filter').value='ALL'; filterAdminCatalogList();" class="mt-2 text-xs text-brand-navy underline font-bold">
+                Clear search filters
+              </button>
+            `}
           </div>
         `;
         return;
       }
 
-      container.innerHTML = catalog.map(p => {
+      container.innerHTML = filtered.map(p => {
         const cost = p.privateSourceCost !== undefined ? Number(p.privateSourceCost)
                    : p.meeshoCostPrice !== undefined ? Number(p.meeshoCostPrice) : 0;
         const sell = Number(p.sellingPrice) || Number(p.price) || 0;
@@ -3220,10 +3330,16 @@
               </div>
               ${sourceUrl ? `
                 <div class="pt-1 border-t border-indigo-100 flex items-center justify-between">
-                  <span class="text-[9px] text-indigo-700 font-semibold truncate max-w-[200px]"><i class="fa-solid fa-link text-indigo-500 mr-1"></i>${sourceUrl}</span>
-                  <a href="${sourceUrl}" target="_blank" rel="noopener noreferrer" class="px-2 py-0.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-[9px] font-bold inline-flex items-center gap-1">
-                    <span>Source Link</span> <i class="fa-solid fa-arrow-up-right-from-square text-[8px]"></i>
-                  </a>
+                  <span class="text-[9px] text-indigo-700 font-semibold truncate max-w-[180px]"><i class="fa-solid fa-link text-indigo-500 mr-1"></i>${sourceUrl}</span>
+                  <div class="flex items-center gap-1.5 flex-shrink-0">
+                    <button type="button" onclick="copyToClipboard('${sourceUrl}', 'Supplier URL')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[9px] font-bold inline-flex items-center gap-1">
+                      <i class="fa-regular fa-copy text-[8px]"></i>
+                      <span>Copy</span>
+                    </button>
+                    <a href="${sourceUrl}" target="_blank" rel="noopener noreferrer" class="px-2 py-0.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-[9px] font-bold inline-flex items-center gap-1">
+                      <span>Source Link</span> <i class="fa-solid fa-arrow-up-right-from-square text-[8px]"></i>
+                    </a>
+                  </div>
                 </div>
               ` : `
                 <div class="pt-1 border-t border-indigo-100 text-[9px] text-amber-700">
@@ -3258,6 +3374,10 @@
           </div>
         `;
       }).join('');
+    }
+
+    function loadAdminCatalogList() {
+      filterAdminCatalogList();
     }
 
     function openEditProductModal(productId) {
@@ -3301,10 +3421,23 @@
     function closeEditProductModal() {
       const modal = document.getElementById('modal-edit-product');
       if (modal) modal.classList.add('hidden');
+      const form = document.getElementById('form-edit-product');
+      if (form) form.reset();
+      const submitBtn = document.getElementById('btn-edit-prod-submit');
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Save Changes';
+      }
     }
 
     async function handleSaveEditedProduct(event) {
       if (event && event.preventDefault) event.preventDefault();
+
+      const submitBtn = document.getElementById('btn-edit-prod-submit');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Saving to Firebase...';
+      }
 
       const prodId = document.getElementById('edit-prod-id').value;
       const title = (document.getElementById('edit-prod-title').value || '').trim();
@@ -3328,18 +3461,22 @@
       // Validations
       if (!title || !mainImage || !desc) {
         alert("Please fill all required fields (Title, Image URL, and Description).");
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = 'Save Changes'; }
         return;
       }
       if (price <= 0 || mrp <= 0) {
         alert("Both MRP and Selling Price must be greater than 0.");
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = 'Save Changes'; }
         return;
       }
       if (isNaN(cost) || cost < 0) {
         alert("Source cost must be a valid number greater than or equal to 0.");
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = 'Save Changes'; }
         return;
       }
       if (price > mrp) {
         alert(`Selling Price (₹${price}) cannot be higher than MRP (₹${mrp}). Please fix before saving.`);
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = 'Save Changes'; }
         return;
       }
 
@@ -3348,6 +3485,7 @@
           alert("Supplier Source URL is mandatory to publish a product live. Please provide a valid supplier URL or select 'Hidden' / 'Out of Stock'.");
           const el = document.getElementById('edit-prod-source-url');
           if (el) el.focus();
+          if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = 'Save Changes'; }
           return;
         }
       }
@@ -3419,6 +3557,10 @@
       } catch (err) {
         console.error("[Edit Product Error]", err);
         alert(`Failed to update product: ${err.message || err}`);
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = 'Save Changes';
+        }
       }
     }
 
@@ -3546,7 +3688,95 @@
       renderFilteredOrders();
     }
 
+    async function checkAndProcess7DayCompletions() {
+      let orders = getStoredOrders();
+      let updated = false;
+      const now = Date.now();
+      const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
+      for (let i = 0; i < orders.length; i++) {
+        const order = orders[i];
+        if (order.status === 'Delivered' && order.deliveredAt && !order.returnDetails) {
+          const deliveredTime = new Date(order.deliveredAt).getTime();
+          if (now - deliveredTime >= SEVEN_DAYS_MS) {
+            order.status = 'Completed';
+            order.completedAt = new Date().toISOString();
+            if (!order.history) order.history = [];
+            order.history.push({
+              status: 'Completed (7-Day Return Window Finished - Profit & Referral Finalized)',
+              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              date: new Date().toLocaleDateString()
+            });
+            updated = true;
+
+            try {
+              await syncOrderUpdateToFirestore(order);
+              await processReferralRewardForCompletedOrder(order);
+            } catch (err) {
+              console.warn("[7-Day Completion Sync Warning]", err);
+            }
+          }
+        }
+      }
+
+      if (updated) {
+        saveOrders(orders);
+        calculateAnalysisMetrics();
+      }
+    }
+
+    async function processReferralRewardForCompletedOrder(order) {
+      if (!order || order.referralRewardProcessed) return;
+      const referredBy = order.referredBy || order.referralCodeUsed;
+      if (!referredBy) return;
+
+      const users = getStoredUsers();
+      const referrer = users.find(u => 
+        (u.referralCode && u.referralCode.toUpperCase() === referredBy.toUpperCase()) || 
+        u.uid === referredBy || 
+        u.phone === referredBy
+      );
+      if (!referrer) return;
+
+      // No self-referral
+      if (referrer.uid === order.userId || (referrer.phone && referrer.phone === order.phone)) return;
+
+      const rewardCoins = 100;
+      referrer.coins = (referrer.coins || 0) + rewardCoins;
+      if (!referrer.referralRewards) referrer.referralRewards = [];
+      referrer.referralRewards.push({
+        orderId: order.orderId,
+        buyerName: order.customerName,
+        coinsEarned: rewardCoins,
+        timestamp: new Date().toISOString()
+      });
+
+      order.referralRewardProcessed = true;
+      saveUsers(users);
+
+      if (fbFirestore) {
+        try {
+          await fbFirestore.collection('users').doc(referrer.uid || referrer.id).set({
+            coins: referrer.coins,
+            referralRewards: referrer.referralRewards
+          }, { merge: true });
+
+          await createCustomerNotificationInFirestore(referrer.uid || referrer.id, {
+            title: `🎁 Referral Reward Unlocked!`,
+            message: `Order #${order.orderId} from your referral has completed! +100 Buyero Coins added to your wallet.`,
+            icon: '🪙',
+            type: 'REFERRAL_REWARD'
+          });
+        } catch (e) {
+          console.warn("[Referral Reward Sync]", e);
+        }
+      }
+    }
+
     function renderFilteredOrders() {
+      // Background check for 7-day auto-completions
+      checkAndProcess7DayCompletions();
+
       const orders = getStoredOrders();
       const query = orderSearchQuery;
 
@@ -3563,8 +3793,8 @@
         );
       });
 
-      const liveOrders = filtered.filter(o => o.status !== 'Delivered' && o.status !== 'Completed');
-      const completedOrders = filtered.filter(o => o.status === 'Delivered' || o.status === 'Completed');
+      const liveOrders = filtered.filter(o => o.status !== 'Completed');
+      const completedOrders = filtered.filter(o => o.status === 'Completed');
 
       // Update counters
       const countLive = document.getElementById('count-order-live');
@@ -3593,6 +3823,9 @@
 
       container.innerHTML = orders.map(o => {
         const m = getAdminOrderPrivateData(o);
+        const daysElapsed = o.deliveredAt ? Math.floor((Date.now() - new Date(o.deliveredAt).getTime()) / (24 * 60 * 60 * 1000)) : 0;
+        const daysLeft = Math.max(0, 7 - daysElapsed);
+
         return `
         <div class="bg-white rounded-3xl p-4 border border-slate-200 shadow-sm space-y-3">
           <div class="flex items-center justify-between border-b border-slate-100 pb-2">
@@ -3601,14 +3834,27 @@
               <span class="text-[10px] text-slate-400 block">${new Date(o.timestamp || Date.now()).toLocaleDateString()} ${new Date(o.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
             <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-              o.status === 'Delivered' ? 'bg-emerald-100 text-emerald-800' :
+              o.status === 'Delivered' ? 'bg-purple-100 text-purple-800 border border-purple-200' :
               o.status === 'Cancelled' ? 'bg-rose-100 text-rose-800' :
               o.status === 'Shipped via Courier' ? 'bg-blue-100 text-blue-800' :
               'bg-amber-100 text-amber-800'
             }">
-              ${o.status || 'Pending'}
+              ${o.status === 'Delivered' ? 'Delivered (7-Day Return Window Active)' : (o.status || 'Pending')}
             </span>
           </div>
+
+          ${o.status === 'Delivered' ? `
+            <div class="text-[10px] text-purple-700 bg-purple-50 p-2.5 rounded-2xl border border-purple-200 font-medium">
+              <div class="font-bold flex items-center gap-1 text-purple-900">
+                <i class="fa-solid fa-shield-halved text-purple-600"></i>
+                <span>7-Day Customer Protection Window Active</span>
+              </div>
+              <p class="mt-0.5 leading-snug">
+                Delivered on ${new Date(o.deliveredAt).toLocaleDateString()}. 
+                ${daysLeft > 0 ? `<strong>${daysLeft} day(s) remaining</strong> before order moves to Completed and referral reward unlocks.` : '7 days completed. Order will finalize automatically.'}
+              </p>
+            </div>
+          ` : ''}
 
           <!-- Customer & Amount Row -->
           <div class="flex items-center justify-between text-xs">
@@ -3618,7 +3864,7 @@
             </div>
             <div class="text-right font-poppins">
               <span class="font-bold text-sm text-slate-900 block">₹${m.totalRevenue}</span>
-              <span class="text-[10px] text-emerald-600 font-bold">Est. Profit: +₹${m.netProfit}</span>
+              <span class="text-[10px] text-emerald-600 font-bold">${o.status === 'Delivered' ? 'Realizing Profit: +₹' + m.netProfit : 'Est. Profit: +₹' + m.netProfit}</span>
             </div>
           </div>
 
@@ -3649,12 +3895,12 @@
                         <span class="text-emerald-600 font-bold font-mono text-[11px]">+₹${item.itemProfit}</span>
                       </div>
                       <div class="flex items-center gap-2 text-[10px] text-slate-500 mt-0.5">
-                        ${item.size ? `<span class="bg-slate-100 px-1.5 py-0.2 rounded font-semibold text-slate-700">Variant: ${item.size}</span>` : ''}
+                        <span class="bg-indigo-50 border border-indigo-200 px-1.5 py-0.2 rounded font-bold text-indigo-900">Variant: ${item.selectedSize || item.size || item.selectedVariant || 'Standard'}</span>
                         <span>Qty: ${item.quantity}</span>
                         <span>•</span>
                         <span>Sell: <strong class="text-slate-800">₹${item.sellingPrice}</strong></span>
                         <span>•</span>
-                        <span class="text-rose-600 font-medium">Source Cost: ₹${item.privateSourceCost}</span>
+                        <span class="text-rose-600 font-medium">Cost: ₹${item.privateSourceCost}</span>
                       </div>
                     </div>
                   </div>
@@ -3662,11 +3908,17 @@
                   <!-- Source Link row -->
                   <div class="flex items-center justify-between pt-1 border-t border-slate-100 text-[10px]">
                     ${item.sourceProductUrl ? `
-                      <span class="text-slate-500 font-mono truncate max-w-[200px]"><i class="fa-solid fa-link text-indigo-500 mr-1"></i>${item.sourceProductUrl}</span>
-                      <a href="${item.sourceProductUrl}" target="_blank" class="px-2 py-0.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold rounded-md flex items-center gap-1 flex-shrink-0">
-                        <span>Open Supplier Link</span>
-                        <i class="fa-solid fa-arrow-up-right-from-square text-[8px]"></i>
-                      </a>
+                      <span class="text-slate-500 font-mono truncate max-w-[180px]"><i class="fa-solid fa-link text-indigo-500 mr-1"></i>${item.sourceProductUrl}</span>
+                      <div class="flex items-center gap-1.5 flex-shrink-0">
+                        <button type="button" onclick="copyToClipboard('${item.sourceProductUrl}', 'Supplier Link')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-md flex items-center gap-1">
+                          <i class="fa-regular fa-copy text-[8px]"></i>
+                          <span>Copy Link</span>
+                        </button>
+                        <a href="${item.sourceProductUrl}" target="_blank" class="px-2 py-0.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold rounded-md flex items-center gap-1">
+                          <span>Open Link</span>
+                          <i class="fa-solid fa-arrow-up-right-from-square text-[8px]"></i>
+                        </a>
+                      </div>
                     ` : `
                       <span class="text-amber-600 font-medium"><i class="fa-solid fa-triangle-exclamation mr-1"></i> No supplier URL in catalog</span>
                     `}
@@ -3835,6 +4087,14 @@
         order.awb = awb;
         order.deliveryDays = deliveryDays;
         order.locationStatus = locationStatus;
+
+        if (status === 'Delivered') {
+          if (!order.deliveredAt) order.deliveredAt = new Date().toISOString();
+          order.paymentStatus = 'COLLECTED_AT_DOORSTEP';
+        } else if (status === 'Completed') {
+          if (!order.completedAt) order.completedAt = new Date().toISOString();
+          processReferralRewardForCompletedOrder(order);
+        }
 
         if (!order.history) order.history = [];
         order.history.push({
@@ -4014,6 +4274,7 @@
         if (order) {
           order.status = 'Delivered';
           order.paymentStatus = 'COLLECTED_AT_DOORSTEP';
+          if (!order.deliveredAt) order.deliveredAt = new Date().toISOString();
           if (!order.history) order.history = [];
           order.history.push({
             status: 'Delivered',
@@ -4636,6 +4897,7 @@ FINANCIAL BREAKDOWN:
             </div>
             <div class="min-w-0">
               <h5 class="font-bold text-slate-800 text-xs truncate">${t.clientName}</h5>
+              ${t.clientPhone ? `<span class="text-[9px] text-emerald-700 font-semibold block truncate">📞 ${t.clientPhone}</span>` : ''}
               <p class="text-[10px] text-slate-500 truncate max-w-[130px]">${t.lastMessage || 'Sent message'}</p>
             </div>
           </div>
@@ -4700,15 +4962,65 @@ FINANCIAL BREAKDOWN:
               <span class="font-bold text-[10px] ${m.isAdmin ? 'text-amber-300' : 'text-slate-500'}">
                 ${m.isAdmin ? 'Buyero Support' : (m.clientName || 'Customer')}
               </span>
-              <span class="text-[9px] opacity-70">${m.timestamp || ''}</span>
+              <div class="flex items-center gap-1.5 text-[9px] opacity-75">
+                ${m.isEdited ? '<span class="italic text-amber-300 font-medium">(Edited)</span>' : ''}
+                <span>${m.timestamp || ''}</span>
+              </div>
             </div>
-            <p class="leading-relaxed">${m.text}</p>
-            ${m.isAdmin ? '<div class="text-right text-[9px] opacity-75 mt-0.5">✓✓ Delivered</div>' : ''}
+            <p class="leading-relaxed whitespace-pre-wrap">${m.text}</p>
+            <div class="flex items-center justify-between mt-1 text-[9px] opacity-75">
+              ${m.isAdmin ? `
+                <button type="button" onclick="editAdminChatMessage('${m.id}')" class="text-amber-200 hover:text-white underline font-semibold flex items-center gap-1">
+                  <i class="fa-solid fa-pen text-[8px]"></i> Edit
+                </button>
+                <span>✓✓ Delivered</span>
+              ` : `<span></span>`}
+            </div>
           </div>
         </div>
       `).join('');
 
       container.scrollTop = container.scrollHeight;
+    }
+
+    function editAdminChatMessage(msgId) {
+      let messages = getStoredChatMessages();
+      const msg = messages.find(m => m.id === msgId);
+      if (!msg || !msg.isAdmin) return;
+
+      const newText = prompt("Edit support reply message:", msg.text);
+      if (newText === null) return;
+      const trimmed = newText.trim();
+      if (!trimmed) {
+        alert("Message cannot be empty.");
+        return;
+      }
+
+      msg.text = trimmed;
+      msg.isEdited = true;
+      msg.editedAt = new Date().toISOString();
+      saveChatMessages(messages);
+
+      // Persist to Firestore if available
+      if (fbFirestore) {
+        fbFirestore.collection('support_chats').where('id', '==', msgId).get().then(snap => {
+          snap.forEach(doc => {
+            doc.ref.update({ text: trimmed, isEdited: true, editedAt: msg.editedAt }).catch(() => {});
+          });
+        }).catch(() => {});
+      }
+
+      renderActiveThreadMessages();
+      loadAdminChatThreads();
+
+      // Broadcast to client storefront
+      try {
+        syncChannel.postMessage({
+          type: 'SUPPORT_MESSAGE_EDITED',
+          msgId: msgId,
+          text: trimmed
+        });
+      } catch (e) {}
     }
 
     function handleSendAdminReply(event) {
