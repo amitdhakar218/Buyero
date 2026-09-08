@@ -3164,9 +3164,58 @@
       }
     }
 
+    function syncUserDataFieldToFirestore(field, value) {
+      if (!fbFirestore) return;
+      const uid = (fbAuth && fbAuth.currentUser && fbAuth.currentUser.uid) ||
+                  (currentUser && currentUser.authUid) ||
+                  (currentUser && currentUser.uuid && !currentUser.uuid.startsWith('usr_') ? currentUser.uuid : null);
+      if (!uid) return;
+      try {
+        fbFirestore.collection('users').doc(uid).set({
+          [field]: value,
+          updatedAt: new Date().toISOString()
+        }, { merge: true }).catch(() => {});
+      } catch (e) {}
+    }
+
+    function restoreCloudUserData(cloudData) {
+      if (!cloudData) return;
+      // 1. Cart restoration
+      if (Array.isArray(cloudData.cart) && cloudData.cart.length > 0) {
+        const localCart = getStoredCart();
+        if (!localCart || localCart.length === 0) {
+          localStorage.setItem('buyero_cart', JSON.stringify(cloudData.cart));
+          updateCartBadges();
+        }
+      }
+      // 2. Wishlist restoration
+      if (Array.isArray(cloudData.wishlist) && cloudData.wishlist.length > 0) {
+        let localLikes = getLikedProducts();
+        const mergedLikes = Array.from(new Set([...localLikes, ...cloudData.wishlist]));
+        localStorage.setItem('buyero_liked_products', JSON.stringify(mergedLikes));
+        updateWishlistBadge();
+      }
+      // 3. Saved Addresses restoration
+      if (Array.isArray(cloudData.savedAddresses) && cloudData.savedAddresses.length > 0) {
+        const localAddrs = getStoredAddresses();
+        if (!localAddrs || localAddrs.length === 0) {
+          localStorage.setItem('buyero_saved_addresses', JSON.stringify(cloudData.savedAddresses));
+        } else {
+          const combined = [...localAddrs];
+          cloudData.savedAddresses.forEach(ca => {
+            if (!combined.some(la => la.id === ca.id || (la.phone === ca.phone && la.pincode === ca.pincode && la.address === ca.address))) {
+              combined.push(ca);
+            }
+          });
+          localStorage.setItem('buyero_saved_addresses', JSON.stringify(combined));
+        }
+      }
+    }
+
     function saveCart(cart) {
       localStorage.setItem('buyero_cart', JSON.stringify(cart));
       updateCartBadges();
+      syncUserDataFieldToFirestore('cart', cart);
     }
 
     function getAllStoredOrders() {
@@ -3527,6 +3576,7 @@
                 userId: preferredId
               });
               localStorage.setItem('buyero_user', JSON.stringify(currentUser));
+              restoreCloudUserData(cloudP);
               renderUserProfile();
               fetchCloudOrdersForUser(currentUser);
             }
@@ -3674,6 +3724,7 @@
         liked.push(productId);
       }
       localStorage.setItem('buyero_liked_products', JSON.stringify(liked));
+      syncUserDataFieldToFirestore('wishlist', liked);
       updateWishlistBadge();
       loadCatalog();
     }
@@ -3746,6 +3797,7 @@
       let liked = getLikedProducts();
       liked = liked.filter(id => id !== productId);
       localStorage.setItem('buyero_liked_products', JSON.stringify(liked));
+      syncUserDataFieldToFirestore('wishlist', liked);
       updateWishlistBadge();
       renderWishlistView();
       loadCatalog();
@@ -8077,6 +8129,7 @@
           currentUser.photoURL = fbUser.photoURL;
         }
         localStorage.setItem('buyero_user', JSON.stringify(currentUser));
+        restoreCloudUserData(existingUser);
 
         // Sync cloud orders in background for this persistent user
         fetchCloudOrdersForUser(currentUser);
@@ -8602,6 +8655,7 @@
     function saveStoredAddresses(addresses) {
       try {
         localStorage.setItem('buyero_saved_addresses', JSON.stringify(addresses));
+        syncUserDataFieldToFirestore('savedAddresses', addresses);
       } catch (e) {
         console.error("Error saving addresses:", e);
       }
