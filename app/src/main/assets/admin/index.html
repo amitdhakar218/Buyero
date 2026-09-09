@@ -906,36 +906,126 @@
       <!-- Users Header with Refresh -->
       <div class="flex items-center justify-between">
         <div>
-          <h2 class="font-poppins font-bold text-sm text-slate-800">Customer Management</h2>
-          <p class="text-[10px] text-slate-500">Registered users, orders, saved addresses & activity</p>
+          <h2 class="font-poppins font-bold text-sm text-slate-800">Customer & Referral Hub</h2>
+          <p class="text-[10px] text-slate-500">Registered users, wallet balances, 168h return window & referral engine</p>
         </div>
-        <button onclick="refreshAdminUsers(this)" class="text-xs text-brand-navy font-bold hover:underline flex items-center gap-1 px-2.5 py-1 bg-slate-100 rounded-lg hover:bg-slate-200 transition">
-          <i class="fa-solid fa-rotate"></i> Refresh Users
+        <div class="flex items-center gap-2">
+          <button onclick="refreshAdminUsers(this)" class="text-xs text-brand-navy font-bold flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 rounded-lg hover:bg-slate-200 transition">
+            <i class="fa-solid fa-rotate"></i> Refresh
+          </button>
+        </div>
+      </div>
+
+      <!-- Segmented Navigation for Directory vs Referral Engine -->
+      <div class="flex bg-slate-100 p-1 rounded-2xl border border-slate-200 text-xs font-bold">
+        <button id="admin-subtab-directory-btn" onclick="switchAdminUsersSubTab('directory')" class="flex-1 py-2 rounded-xl bg-white text-brand-navy shadow-sm transition">
+          <i class="fa-solid fa-users mr-1"></i> Customer Directory
+        </button>
+        <button id="admin-subtab-referrals-btn" onclick="switchAdminUsersSubTab('referrals')" class="flex-1 py-2 rounded-xl text-slate-500 hover:text-slate-800 transition">
+          <i class="fa-solid fa-gift mr-1 text-brand-orange"></i> Referral & Rewards Engine
         </button>
       </div>
 
-      <!-- Universal User Search -->
-      <div class="relative">
-        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
-        <input 
-          type="text" 
-          id="universal-user-search" 
-          oninput="handleUniversalUserSearch(this.value)"
-          placeholder="Search by Name, Email, Phone, UID..." 
-          class="w-full pl-9 pr-8 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs shadow-sm outline-none focus:border-brand-navy"
-        />
-        <button 
-          id="clear-user-search" 
-          onclick="clearUserSearch()" 
-          class="hidden absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 text-xs"
-        >
-          <i class="fa-solid fa-xmark"></i>
-        </button>
+      <!-- SUBTAB 1: CUSTOMER DIRECTORY -->
+      <div id="admin-users-directory-view" class="space-y-4">
+        <!-- Universal User Search -->
+        <div class="relative">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+          <input 
+            type="text" 
+            id="universal-user-search" 
+            oninput="handleUniversalUserSearch(this.value)"
+            placeholder="Search by Name, Email, Phone, UID..." 
+            class="w-full pl-9 pr-8 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs shadow-sm outline-none focus:border-brand-navy"
+          />
+          <button 
+            id="clear-user-search" 
+            onclick="clearUserSearch()" 
+            class="hidden absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 text-xs"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <!-- User List Container -->
+        <div id="admin-users-list-container" class="space-y-2.5">
+          <!-- Populated dynamically -->
+        </div>
       </div>
 
-      <!-- User List Container -->
-      <div id="admin-users-list-container" class="space-y-2.5">
-        <!-- Populated dynamically -->
+      <!-- SUBTAB 2: REFERRAL & REWARDS ENGINE MONITORING -->
+      <div id="admin-users-referrals-view" class="hidden space-y-4">
+        <!-- Metric Cards Grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <div class="p-3 bg-white border border-slate-200 rounded-2xl shadow-sm">
+            <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
+              <span>Total Referrals</span>
+              <i class="fa-solid fa-users-rays text-indigo-500"></i>
+            </div>
+            <div id="metric-ref-total" class="text-lg font-bold text-slate-800">0</div>
+            <div class="text-[10px] text-slate-400">Tracked in database</div>
+          </div>
+          <div class="p-3 bg-white border border-slate-200 rounded-2xl shadow-sm">
+            <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
+              <span>168h Window</span>
+              <i class="fa-solid fa-hourglass-half text-amber-500"></i>
+            </div>
+            <div id="metric-ref-waiting" class="text-lg font-bold text-amber-600">0</div>
+            <div class="text-[10px] text-slate-400">Order delivered, ticking</div>
+          </div>
+          <div class="p-3 bg-white border border-slate-200 rounded-2xl shadow-sm">
+            <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
+              <span>Rewarded (+50c)</span>
+              <i class="fa-solid fa-coins text-emerald-500"></i>
+            </div>
+            <div id="metric-ref-rewarded" class="text-lg font-bold text-emerald-600">0</div>
+            <div class="text-[10px] text-slate-400">Coins disbursed</div>
+          </div>
+          <div class="p-3 bg-white border border-slate-200 rounded-2xl shadow-sm">
+            <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
+              <span>Disqualified</span>
+              <i class="fa-solid fa-ban text-rose-500"></i>
+            </div>
+            <div id="metric-ref-disqualified" class="text-lg font-bold text-rose-600">0</div>
+            <div class="text-[10px] text-slate-400">Cancelled / Returned</div>
+          </div>
+        </div>
+
+        <!-- Controls: Search, Filter, and Trigger Audit -->
+        <div class="p-3 bg-white border border-slate-200 rounded-2xl shadow-sm space-y-3">
+          <div class="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center justify-between">
+            <div class="relative flex-1">
+              <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+              <input 
+                type="text" 
+                id="referral-search-input" 
+                oninput="handleReferralSearch(this.value)"
+                placeholder="Search referral code, UID, or order ID..." 
+                class="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:border-brand-navy"
+              />
+            </div>
+            <div class="flex gap-2">
+              <select id="referral-status-filter" onchange="handleReferralFilterChange(this.value)" class="text-xs bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 font-medium outline-none">
+                <option value="ALL">All Referral Statuses</option>
+                <option value="WAITING_FOR_FIRST_ORDER">Waiting for First Order</option>
+                <option value="ORDER_DELIVERED_WAITING_168H">168h Return Window Running</option>
+                <option value="ELIGIBLE">Eligible (Ready for Payout)</option>
+                <option value="REWARDED">Rewarded (+50 Coins)</option>
+                <option value="INELIGIBLE_RETURN">Disqualified (Return)</option>
+                <option value="INELIGIBLE_CANCELLED">Disqualified (Cancelled)</option>
+              </select>
+              <button onclick="triggerManualReferralAudit(this)" class="px-3 py-1.5 bg-brand-navy hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow transition flex items-center gap-1.5 whitespace-nowrap">
+                <i class="fa-solid fa-bolt text-amber-400"></i> Run 168h Audit Now
+              </button>
+            </div>
+          </div>
+          <div id="referral-audit-status-banner" class="hidden p-2.5 rounded-xl text-xs font-medium"></div>
+        </div>
+
+        <!-- Referral Audit Records List -->
+        <div id="admin-referrals-list-container" class="space-y-2.5">
+          <!-- Populated dynamically -->
+        </div>
       </div>
     </section>
 
@@ -3745,7 +3835,7 @@
     }
 
     async function processReferralRewardForCompletedOrder(order) {
-      if (!order) return;
+      if (!order || !order.orderId) return;
       // Disqualification checks (Sections 6, 7, 9, 10, 11, 14)
       if (order.referralRewardProcessed || order.referralRewardStatus === 'PROCESSED') return;
       if (order.referralRewardStatus === 'INELIGIBLE_RETURN' || order.referralRewardStatus === 'INELIGIBLE_CANCELLED') return;
@@ -3754,7 +3844,7 @@
       const referrerKey = order.referredByUid || order.referredBy || order.referralCodeUsed;
       if (!referrerKey) return;
 
-      // Check 168-hour requirement
+      // Check 168-hour requirement (Exact 604,800,000 ms)
       const deliveredTime = order.deliveredAt ? new Date(order.deliveredAt).getTime() : 0;
       const now = Date.now();
       const SEVEN_DAYS_MS = 168 * 60 * 60 * 1000;
@@ -3768,6 +3858,29 @@
       if (hasReturn) {
         order.referralRewardStatus = 'INELIGIBLE_RETURN';
         await syncOrderUpdateToFirestore(order);
+        if (fbFirestore && order.userId) {
+          fbFirestore.collection('referrals').doc(order.userId).set({
+            status: 'INELIGIBLE_RETURN',
+            rewardStatus: 'INELIGIBLE_RETURN',
+            disqualificationReason: 'Return was requested before 168-hour period ended',
+            updatedAt: new Date().toISOString()
+          }, { merge: true }).catch(() => {});
+        }
+        return;
+      }
+
+      // Check if cancelled
+      if (order.status === 'Cancelled') {
+        order.referralRewardStatus = 'INELIGIBLE_CANCELLED';
+        await syncOrderUpdateToFirestore(order);
+        if (fbFirestore && order.userId) {
+          fbFirestore.collection('referrals').doc(order.userId).set({
+            status: 'INELIGIBLE_CANCELLED',
+            rewardStatus: 'INELIGIBLE_CANCELLED',
+            disqualificationReason: order.cancellationReason || 'Order was cancelled',
+            updatedAt: new Date().toISOString()
+          }, { merge: true }).catch(() => {});
+        }
         return;
       }
 
@@ -3815,62 +3928,112 @@
           if (referrerUid === order.userId || (referrer && referrer.phone && referrer.phone === order.phone)) {
             order.referralRewardStatus = 'SELF_REFERRAL_BLOCKED';
             await syncOrderUpdateToFirestore(order);
+            if (order.userId) {
+              fbFirestore.collection('referrals').doc(order.userId).set({
+                status: 'SELF_REFERRAL_BLOCKED',
+                rewardStatus: 'SELF_REFERRAL_BLOCKED',
+                disqualificationReason: 'Self referral attempted and blocked',
+                updatedAt: new Date().toISOString()
+              }, { merge: true }).catch(() => {});
+            }
             return;
           }
 
-          // Idempotent record per referred user (Section 13): users/{referrerUid}/coin_transactions/referral_{referredUid}
-          const txDocId = `referral_${order.userId || order.orderId}`;
-          const txRef = fbFirestore.collection('users').doc(referrerUid).collection('coin_transactions').doc(txDocId);
-          const txDoc = await txRef.get();
-          if (txDoc.exists) {
-            order.referralRewardProcessed = true;
-            order.referralRewardStatus = 'PROCESSED';
-            await syncOrderUpdateToFirestore(order);
-            return;
-          }
+          // Deterministic transaction ID (Section 14): referralReward_{referredUid}
+          const deterministicTxId = `referralReward_${order.userId || order.orderId}`;
+          const txRef = fbFirestore.collection('users').doc(referrerUid).collection('coin_transactions').doc(deterministicTxId);
+          const refDocRef = fbFirestore.collection('referrals').doc(order.userId || order.orderId);
+          const referrerUserRef = fbFirestore.collection('users').doc(referrerUid);
+          const orderDocRef = fbFirestore.collection('orders').doc(order.orderId);
 
-          // Create ledger entry
-          await txRef.set({
-            uid: referrerUid,
-            amount: rewardCoins,
-            type: 'REFERRAL_REWARD',
-            referredUserUid: order.userId,
-            orderId: order.orderId,
-            buyerName: order.customerName || 'Referred Buyer',
-            createdAt: new Date().toISOString()
+          let creditedNewCoins = 0;
+
+          // Execute atomic Firestore transaction
+          await fbFirestore.runTransaction(async (transaction) => {
+            const txDoc = await transaction.get(txRef);
+            if (txDoc.exists) {
+              return { alreadyDone: true };
+            }
+
+            const refDoc = await transaction.get(refDocRef);
+            if (refDoc.exists && refDoc.data().rewardStatus === 'REWARDED') {
+              return { alreadyDone: true };
+            }
+
+            const referrerUserDoc = await transaction.get(referrerUserRef);
+            const curCoins = referrerUserDoc.exists 
+              ? Number(referrerUserDoc.data().coins !== undefined ? referrerUserDoc.data().coins : (referrerUserDoc.data().walletCoins || 0)) 
+              : 0;
+            creditedNewCoins = curCoins + rewardCoins;
+
+            // 1. Transaction ledger entry
+            transaction.set(txRef, {
+              uid: referrerUid,
+              amount: rewardCoins,
+              type: 'REFERRAL_REWARD',
+              referredUserUid: order.userId,
+              orderId: order.orderId,
+              buyerName: order.customerName || 'Referred Buyer',
+              status: 'COMPLETED',
+              createdAt: new Date().toISOString()
+            });
+
+            // 2. Referrer coin wallet update
+            transaction.set(referrerUserRef, {
+              coins: creditedNewCoins,
+              walletCoins: creditedNewCoins,
+              lastRewardAt: new Date().toISOString()
+            }, { merge: true });
+
+            // 3. Dedicated referral tracking record update
+            transaction.set(refDocRef, {
+              referredUid: order.userId,
+              referrerUid: referrerUid,
+              firstOrderId: order.orderId,
+              firstOrderDeliveredAt: order.deliveredAt,
+              status: 'REWARDED',
+              rewardStatus: 'REWARDED',
+              rewardCoins: rewardCoins,
+              rewardedAt: new Date().toISOString(),
+              rewardTransactionId: deterministicTxId,
+              updatedAt: new Date().toISOString()
+            }, { merge: true });
+
+            // 4. Order update
+            transaction.set(orderDocRef, {
+              status: 'Completed',
+              completedAt: order.completedAt || new Date().toISOString(),
+              referralRewardStatus: 'PROCESSED',
+              referralRewardProcessed: true,
+              referralRewardProcessedAt: new Date().toISOString()
+            }, { merge: true });
           });
 
-          // Fetch fresh coins balance & credit 50 coins atomically
-          const freshUserDoc = await fbFirestore.collection('users').doc(referrerUid).get();
-          const curCoins = freshUserDoc.exists ? (Number(freshUserDoc.data().coins !== undefined ? freshUserDoc.data().coins : freshUserDoc.data().walletCoins) || 0) : (Number(referrer.coins) || 0);
-          const newCoins = curCoins + rewardCoins;
-
-          await fbFirestore.collection('users').doc(referrerUid).set({
-            coins: newCoins,
-            walletCoins: newCoins,
-            lastRewardAt: new Date().toISOString()
-          }, { merge: true });
-
-          // Send push notification to referrer
-          await createCustomerNotificationInFirestore(referrerUid, {
+          // Single idempotent in-app notification to referrer
+          await fbFirestore.collection('users').doc(referrerUid).collection('notifications').doc(`notif_${deterministicTxId}`).set({
             title: `🎁 Referral Reward Unlocked!`,
             message: `Order #${order.orderId} from your referred friend has passed the 7-day return period! +50 Buyero Coins credited to your wallet.`,
             icon: '🪙',
-            type: 'REFERRAL_REWARD'
-          });
+            type: 'REFERRAL_REWARD',
+            createdAt: new Date().toISOString()
+          }, { merge: true });
 
           // Update local state if cached
-          if (referrer) {
-            referrer.coins = newCoins;
-            referrer.walletCoins = newCoins;
+          if (referrer && creditedNewCoins > 0) {
+            referrer.coins = creditedNewCoins;
+            referrer.walletCoins = creditedNewCoins;
             saveUsers(users);
           }
 
+          order.status = 'Completed';
+          if (!order.completedAt) order.completedAt = new Date().toISOString();
           order.referralRewardProcessed = true;
           order.referralRewardStatus = 'PROCESSED';
           order.referralRewardProcessedAt = new Date().toISOString();
-          await syncOrderUpdateToFirestore(order);
-          logActivityEvent('REWARD', `Credited +50 Coins to referrer (${referrerUid}) for Order #${order.orderId}`);
+          saveOrders(getStoredOrders());
+
+          logActivityEvent('REWARD', `Credited +50 Coins to referrer (${referrerUid}) for Order #${order.orderId} (168h return window completed)`);
+          console.log(`[ReferralEngine] Atomic reward transaction ${deterministicTxId} completed successfully for order #${order.orderId}`);
         } catch (e) {
           console.warn("[Referral Reward Sync Error]", e);
         }
@@ -4213,6 +4376,43 @@
         if (status === 'Delivered') {
           if (!order.deliveredAt) order.deliveredAt = new Date().toISOString();
           order.paymentStatus = 'COLLECTED_AT_DOORSTEP';
+          
+          // Update dedicated referrals record
+          if (fbFirestore && order.userId) {
+            const deliveredTime = new Date(order.deliveredAt).getTime();
+            const eligibilityAt = new Date(deliveredTime + 168 * 60 * 60 * 1000).toISOString();
+            fbFirestore.collection('referrals').doc(order.userId).get().then(refSnap => {
+              if (refSnap.exists) {
+                const rData = refSnap.data();
+                if ((!rData.firstOrderId || rData.firstOrderId === order.orderId) && rData.rewardStatus !== 'REWARDED') {
+                  refSnap.ref.set({
+                    firstOrderId: order.orderId,
+                    firstOrderDeliveredAt: order.deliveredAt,
+                    eligibilityAt: eligibilityAt,
+                    status: 'ORDER_DELIVERED_WAITING_168H',
+                    updatedAt: new Date().toISOString()
+                  }, { merge: true });
+                }
+              }
+            }).catch(() => {});
+          }
+        } else if (status === 'Cancelled') {
+          if (fbFirestore && order.userId) {
+            fbFirestore.collection('referrals').doc(order.userId).get().then(refSnap => {
+              if (refSnap.exists) {
+                const rData = refSnap.data();
+                if ((!rData.firstOrderId || rData.firstOrderId === order.orderId) && rData.rewardStatus !== 'REWARDED') {
+                  refSnap.ref.set({
+                    status: 'INELIGIBLE_CANCELLED',
+                    rewardStatus: 'INELIGIBLE_CANCELLED',
+                    cancellationAt: new Date().toISOString(),
+                    disqualificationReason: order.cancellationReason || 'Order cancelled by admin',
+                    updatedAt: new Date().toISOString()
+                  }, { merge: true });
+                }
+              }
+            }).catch(() => {});
+          }
         } else if (status === 'Completed') {
           const daysElapsed = order.deliveredAt ? Math.floor((Date.now() - new Date(order.deliveredAt).getTime()) / (24 * 60 * 60 * 1000)) : 0;
           if (!order.deliveredAt || daysElapsed < 7) {
@@ -5054,6 +5254,427 @@ FINANCIAL BREAKDOWN:
       const phone = messages[0]?.clientPhone || '';
       openCustomerProfileModal(phone, name, 'Refer to order sheet');
     }
+
+    /* =========================================================
+       🎁 SECTION 3B: REFERRAL & REWARDS ENGINE CONTROLLER
+       ========================================================= */
+    let currentAdminUsersSubTab = 'directory';
+    let cachedAdminReferrals = [];
+    let referralSearchQuery = '';
+    let referralStatusFilter = 'ALL';
+
+    function switchAdminUsersSubTab(tab) {
+      currentAdminUsersSubTab = tab;
+      const btnDir = document.getElementById('admin-subtab-directory-btn');
+      const btnRef = document.getElementById('admin-subtab-referrals-btn');
+      const viewDir = document.getElementById('admin-users-directory-view');
+      const viewRef = document.getElementById('admin-users-referrals-view');
+
+      const activeBtn = "flex-1 py-2 rounded-xl bg-white text-brand-navy shadow-sm transition font-bold";
+      const inactiveBtn = "flex-1 py-2 rounded-xl text-slate-500 hover:text-slate-800 transition font-bold";
+
+      if (btnDir) btnDir.className = (tab === 'directory') ? activeBtn : inactiveBtn;
+      if (btnRef) btnRef.className = (tab === 'referrals') ? activeBtn : inactiveBtn;
+
+      if (viewDir) viewDir.classList.toggle('hidden', tab !== 'directory');
+      if (viewRef) viewRef.classList.toggle('hidden', tab !== 'referrals');
+
+      if (tab === 'referrals') {
+        loadAdminReferralsList();
+      }
+    }
+
+    async function loadAdminReferralsList() {
+      const container = document.getElementById('admin-referrals-list-container');
+      if (container && cachedAdminReferrals.length === 0) {
+        container.innerHTML = '<div class="py-10 text-center text-slate-400 text-xs"><i class="fa-solid fa-spinner fa-spin mr-1 text-brand-navy"></i> Loading referral tracking records...</div>';
+      }
+
+      const referralsMap = new Map();
+      const allOrders = getStoredOrders();
+      const allUsers = getStoredUsers();
+
+      // 1. Fetch cloud referrals from Firestore
+      if (fbFirestore) {
+        try {
+          const snap = await fbFirestore.collection('referrals').get();
+          snap.forEach(doc => {
+            const data = doc.data();
+            referralsMap.set(doc.id, Object.assign({ id: doc.id, referredUid: doc.id }, data));
+          });
+        } catch (e) {
+          console.warn("[Admin Referral Fetch Warning]", e);
+        }
+      }
+
+      // 2. Cross-reference with all orders that have referral attribution
+      allOrders.forEach(ord => {
+        const referredUid = ord.userId;
+        const referrerKey = ord.referredByUid || ord.referralCodeUsed;
+        if (!referredUid || !referrerKey) return;
+
+        let existing = referralsMap.get(referredUid);
+        if (!existing) {
+          existing = {
+            id: referredUid,
+            referredUid: referredUid,
+            referrerUid: ord.referredByUid || null,
+            referralCode: ord.referralCodeUsed || null,
+            firstOrderId: ord.orderId,
+            firstOrderCreatedAt: ord.timestamp || ord.createdAt || null,
+            firstOrderDeliveredAt: ord.deliveredAt || null,
+            status: ord.status === 'Cancelled' ? 'INELIGIBLE_CANCELLED' : 
+                   (ord.referralRewardStatus === 'PROCESSED' ? 'REWARDED' : 
+                   (ord.status === 'Delivered' ? 'ORDER_DELIVERED_WAITING_168H' : 'FIRST_ORDER_PLACED')),
+            rewardStatus: ord.referralRewardStatus === 'PROCESSED' ? 'REWARDED' : (ord.referralRewardStatus || 'PENDING'),
+            rewardCoins: 50,
+            rewardedAt: ord.referralRewardProcessedAt || null,
+            rewardTransactionId: `referralReward_${referredUid}`
+          };
+          referralsMap.set(referredUid, existing);
+        } else {
+          // Enrich existing with latest order data
+          if (!existing.firstOrderId) existing.firstOrderId = ord.orderId;
+          if (!existing.firstOrderCreatedAt) existing.firstOrderCreatedAt = ord.timestamp || ord.createdAt;
+          if (!existing.firstOrderDeliveredAt && ord.deliveredAt) existing.firstOrderDeliveredAt = ord.deliveredAt;
+          if (ord.referralRewardStatus === 'PROCESSED') {
+            existing.status = 'REWARDED';
+            existing.rewardStatus = 'REWARDED';
+          }
+        }
+      });
+
+      cachedAdminReferrals = Array.from(referralsMap.values());
+      renderAdminReferralsList();
+    }
+
+    function renderAdminReferralsList() {
+      const container = document.getElementById('admin-referrals-list-container');
+      if (!container) return;
+
+      const allOrders = getStoredOrders();
+      const allUsers = getStoredUsers();
+      const now = Date.now();
+      const SEVEN_DAYS_MS = 168 * 60 * 60 * 1000;
+
+      // Update Top Metrics
+      let waitingCount = 0;
+      let rewardedCount = 0;
+      let disqualifiedCount = 0;
+
+      cachedAdminReferrals.forEach(ref => {
+        const status = ref.status || '';
+        const rewStatus = ref.rewardStatus || '';
+        if (status === 'REWARDED' || rewStatus === 'REWARDED') {
+          rewardedCount++;
+        } else if (status.includes('INELIGIBLE') || status === 'SELF_REFERRAL_BLOCKED') {
+          disqualifiedCount++;
+        } else if (status === 'ORDER_DELIVERED_WAITING_168H' || ref.firstOrderDeliveredAt) {
+          waitingCount++;
+        }
+      });
+
+      const totalEl = document.getElementById('metric-ref-total');
+      const waitEl = document.getElementById('metric-ref-waiting');
+      const rewEl = document.getElementById('metric-ref-rewarded');
+      const disEl = document.getElementById('metric-ref-disqualified');
+
+      if (totalEl) totalEl.textContent = cachedAdminReferrals.length;
+      if (waitEl) waitEl.textContent = waitingCount;
+      if (rewEl) rewEl.textContent = rewardedCount;
+      if (disEl) disEl.textContent = disqualifiedCount;
+
+      // Apply Search and Filters
+      const q = referralSearchQuery.toLowerCase().trim();
+      const filter = referralStatusFilter;
+
+      const filtered = cachedAdminReferrals.filter(r => {
+        // Filter match
+        if (filter !== 'ALL') {
+          if (filter === 'ELIGIBLE') {
+            if (r.status === 'REWARDED' || r.rewardStatus === 'REWARDED' || r.status.includes('INELIGIBLE')) return false;
+            const delTime = r.firstOrderDeliveredAt ? new Date(r.firstOrderDeliveredAt).getTime() : 0;
+            if (!delTime || (now - delTime) < SEVEN_DAYS_MS) return false;
+          } else if (filter === 'ORDER_DELIVERED_WAITING_168H') {
+            if (r.status !== 'ORDER_DELIVERED_WAITING_168H' && !r.firstOrderDeliveredAt) return false;
+            if (r.status === 'REWARDED' || r.rewardStatus === 'REWARDED') return false;
+          } else if (r.status !== filter && r.rewardStatus !== filter) {
+            return false;
+          }
+        }
+
+        // Search match
+        if (q) {
+          const matchReferred = (r.referredUid && r.referredUid.toLowerCase().includes(q));
+          const matchReferrer = (r.referrerUid && r.referrerUid.toLowerCase().includes(q)) || (r.referralCode && r.referralCode.toLowerCase().includes(q));
+          const matchOrder = (r.firstOrderId && r.firstOrderId.toLowerCase().includes(q));
+          return matchReferred || matchReferrer || matchOrder;
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="py-12 text-center bg-white rounded-2xl border border-slate-200">
+            <i class="fa-solid fa-gift text-3xl text-slate-300 mb-2"></i>
+            <p class="text-xs text-slate-500 font-medium">No referral records found matching your filters.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(ref => {
+        const referredUid = ref.referredUid || ref.id;
+        const referrerUid = ref.referrerUid || 'Unknown';
+        const orderId = ref.firstOrderId;
+
+        const linkedOrder = orderId ? allOrders.find(o => o.orderId === orderId) : null;
+        const referredUser = allUsers.find(u => u.uid === referredUid || u.userId === referredUid);
+        const referrerUser = allUsers.find(u => u.uid === referrerUid || u.userId === referrerUid || (u.referralCode && u.referralCode === ref.referralCode));
+
+        const referredName = (referredUser && referredUser.name) || (linkedOrder && linkedOrder.customerName) || `User (${referredUid.slice(-6)})`;
+        const referrerName = (referrerUser && referrerUser.name) || `Referrer (${referrerUid.slice(-6)})`;
+        const refCode = ref.referralCode || (referrerUser && referrerUser.referralCode) || '-';
+
+        const orderDateStr = ref.firstOrderCreatedAt ? new Date(ref.firstOrderCreatedAt).toLocaleDateString() : (linkedOrder ? new Date(linkedOrder.timestamp).toLocaleDateString() : 'Pending');
+        const deliveredDateStr = (ref.firstOrderDeliveredAt || (linkedOrder && linkedOrder.deliveredAt))
+          ? new Date(ref.firstOrderDeliveredAt || linkedOrder.deliveredAt).toLocaleDateString()
+          : 'Awaiting Delivery';
+
+        // 168-Hour Window Calculation
+        let eligibilityStr = 'Pending Delivery';
+        let countdownBadge = '';
+        let isEligibleForPayout = false;
+
+        const delAt = ref.firstOrderDeliveredAt || (linkedOrder && linkedOrder.deliveredAt);
+        if (delAt) {
+          const delTime = new Date(delAt).getTime();
+          const targetTime = delTime + SEVEN_DAYS_MS;
+          const msRemaining = targetTime - now;
+
+          eligibilityStr = new Date(targetTime).toLocaleDateString() + ' ' + new Date(targetTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+          if (ref.status === 'REWARDED' || ref.rewardStatus === 'REWARDED') {
+            countdownBadge = '<span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-full">✅ Rewarded (+50 Coins)</span>';
+          } else if (ref.status.includes('INELIGIBLE') || (linkedOrder && linkedOrder.referralRewardStatus === 'INELIGIBLE_RETURN')) {
+            countdownBadge = '<span class="px-2 py-0.5 bg-rose-100 text-rose-800 text-[10px] font-bold rounded-full">🚫 Disqualified (Return/Cancel)</span>';
+          } else if (msRemaining <= 0) {
+            isEligibleForPayout = true;
+            countdownBadge = '<span class="px-2 py-0.5 bg-amber-100 text-amber-900 text-[10px] font-bold rounded-full animate-pulse">⚡ 168h Elapsed - Ready for Payout!</span>';
+          } else {
+            const hoursRemaining = Math.floor(msRemaining / (1000 * 60 * 60));
+            const minsRemaining = Math.floor((msRemaining % (1000 * 60 * 60)) / (1000 * 60));
+            countdownBadge = `<span class="px-2 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-bold rounded-full">⏳ Return Window: ${hoursRemaining}h ${minsRemaining}m left</span>`;
+          }
+        } else {
+          countdownBadge = '<span class="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-full">📦 First Order In-Transit</span>';
+        }
+
+        const returnRequested = (linkedOrder && linkedOrder.returnDetails && linkedOrder.returnDetails.status && linkedOrder.returnDetails.status !== 'Rejected') ||
+                                (linkedOrder && Array.isArray(linkedOrder.items) && linkedOrder.items.some(i => i.returnRequest));
+        const returnStatusBadge = returnRequested 
+          ? '<span class="text-rose-600 font-bold"><i class="fa-solid fa-rotate-left"></i> Return Requested</span>' 
+          : '<span class="text-slate-500 font-medium"><i class="fa-solid fa-shield-check text-emerald-500"></i> No Return</span>';
+
+        return `
+          <div class="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-sm hover:border-indigo-300 transition space-y-3">
+            <!-- Header: Referred & Referrer -->
+            <div class="flex items-start justify-between gap-2 border-b border-slate-100 pb-2.5">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="w-6 h-6 rounded-full bg-brand-navy text-white text-[11px] font-bold flex items-center justify-center">
+                    ${referredName.charAt(0).toUpperCase()}
+                  </span>
+                  <div>
+                    <h4 class="font-bold text-xs text-slate-900">${referredName}</h4>
+                    <p class="text-[10px] text-slate-400 font-mono">UID: ${referredUid}</p>
+                  </div>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="text-[10px] text-slate-400">Referred by</div>
+                <div class="font-bold text-xs text-indigo-700">${referrerName}</div>
+                <span class="inline-block px-1.5 py-0.5 bg-indigo-50 border border-indigo-200 text-indigo-700 text-[9px] font-mono font-bold rounded">
+                  ${refCode}
+                </span>
+              </div>
+            </div>
+
+            <!-- Lifecycle & Order Metadata Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-[11px]">
+              <div>
+                <span class="text-[10px] text-slate-400 block">First Order</span>
+                <span class="font-bold text-slate-800 font-mono">${orderId ? '#' + orderId : 'None Yet'}</span>
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-400 block">Order Date</span>
+                <span class="font-medium text-slate-700">${orderDateStr}</span>
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-400 block">Delivered Date</span>
+                <span class="font-medium text-slate-700">${deliveredDateStr}</span>
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-400 block">Return Status</span>
+                <div>${returnStatusBadge}</div>
+              </div>
+            </div>
+
+            <!-- Status Banner & Payout Trigger -->
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pt-0.5">
+              <div class="flex items-center gap-2 flex-wrap">
+                ${countdownBadge}
+                ${ref.rewardTransactionId && (ref.status === 'REWARDED' || ref.rewardStatus === 'REWARDED') ? `<span class="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">Tx: ${ref.rewardTransactionId}</span>` : ''}
+              </div>
+              ${isEligibleForPayout ? `
+                <button onclick="forceProcessSingleReferral('${orderId}', this)" class="px-3 py-1 bg-brand-orange hover:bg-orange-600 text-white font-bold text-[11px] rounded-lg shadow transition flex items-center gap-1 active:scale-95">
+                  <i class="fa-solid fa-coins"></i> Disburse 50 Coins Now
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function handleReferralSearch(val) {
+      referralSearchQuery = (val || '').trim();
+      renderAdminReferralsList();
+    }
+
+    function handleReferralFilterChange(val) {
+      referralStatusFilter = val || 'ALL';
+      renderAdminReferralsList();
+    }
+
+    async function triggerManualReferralAudit(btn) {
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Auditing 168h Return Window...';
+      }
+
+      const banner = document.getElementById('referral-audit-status-banner');
+      if (banner) {
+        banner.className = 'p-2.5 rounded-xl text-xs font-medium bg-blue-50 text-blue-800 border border-blue-200 block';
+        banner.innerHTML = '<i class="fa-solid fa-magnifying-glass mr-1"></i> Running comprehensive 168-hour referral return window scan against Firestore...';
+      }
+
+      try {
+        const res = await scanAndProcessReferralRewards();
+        if (banner) {
+          banner.className = 'p-2.5 rounded-xl text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200 block';
+          banner.innerHTML = `✅ <strong>168h Audit Complete:</strong> Scanned ${res.totalScanned} tracked referrals. Newly credited ${res.newlyRewarded} rewards (+50 coins each). Disqualified ${res.disqualified}.`;
+        }
+      } catch (err) {
+        if (banner) {
+          banner.className = 'p-2.5 rounded-xl text-xs font-medium bg-rose-50 text-rose-800 border border-rose-200 block';
+          banner.innerHTML = `⚠️ Audit failed: ${err.message || 'Unknown network error'}`;
+        }
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa-solid fa-bolt text-amber-400"></i> Run 168h Audit Now';
+        }
+        loadAdminReferralsList();
+      }
+    }
+
+    async function scanAndProcessReferralRewards() {
+      const allOrders = getStoredOrders();
+      const now = Date.now();
+      const SEVEN_DAYS_MS = 168 * 60 * 60 * 1000;
+
+      let totalScanned = 0;
+      let newlyRewarded = 0;
+      let disqualified = 0;
+
+      for (let i = 0; i < allOrders.length; i++) {
+        const order = allOrders[i];
+        if (!order || !order.orderId) continue;
+
+        const hasReferralAttribution = Boolean(order.referredByUid || order.referralCodeUsed);
+        if (!hasReferralAttribution) continue;
+
+        totalScanned++;
+
+        // Check return or exchange requests
+        const hasReturn = (order.returnDetails && order.returnDetails.status && order.returnDetails.status !== 'Rejected') ||
+                          (Array.isArray(order.items) && order.items.some(it => it.returnRequest));
+        
+        if (hasReturn && order.referralRewardStatus !== 'INELIGIBLE_RETURN') {
+          order.referralRewardStatus = 'INELIGIBLE_RETURN';
+          disqualified++;
+          try {
+            await syncOrderUpdateToFirestore(order);
+            if (fbFirestore && order.userId) {
+              await fbFirestore.collection('referrals').doc(order.userId).set({
+                status: 'INELIGIBLE_RETURN',
+                rewardStatus: 'INELIGIBLE_RETURN',
+                disqualificationReason: 'Return was requested before 168-hour return window elapsed',
+                updatedAt: new Date().toISOString()
+              }, { merge: true });
+            }
+          } catch (e) {}
+          continue;
+        }
+
+        // Check if delivered and full 168 hours have elapsed
+        if (order.status === 'Delivered' && order.deliveredAt && !hasReturn) {
+          const deliveredTime = new Date(order.deliveredAt).getTime();
+          if ((now - deliveredTime) >= SEVEN_DAYS_MS) {
+            order.status = 'Completed';
+            if (!order.completedAt) order.completedAt = new Date().toISOString();
+            if (!order.history) order.history = [];
+            order.history.push({
+              status: 'Completed (168-Hour Return Window Elapsed - Referral & Order Finalized)',
+              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              date: new Date().toLocaleDateString()
+            });
+
+            try {
+              await syncOrderUpdateToFirestore(order);
+              await processReferralRewardForCompletedOrder(order);
+              newlyRewarded++;
+            } catch (err) {
+              console.warn("[Referral Scanner Reward Error]", err);
+            }
+          }
+        }
+      }
+
+      saveOrders(allOrders);
+      return { totalScanned, newlyRewarded, disqualified };
+    }
+
+    async function forceProcessSingleReferral(orderId, btn) {
+      if (!orderId) return;
+      const allOrders = getStoredOrders();
+      const ord = allOrders.find(o => o.orderId === orderId);
+      if (!ord) return;
+
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Disbursing...';
+      }
+
+      try {
+        await processReferralRewardForCompletedOrder(ord);
+        alert(`✅ Referral Reward Processed!\n+50 Buyero Coins credited to referrer for Order #${orderId}.`);
+        loadAdminReferralsList();
+      } catch (err) {
+        alert("Error processing reward: " + (err.message || "Network Error"));
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa-solid fa-coins"></i> Disburse 50 Coins Now';
+        }
+      }
+    }
+
+    // Auto-run scanner every 60 seconds
+    setInterval(() => {
+      scanAndProcessReferralRewards().catch(() => {});
+    }, 60000);
 
     /* =========================================================
        SECTION 4: 💬 SUPPORT & LIVE CHAT ENGINE

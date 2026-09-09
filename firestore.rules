@@ -98,11 +98,12 @@ service cloud.firestore {
       );
 
       // Updates: Customers can update profile info (name, phone, addresses, cart, wishlist)
-      // They can spend coins, or restore up to 50 coins on order cancellation refund, but CANNOT tamper with referral attribution
+      // They can spend coins, or restore up to 50 coins on order cancellation refund, but CANNOT tamper with referral attribution or bonus status
       allow update: if isAdmin() || (
         request.auth != null && request.auth.uid == userId &&
         (!request.resource.data.diff(resource.data).affectedKeys().hasAny([
-          'signupBonusGranted', 'signupBonusCoins', 'signupBonusGrantedAt'
+          'signupBonusGranted', 'signupBonusCoins', 'signupBonusGrantedAt', 'signupBonusTransactionId',
+          'referralAttributionStatus', 'referralAttributedAt', 'referralCapturedAt', 'referralRewardStatus'
         ])) &&
         // Customer cannot overwrite referredByUid if already set
         (!('referredByUid' in resource.data) || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['referredByUid', 'referredByCode'])) &&
@@ -120,9 +121,9 @@ service cloud.firestore {
         // Customer can only record their one-time signup_bonus (10 coins), order spend (deduction <= 50), or cancellation refund (<= 50)
         allow create: if isAdmin() || (
           request.auth != null && request.auth.uid == userId && (
-            (txId == 'signup_bonus' && request.resource.data.type == 'SIGNUP_BONUS' && request.resource.data.amount == 10) ||
-            (request.resource.data.type == 'ORDER_SPEND' && request.resource.data.amount <= 0 && request.resource.data.amount >= -50) ||
-            (request.resource.data.type == 'ORDER_REFUND' && request.resource.data.amount > 0 && request.resource.data.amount <= 50)
+            ((txId == 'signup_bonus' || txId == ('signupBonus_' + userId)) && request.resource.data.type == 'SIGNUP_BONUS' && request.resource.data.amount == 10) ||
+            ((request.resource.data.type == 'ORDER_SPEND' || request.resource.data.type == 'ORDER_DISCOUNT') && request.resource.data.amount <= 0 && request.resource.data.amount >= -50) ||
+            ((request.resource.data.type == 'ORDER_REFUND' || request.resource.data.type == 'ORDER_COIN_REFUND') && request.resource.data.amount > 0 && request.resource.data.amount <= 50)
           )
         );
         allow update, delete: if isAdmin();
@@ -133,7 +134,46 @@ service cloud.firestore {
       }
     }
 
-    // 5. PUBLIC REFERRAL CODES INDEX (Safe, O(1) code-to-uid resolution without exposing user profiles)
+    // 5. AUTHORITATIVE REFERRAL TRACKING RECORDS (referrals/{referredUid})
+    // Enforces deterministic, immutable referral attributions and lifecycle states
+    match /referrals/{referredUid} {
+      // Read: Admin or participants in the referral (referred customer or original referrer)
+      allow read: if isAdmin() || (
+        request.auth != null && (
+          request.auth.uid == referredUid ||
+          (resource != null && resource.data.referrerUid == request.auth.uid)
+        )
+      );
+
+      // Creation: Authenticated referred user upon initial account creation
+      // Strictly enforces pending reward status and blocks self-referral
+      allow create: if isAdmin() || (
+        request.auth != null &&
+        request.auth.uid == referredUid &&
+        request.resource.data.referredUid == request.auth.uid &&
+        request.resource.data.referrerUid != request.auth.uid &&
+        request.resource.data.status in ['WAITING_FOR_FIRST_ORDER', 'FIRST_ORDER_PLACED'] &&
+        request.resource.data.rewardStatus == 'PENDING' &&
+        request.resource.data.rewardCoins == 50
+      );
+
+      // Updates: Customer can link their first qualifying order or update order events
+      // They are STRICTLY FORBIDDEN from altering rewardStatus, rewardedAt, rewardTransactionId, referrerUid or referredUid
+      allow update: if isAdmin() || (
+        request.auth != null &&
+        request.auth.uid == referredUid &&
+        request.resource.data.referrerUid == resource.data.referrerUid &&
+        request.resource.data.referredUid == resource.data.referredUid &&
+        request.resource.data.rewardStatus == resource.data.rewardStatus &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'rewardStatus', 'rewardedAt', 'rewardTransactionId', 'rewardCoins', 'referrerUid', 'referredUid'
+        ])
+      );
+
+      allow delete: if isAdmin();
+    }
+
+    // 6. PUBLIC REFERRAL CODES INDEX (Safe, O(1) code-to-uid resolution without exposing user profiles)
     match /referral_codes/{code} {
       allow read: if true;
       allow create: if isAdmin() || (

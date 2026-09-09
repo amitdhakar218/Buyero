@@ -6842,18 +6842,39 @@
           };
         });
 
-        // Referral & first order determination
+        // Referral & first order determination (Authoritative Firebase check)
         let isFirstOrder = true;
+        let authoritativeRefUid = null;
+        let authoritativeRefCode = null;
+
         if (fbFirestore && currentUuid) {
           try {
+            // 1. Authoritative user profile check from Firestore
+            const uSnap = await fbFirestore.collection('users').doc(currentUuid).get();
+            if (uSnap.exists) {
+              const uData = uSnap.data();
+              authoritativeRefUid = uData.referredByUid || null;
+              authoritativeRefCode = uData.referredByCode || null;
+              if (uData.referralFirstOrderId) {
+                isFirstOrder = false;
+              }
+            }
+
+            // 2. Authoritative check across all past orders for this user in orders collection
             const prevOrdersSnap = await fbFirestore.collection('orders')
               .where('userId', '==', currentUuid)
-              .limit(1)
               .get();
             if (!prevOrdersSnap.empty) {
-              isFirstOrder = false;
+              const activeOrders = prevOrdersSnap.docs.filter(d => {
+                const s = d.data().status;
+                return s !== 'Cancelled';
+              });
+              if (activeOrders.length > 0) {
+                isFirstOrder = false;
+              }
             }
           } catch (e) {
+            console.warn("[Cloud first-order check error]", e);
             const prevLocal = getAllStoredOrders().filter(o => o.userId === currentUuid && o.status !== 'Cancelled');
             if (prevLocal.length > 0) isFirstOrder = false;
           }
@@ -6862,18 +6883,23 @@
           if (prevLocal.length > 0) isFirstOrder = false;
         }
 
-        const refUid = (currentUser && currentUser.referredByUid) || 
-                       sessionStorage.getItem('buyero_referred_by_uid') || 
-                       localStorage.getItem('buyero_referred_by_uid') || null;
-        const refCode = (currentUser && currentUser.referredByCode) || 
-                        sessionStorage.getItem('buyero_referred_by_code') || 
-                        localStorage.getItem('buyero_referred_by_code') || null;
+        if (!authoritativeRefUid && currentUser && currentUser.referredByUid) {
+          authoritativeRefUid = currentUser.referredByUid;
+          authoritativeRefCode = currentUser.referredByCode;
+        }
 
-        const isEligibleForReferral = Boolean(isFirstOrder && refUid && refUid !== currentUuid);
+        // Prevent self-referral
+        if (authoritativeRefUid && authoritativeRefUid === currentUuid) {
+          authoritativeRefUid = null;
+          authoritativeRefCode = null;
+        }
+
+        const isEligibleForReferral = Boolean(isFirstOrder && authoritativeRefUid);
 
         const newOrder = {
           orderId: newOrderId,
           timestamp: timestamp,
+          createdAt: new Date().toISOString(),
           userId: currentUuid,
           customerEmail: currentEmail,
           customerName: name,
@@ -6892,8 +6918,8 @@
           couponDiscount: couponDiscount,
           appliedCoupon: checkoutState.appliedCouponCode || null,
           isFirstOrder: isFirstOrder,
-          referredByUid: isEligibleForReferral ? refUid : null,
-          referralCodeUsed: isEligibleForReferral ? refCode : null,
+          referredByUid: isEligibleForReferral ? authoritativeRefUid : null,
+          referralCodeUsed: isEligibleForReferral ? authoritativeRefCode : null,
           referralRewardStatus: isEligibleForReferral ? 'PENDING' : (isFirstOrder ? 'INELIGIBLE_NO_REFERRER' : 'INELIGIBLE_NOT_FIRST_ORDER'),
           referralRewardProcessed: false,
           paymentMode: 'Cash on Delivery (COD)',
@@ -6919,6 +6945,25 @@
             await fbFirestore.collection('orders').doc(newOrder.orderId).set(newOrder);
             if (newOrder.userId) {
               await fbFirestore.collection('users').doc(newOrder.userId).collection('orders').doc(newOrder.orderId).set(newOrder).catch(() => {});
+              
+              // If this is the qualifying first order for referral:
+              if (isEligibleForReferral) {
+                // Update user document
+                await fbFirestore.collection('users').doc(newOrder.userId).set({
+                  referralFirstOrderId: newOrder.orderId,
+                  referralRewardStatus: 'PENDING_ORDER_DELIVERY',
+                  updatedAt: new Date().toISOString()
+                }, { merge: true });
+
+                // Update dedicated referrals record
+                await fbFirestore.collection('referrals').doc(newOrder.userId).set({
+                  firstOrderId: newOrder.orderId,
+                  firstOrderCreatedAt: new Date().toISOString(),
+                  status: 'FIRST_ORDER_PLACED',
+                  rewardStatus: 'PENDING',
+                  updatedAt: new Date().toISOString()
+                }, { merge: true });
+              }
             }
           } catch (cloudErr) {
             console.error("[Buyero Order Firestore Error]", cloudErr);
@@ -7451,6 +7496,24 @@
         note: reason
       });
 
+      // Update dedicated referral tracking record if this was first order
+      if (fbFirestore && order.userId) {
+        fbFirestore.collection('referrals').doc(order.userId).get().then(refSnap => {
+          if (refSnap.exists) {
+            const rData = refSnap.data();
+            if ((!rData.firstOrderId || rData.firstOrderId === order.orderId) && rData.rewardStatus !== 'REWARDED') {
+              refSnap.ref.set({
+                status: 'INELIGIBLE_CANCELLED',
+                rewardStatus: 'INELIGIBLE_CANCELLED',
+                cancellationAt: new Date().toISOString(),
+                disqualificationReason: reason || 'First order was cancelled before eligibility',
+                updatedAt: new Date().toISOString()
+              }, { merge: true });
+            }
+          }
+        }).catch(() => {});
+      }
+
       // Refund used coins if applicable (idempotent: exactly coins actually used, Section 19)
       if (order.coinsDiscount && order.coinsDiscount > 0 && !order.coinsRefunded) {
         order.coinsRefunded = true;
@@ -7607,6 +7670,24 @@
       // Disqualify referral reward if return is requested (Sections 9 & 10)
       if (actionType === 'RETURN') {
         order.referralRewardStatus = 'INELIGIBLE_RETURN';
+      }
+
+      // Update dedicated referral tracking record if return is requested on first order
+      if (fbFirestore && order.userId && actionType === 'RETURN') {
+        fbFirestore.collection('referrals').doc(order.userId).get().then(refSnap => {
+          if (refSnap.exists) {
+            const rData = refSnap.data();
+            if ((!rData.firstOrderId || rData.firstOrderId === order.orderId) && rData.rewardStatus !== 'REWARDED') {
+              refSnap.ref.set({
+                status: 'INELIGIBLE_RETURN',
+                rewardStatus: 'INELIGIBLE_RETURN',
+                returnInitiatedAt: new Date().toISOString(),
+                disqualificationReason: `Return requested for item before 168-hour window elapsed (${reason})`,
+                updatedAt: new Date().toISOString()
+              }, { merge: true });
+            }
+          }
+        }).catch(() => {});
       }
 
       if (!order.history) order.history = [];
@@ -8723,15 +8804,40 @@
         // Check existing cloud user state
         let isGenuinelyNewAccount = true;
         let initialCoins = 10;
+        let finalReferralCode = userReferralCode;
+        let finalReferredByUid = validReferrerUid;
+        let finalReferredByCode = validReferrerUid ? storedRefCode : null;
+        let referralAttributionStatus = validReferrerUid ? 'ATTRIBUTED' : 'UNATTRIBUTED';
+        let referralAttributedAt = validReferrerUid ? new Date().toISOString() : null;
+        let referralCapturedAt = validReferrerUid ? new Date().toISOString() : null;
+        let referralFirstOrderId = null;
+        let referralRewardStatus = validReferrerUid ? 'WAITING_FOR_FIRST_ORDER' : 'INELIGIBLE_NO_REFERRER';
+        let signupBonusGranted = true;
+        let signupBonusTransactionId = `signupBonus_${userUuid}`;
 
         if (fbFirestore) {
           try {
             const userSnap = await fbFirestore.collection('users').doc(userUuid).get();
             if (userSnap.exists) {
               const uData = userSnap.data();
+              if (uData.referralCode) {
+                finalReferralCode = uData.referralCode;
+              }
+              // NEW USER ONLY RULE: If user already has referredByUid, preserve it permanently!
+              if (uData.referredByUid) {
+                finalReferredByUid = uData.referredByUid;
+                finalReferredByCode = uData.referredByCode || finalReferredByCode;
+                referralAttributionStatus = uData.referralAttributionStatus || 'ATTRIBUTED';
+                referralAttributedAt = uData.referralAttributedAt || referralAttributedAt;
+                referralCapturedAt = uData.referralCapturedAt || referralCapturedAt;
+                referralFirstOrderId = uData.referralFirstOrderId || null;
+                referralRewardStatus = uData.referralRewardStatus || referralRewardStatus;
+              }
               if (uData.signupBonusGranted) {
                 isGenuinelyNewAccount = false;
                 initialCoins = Number(uData.coins !== undefined ? uData.coins : (uData.walletCoins || 0));
+                signupBonusGranted = uData.signupBonusGranted;
+                signupBonusTransactionId = uData.signupBonusTransactionId || `signupBonus_${userUuid}`;
               }
             }
           } catch (e) {
@@ -8751,13 +8857,18 @@
           photoURL: userPhoto,
           coins: initialCoins,
           walletCoins: initialCoins,
-          referralCode: userReferralCode,
+          referralCode: finalReferralCode,
           signupBonusCoins: isGenuinelyNewAccount ? 10 : 0,
-          signupBonusGranted: true,
+          signupBonusGranted: signupBonusGranted,
           signupBonusGrantedAt: new Date().toISOString(),
-          referredByUid: validReferrerUid,
-          referredByCode: validReferrerUid ? storedRefCode : null,
-          referralJoinedAt: validReferrerUid ? new Date().toISOString() : null,
+          signupBonusTransactionId: signupBonusTransactionId,
+          referredByUid: finalReferredByUid,
+          referredByCode: finalReferredByCode,
+          referralAttributionStatus: referralAttributionStatus,
+          referralCapturedAt: referralCapturedAt,
+          referralAttributedAt: referralAttributedAt,
+          referralFirstOrderId: referralFirstOrderId,
+          referralRewardStatus: referralRewardStatus,
           authMethod: 'google_oauth_firebase',
           createdAt: (existingUser && existingUser.createdAt) ? existingUser.createdAt : new Date().toISOString(),
           lastLogin: new Date().toISOString()
@@ -8782,24 +8893,61 @@
           try {
             await fbFirestore.collection('users').doc(userUuid).set(newUserData, { merge: true });
 
-            // Record signup bonus in coin_transactions ledger
+            // Record signup bonus in coin_transactions ledger with deterministic ID
             if (isGenuinelyNewAccount) {
+              await fbFirestore.collection('users').doc(userUuid).collection('coin_transactions').doc(`signupBonus_${userUuid}`).set({
+                type: 'SIGNUP_BONUS',
+                amount: 10,
+                uid: userUuid,
+                status: 'COMPLETED',
+                createdAt: new Date().toISOString()
+              });
               await fbFirestore.collection('users').doc(userUuid).collection('coin_transactions').doc('signup_bonus').set({
                 type: 'SIGNUP_BONUS',
                 amount: 10,
+                uid: userUuid,
+                status: 'COMPLETED',
                 createdAt: new Date().toISOString()
-              });
+              }).catch(() => {});
+            }
+
+            // Create dedicated referral tracking record if attributed & new
+            if (isGenuinelyNewAccount && finalReferredByUid) {
+              const refDocRef = fbFirestore.collection('referrals').doc(userUuid);
+              const refDocSnap = await refDocRef.get();
+              if (!refDocSnap.exists) {
+                await refDocRef.set({
+                  referredUid: userUuid,
+                  referrerUid: finalReferredByUid,
+                  referralCode: finalReferredByCode,
+                  attributedAt: new Date().toISOString(),
+                  firstOrderId: null,
+                  firstOrderCreatedAt: null,
+                  firstOrderDeliveredAt: null,
+                  eligibilityAt: null,
+                  returnInitiatedAt: null,
+                  cancellationAt: null,
+                  status: 'WAITING_FOR_FIRST_ORDER',
+                  rewardStatus: 'PENDING',
+                  rewardCoins: 50,
+                  rewardedAt: null,
+                  rewardTransactionId: null,
+                  disqualificationReason: null,
+                  updatedAt: new Date().toISOString()
+                });
+                console.log("[Referral Engine] Created dedicated tracking doc in referrals/" + userUuid);
+              }
             }
 
             // Register referral code in referral_codes index
-            await fbFirestore.collection('referral_codes').doc(userReferralCode).set({
+            await fbFirestore.collection('referral_codes').doc(finalReferralCode).set({
               uid: userUuid,
-              code: userReferralCode,
+              code: finalReferralCode,
               active: true,
               createdAt: new Date().toISOString()
             }, { merge: true });
 
-            console.log("[Firestore] User and referral code saved with ID:", userUuid, userReferralCode);
+            console.log("[Firestore] User and referral code saved with ID:", userUuid, finalReferralCode);
           } catch (e) {
             console.warn("[Firestore user sync error]", e);
           }

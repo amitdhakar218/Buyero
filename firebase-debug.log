@@ -1,0 +1,25 @@
+[debug] [2026-09-09T11:51:58.449Z] ----------------------------------------------------------------------
+[debug] [2026-09-09T11:51:58.453Z] Command:       /usr/local/bin/node /usr/local/bin/firebase projects:list
+[debug] [2026-09-09T11:51:58.453Z] CLI Version:   15.26.0
+[debug] [2026-09-09T11:51:58.454Z] Platform:      linux
+[debug] [2026-09-09T11:51:58.454Z] Node Version:  v22.23.2
+[debug] [2026-09-09T11:51:58.454Z] Detected Agent: unknown
+[debug] [2026-09-09T11:51:58.454Z] Time:          Wed Sep 09 2026 11:51:58 GMT+0000 (Coordinated Universal Time)
+[debug] [2026-09-09T11:51:58.455Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-09-09T11:51:58.488Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2026-09-09T11:51:58.850Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-09-09T11:51:58.910Z] Running auto auth
+[debug] [2026-09-09T11:51:58.917Z] No OAuth tokens found
+[debug] [2026-09-09T11:51:58.918Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects pageSize=1000
+[debug] [2026-09-09T11:51:59.269Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects 403
+[debug] [2026-09-09T11:51:59.270Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects [omitted]
+[debug] [2026-09-09T11:51:59.270Z] Request to https://firebase.googleapis.com/v1beta1/projects?pageSize=1000 had HTTP Error: 403, Firebase Management API has not been used in project 166680888425 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/firebase.googleapis.com/overview?project=166680888425 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.
+[debug] [2026-09-09T11:51:59.272Z] FirebaseError: Request to https://firebase.googleapis.com/v1beta1/projects?pageSize=1000 had HTTP Error: 403, Firebase Management API has not been used in project 166680888425 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/firebase.googleapis.com/overview?project=166680888425 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.
+    at responseToError (/usr/local/lib/node_modules/firebase-tools/lib/responseToError.js:53:12)
+    at RetryOperation._fn (/usr/local/lib/node_modules/firebase-tools/lib/apiv2.js:415:77)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[error] 
+[error] Error: Failed to list Firebase projects. See firebase-debug.log for more info.
+[debug] [2026-09-09T11:51:59.300Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
+[debug] [2026-09-09T11:51:59.300Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}
