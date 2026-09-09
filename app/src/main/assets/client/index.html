@@ -410,35 +410,52 @@
         </div>
       </div>
 
-      <!-- 2. Share & Invite Friends Box (WhatsApp & App Link Sharing) -->
+      <!-- 2. Share & Invite Friends Box (Referral Sharing) -->
       <div class="bg-gradient-to-r from-orange-500 to-amber-500 rounded-2xl p-4 text-white shadow-md flex items-center justify-between">
         <div class="space-y-1">
           <span class="inline-block text-[10px] font-bold uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded-full">Refer & Earn</span>
           <h4 class="font-bold text-sm">🎁 Share Buyero & Invite Friends</h4>
-          <p class="text-[11px] text-white/90">Share app link on WhatsApp & earn 50 Buyero Coins!</p>
+          <p class="text-[11px] text-white/90">Referral ID: <span id="profile-referral-id" class="font-mono font-bold underline">AMITCEEQ</span> • Earn 50 Coins</p>
         </div>
         <button onclick="handleShareApp()" class="px-3.5 py-2.5 bg-white text-orange-600 font-bold rounded-xl text-xs hover:bg-orange-50 transition shadow active:scale-95 flex items-center gap-1.5 whitespace-nowrap">
-          <i class="fa-brands fa-whatsapp text-emerald-600 text-sm"></i> Share Link
+          <i class="fa-solid fa-share-nodes text-orange-600 text-sm"></i> Share Buyero
         </button>
       </div>
 
-      <!-- 3. My Wallet & Rewards (Buyero Coins Balance) -->
-      <div class="bg-white rounded-2xl p-4 border border-amber-200/80 shadow-sm flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl shadow-inner">
-            🪙
-          </div>
-          <div>
-            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">My Wallet & Rewards</span>
-            <div class="flex items-baseline gap-1.5 mt-0.5">
-              <span class="font-poppins font-bold text-lg text-slate-900" id="profile-wallet-coins">50</span>
-              <span class="text-xs font-semibold text-amber-600">Buyero Coins</span>
-              <span class="text-[11px] text-slate-400">(₹50 Value)</span>
+      <!-- 3. My Wallet & Rewards (Buyero Coins Balance & Canonical Rules) -->
+      <div class="bg-white rounded-2xl p-4 border border-amber-200/80 shadow-sm space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl shadow-inner">
+              🪙
             </div>
-            <p class="text-[10px] text-emerald-600 font-medium">1 Coin = ₹1 instant discount on next order</p>
+            <div>
+              <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Buyero Coins</span>
+              <div class="flex items-baseline gap-1.5 mt-0.5">
+                <span class="text-xs text-slate-500">Current balance:</span>
+                <span class="font-poppins font-bold text-xl text-slate-900" id="profile-wallet-coins">0</span>
+                <span class="text-xs font-semibold text-amber-600">Coins</span>
+              </div>
+            </div>
           </div>
+          <span class="text-[10px] font-bold px-2.5 py-1 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg">Active</span>
         </div>
-        <span class="text-[10px] font-bold px-2.5 py-1 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg">Active</span>
+
+        <!-- Official Coin System Rules -->
+        <div class="bg-amber-50/70 border border-amber-200/60 rounded-xl p-3 text-[11px] text-amber-950 space-y-1.5 leading-relaxed">
+          <div class="font-bold text-amber-900 flex items-center gap-1.5">
+            <i class="fa-solid fa-shield-halved text-amber-600 text-xs"></i>
+            <span>Buyero Coins Rules & Rewards</span>
+          </div>
+          <ul class="space-y-1 text-slate-700 list-disc list-inside">
+            <li><span class="font-medium text-slate-900">New account:</span> 10 coins, one time only</li>
+            <li><span class="font-medium text-slate-900">Refer a new user:</span> 50 coins after their first qualifying order</li>
+            <li><span class="font-medium text-slate-900">Referral reward</span> is credited only after the full 7-day (168-hour) return period</li>
+            <li>If the referred order is returned before 7 days, <span class="text-rose-600 font-medium">no referral reward</span></li>
+            <li><span class="font-medium text-slate-900">Maximum coin discount per order:</span> ₹50 (1 coin = ₹1)</li>
+            <li>Coins cannot pay the entire product price (minimum payable ₹1)</li>
+          </ul>
+        </div>
       </div>
 
       <!-- 4. Primary Actions List -->
@@ -1152,12 +1169,15 @@
           <!-- Buyero Coins Checkbox -->
           <label class="flex items-start gap-3 p-3 bg-amber-50/60 border border-amber-200 rounded-xl cursor-pointer">
             <input type="checkbox" id="chk-use-coins" onchange="toggleCheckoutCoins()" class="mt-0.5 text-brand-orange focus:ring-brand-orange rounded">
-            <div class="text-xs">
-              <span class="font-bold text-slate-800 flex items-center gap-1">
-                🪙 Use 50 Buyero Coins
-                <span class="text-[10px] text-amber-800 bg-amber-200/70 font-semibold px-1.5 py-0.2 rounded">Save ₹50</span>
-              </span>
-              <p class="text-[10px] text-slate-500 mt-0.5">Your balance: <span id="chk-coins-balance" class="font-bold text-amber-700">50</span> Coins</p>
+            <div class="text-xs flex-1">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-slate-800 flex items-center gap-1">
+                  🪙 Apply Buyero Coins
+                  <span class="text-[10px] text-amber-800 bg-amber-200/70 font-semibold px-1.5 py-0.2 rounded">Max ₹50 off</span>
+                </span>
+                <span class="text-[10px] text-slate-500 font-medium">1 Coin = ₹1</span>
+              </div>
+              <p class="text-[10px] text-slate-500 mt-0.5">Your balance: <span id="chk-coins-balance" class="font-bold text-amber-700">0</span> Coins • Min. payable ₹1</p>
             </div>
           </label>
 
@@ -2567,7 +2587,7 @@
           </div>
           <div>
             <h3 class="font-poppins font-bold text-sm">Refer & Earn 50 Coins</h3>
-            <p class="text-[10px] text-white/90">Invite friends & earn ₹50 on every completed order!</p>
+            <p class="text-[10px] text-white/90">Invite friends & earn 50 Buyero Coins after their first order!</p>
           </div>
         </div>
         <button onclick="closeReferralModal()" class="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center text-xs transition" title="Close">
@@ -2578,20 +2598,20 @@
       <div class="p-4 space-y-4">
         <!-- Referral Code Display Box -->
         <div class="p-4 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl text-center space-y-2">
-          <span class="text-[11px] font-bold text-amber-800 uppercase tracking-wider">Your Exclusive Referral Code</span>
+          <span class="text-[11px] font-bold text-amber-800 uppercase tracking-wider">Your Referral ID</span>
           <div class="flex items-center justify-center gap-2">
-            <span id="referral-code-display" class="font-mono font-bold text-2xl tracking-widest text-slate-900 bg-white px-4 py-1.5 rounded-xl border border-dashed border-amber-300 shadow-xs">BUYERO50</span>
+            <span id="referral-code-display" class="font-mono font-bold text-2xl tracking-widest text-slate-900 bg-white px-4 py-1.5 rounded-xl border border-dashed border-amber-300 shadow-xs">AMITCEEQ</span>
             <button onclick="copyReferralCodeOnly()" class="px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-xs shadow-xs transition active:scale-95 flex items-center gap-1">
               <i class="fa-solid fa-copy"></i>
               <span>Copy</span>
             </button>
           </div>
-          <p class="text-[11px] text-amber-900/80">Friends get ₹50 off • You get 50 Buyero Coins when their order completes!</p>
+          <p class="text-[11px] text-amber-900/80">Friend gets 10 coins on signup • You get 50 coins after 7 days of their first delivered order without return.</p>
         </div>
 
         <!-- Shareable Link Box -->
         <div>
-          <label class="block text-[11px] font-bold text-slate-700 mb-1">Your Direct Invite Link:</label>
+          <label class="block text-[11px] font-bold text-slate-700 mb-1">Your Direct Referral Link:</label>
           <div class="flex items-center gap-2">
             <input 
               type="text" 
@@ -2612,22 +2632,22 @@
           </div>
         </div>
 
+        <!-- Primary Action: Share Buyero -->
+        <button 
+          onclick="shareReferralNative()" 
+          class="w-full py-3 bg-brand-orange hover:bg-orange-600 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-md transition active:scale-95"
+        >
+          <i class="fa-solid fa-share-nodes text-sm"></i>
+          <span>Share Buyero</span>
+        </button>
+
         <!-- 1-Tap WhatsApp Share -->
         <button 
           onclick="shareReferralViaWhatsApp()" 
-          class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-md transition active:scale-95"
+          class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-sm transition active:scale-95"
         >
-          <i class="fa-brands fa-whatsapp text-lg"></i>
+          <i class="fa-brands fa-whatsapp text-base"></i>
           <span>Share via WhatsApp</span>
-        </button>
-
-        <!-- Native Share / Web Share API -->
-        <button 
-          onclick="shareReferralNative()" 
-          class="w-full py-2.5 border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition"
-        >
-          <i class="fa-solid fa-share-nodes"></i>
-          <span>More Sharing Options</span>
         </button>
       </div>
     </div>
@@ -3699,9 +3719,16 @@
         if (path) {
           const segments = path.split('/');
           const lastSegment = segments[segments.length - 1];
-          // Ensure it's not a generic asset/admin route
+          // Ensure it's not a generic asset/admin route or a referral code
           if (lastSegment && !['index.html', 'client', 'admin', 'assets'].includes(lastSegment.toLowerCase())) {
-            return decodeURIComponent(lastSegment);
+            const catalog = getStoredCatalog();
+            const matchesProduct = catalog.some(p => 
+              (p.id && p.id.toLowerCase() === lastSegment.toLowerCase()) || 
+              (p.slug && p.slug.toLowerCase() === lastSegment.toLowerCase())
+            );
+            if (matchesProduct) {
+              return decodeURIComponent(lastSegment);
+            }
           }
         }
 
@@ -3723,14 +3750,80 @@
         }, 400);
       }
 
-      // Capture referral parameter from URL (?ref=... or ?referrer=...)
-      try {
-        const refUrlParams = new URLSearchParams(window.location.search);
-        const refParam = refUrlParams.get('ref') || refUrlParams.get('referrer') || refUrlParams.get('r');
-        if (refParam) {
-          localStorage.setItem('buyero_referred_by', refParam.trim().toUpperCase());
+      // Authoritative Referral Attribution Processor
+      async function processIncomingReferralAttribution() {
+        try {
+          let candidateCode = null;
+          let isPathAttribution = false;
+
+          // A. Query Param (?ref=... or ?referrer=...)
+          const refUrlParams = new URLSearchParams(window.location.search);
+          const refParam = refUrlParams.get('ref') || refUrlParams.get('referrer') || refUrlParams.get('r');
+          if (refParam) {
+            candidateCode = refParam.trim().toUpperCase();
+          }
+
+          // B. User Referral Path (/AMITCEEQ)
+          const rawPath = window.location.pathname.replace(/^\/+|\/+$/g, '');
+          const reserved = ['index.html', 'client', 'admin', 'assets', 'favicon.ico', ''];
+          if (!candidateCode && rawPath && !reserved.includes(rawPath.toLowerCase())) {
+            const catalog = getStoredCatalog();
+            const matchesProduct = catalog.some(p => 
+              (p.id && p.id.toLowerCase() === rawPath.toLowerCase()) || 
+              (p.slug && p.slug.toLowerCase() === rawPath.toLowerCase())
+            );
+            if (!matchesProduct) {
+              candidateCode = rawPath.toUpperCase();
+              isPathAttribution = true;
+            }
+          }
+
+          if (!candidateCode) return;
+
+          // Validate in Firestore referral_codes index
+          if (fbFirestore) {
+            const refDoc = await fbFirestore.collection('referral_codes').doc(candidateCode).get();
+            if (refDoc.exists && refDoc.data() && refDoc.data().active && refDoc.data().uid) {
+              const referrerUid = refDoc.data().uid;
+              const currentAuthUid = (fbAuth && fbAuth.currentUser && fbAuth.currentUser.uid) || 
+                                     (currentUser && (currentUser.authUid || currentUser.uuid));
+              // Prevent self-referral
+              if (currentAuthUid && currentAuthUid === referrerUid) {
+                console.log("[Referral] Self-referral ignored.");
+                if (isPathAttribution) window.history.replaceState({}, '', '/');
+                return;
+              }
+              // Prevent altering established referral for registered user
+              if (currentUser && currentUser.referredByUid) {
+                console.log("[Referral] User already permanently referred by:", currentUser.referredByUid);
+                if (isPathAttribution) window.history.replaceState({}, '', '/');
+                return;
+              }
+              sessionStorage.setItem('buyero_referred_by_code', candidateCode);
+              sessionStorage.setItem('buyero_referred_by_uid', referrerUid);
+              localStorage.setItem('buyero_referred_by_code', candidateCode);
+              localStorage.setItem('buyero_referred_by_uid', referrerUid);
+              localStorage.setItem('buyero_referred_by', candidateCode);
+              console.log("[Referral Attribution Registered]", candidateCode, "-> Referrer UID:", referrerUid);
+
+              if (isPathAttribution) {
+                window.history.replaceState({}, '', '/');
+              }
+            } else if (isPathAttribution) {
+              window.history.replaceState({}, '', '/');
+            }
+          } else {
+            sessionStorage.setItem('buyero_referred_by_code', candidateCode);
+            localStorage.setItem('buyero_referred_by_code', candidateCode);
+            localStorage.setItem('buyero_referred_by', candidateCode);
+            if (isPathAttribution) window.history.replaceState({}, '', '/');
+          }
+        } catch (e) {
+          console.warn("[Referral Attribution Error]", e);
         }
-      } catch (e) {}
+      }
+
+      processIncomingReferralAttribution();
 
       const hash = window.location.hash.replace(/^#\/?/, '').trim();
       if (hash === 'orders') switchClientView('orders');
@@ -5250,7 +5343,12 @@
       if (!origin || origin === 'null' || origin.startsWith('file:') || origin.includes('localhost')) {
         origin = 'https://buyero-68abd.web.app';
       }
-      return `${origin}/${productId}`;
+      const refCode = ensureUserReferralCode();
+      const slug = encodeURIComponent(productId);
+      if (refCode) {
+        return `${origin}/${slug}?ref=${encodeURIComponent(refCode)}`;
+      }
+      return `${origin}/${slug}`;
     }
 
     function shareProduct(productId) {
@@ -5406,33 +5504,55 @@
     }
 
     /* =========================================================
-       REFERRAL & APP SHARE ENGINE (50 COINS REWARD)
+       REFERRAL & APP SHARE ENGINE (50 COINS AFTER 7 DAYS)
        ========================================================= */
     function ensureUserReferralCode() {
       if (!currentUser) currentUser = getStoredUser() || {};
-      if (!currentUser.referralCode) {
-        const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
-        const cleanName = (currentUser.name ? currentUser.name.replace(/[^a-zA-Z]/g, '').slice(0, 4).toUpperCase() : '') || 'BYR';
-        currentUser.referralCode = `${cleanName}${rand}`;
-        localStorage.setItem('buyero_user', JSON.stringify(currentUser));
-        if (fbFirestore && (currentUser.uuid || currentUser.userId)) {
-          const uid = currentUser.uuid || currentUser.userId;
-          fbFirestore.collection('users').doc(uid).set({
-            referralCode: currentUser.referralCode
-          }, { merge: true }).catch(() => {});
-        }
+      if (currentUser.referralCode && currentUser.referralCode.trim().length >= 4) {
+        return currentUser.referralCode.toUpperCase();
       }
-      return currentUser.referralCode;
+
+      const uid = (fbAuth && fbAuth.currentUser && fbAuth.currentUser.uid) ||
+                  (currentUser && (currentUser.authUid || currentUser.uuid || currentUser.userId));
+
+      const cleanName = (currentUser.name ? currentUser.name.replace(/[^a-zA-Z]/g, '').slice(0, 4).toUpperCase() : '') || 'BUY';
+      const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+      const newCode = `${cleanName}${rand}`.toUpperCase();
+
+      currentUser.referralCode = newCode;
+      localStorage.setItem('buyero_user', JSON.stringify(currentUser));
+
+      if (fbFirestore && uid && !uid.startsWith('usr_')) {
+        fbFirestore.collection('users').doc(uid).set({
+          referralCode: newCode
+        }, { merge: true }).catch(() => {});
+
+        fbFirestore.collection('referral_codes').doc(newCode).set({
+          uid: uid,
+          code: newCode,
+          active: true,
+          createdAt: new Date().toISOString()
+        }, { merge: true }).catch(() => {});
+      }
+
+      return newCode;
+    }
+
+    function getUserReferralShareUrl() {
+      const code = ensureUserReferralCode() || 'AMITCEEQ';
+      const origin = 'https://buyero-68abd.web.app';
+      return `${origin}/${encodeURIComponent(code)}`;
     }
 
     function handleShareApp() {
-      const code = ensureUserReferralCode() || 'BUYERO50';
-      const baseHref = window.location.origin + window.location.pathname;
-      const shareUrl = `${baseHref}?ref=${encodeURIComponent(code)}`;
+      const code = ensureUserReferralCode() || 'AMITCEEQ';
+      const shareUrl = getUserReferralShareUrl();
 
       const codeEl = document.getElementById('referral-code-display');
       const inputEl = document.getElementById('referral-link-input');
+      const profRefEl = document.getElementById('profile-referral-id');
       if (codeEl) codeEl.textContent = code;
+      if (profRefEl) profRefEl.textContent = code;
       if (inputEl) inputEl.value = shareUrl;
 
       const modal = document.getElementById('modal-referral');
@@ -5445,50 +5565,50 @@
     }
 
     function copyReferralCodeOnly() {
-      const code = ensureUserReferralCode() || 'BUYERO50';
+      const code = ensureUserReferralCode() || 'AMITCEEQ';
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(code).then(() => {
-          alert(`Referral code "${code}" copied to clipboard!`);
+          alert(`Referral ID "${code}" copied to clipboard!`);
         }).catch(() => {
-          prompt("Copy your referral code:", code);
+          prompt("Copy your referral ID:", code);
         });
       } else {
-        prompt("Copy your referral code:", code);
+        prompt("Copy your referral ID:", code);
       }
     }
 
     function copyReferralLink() {
+      const shareUrl = getUserReferralShareUrl();
       const inputEl = document.getElementById('referral-link-input');
-      const text = inputEl ? inputEl.value : window.location.href;
+      if (inputEl) inputEl.value = shareUrl;
+
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(() => {
+        navigator.clipboard.writeText(shareUrl).then(() => {
           const banner = document.getElementById('referral-copied-banner');
           if (banner) {
             banner.classList.remove('hidden');
             setTimeout(() => banner.classList.add('hidden'), 3500);
           }
         }).catch(() => {
-          prompt("Copy your referral link:", text);
+          prompt("Copy your referral link:", shareUrl);
         });
       } else {
-        prompt("Copy your referral link:", text);
+        prompt("Copy your referral link:", shareUrl);
       }
     }
 
     function shareReferralViaWhatsApp() {
-      const code = ensureUserReferralCode() || 'BUYERO50';
-      const baseHref = window.location.origin + window.location.pathname;
-      const shareUrl = `${baseHref}?ref=${encodeURIComponent(code)}`;
-      const text = `🛍️ Hey! Check out Buyero Stores for latest fashion & lifestyle at direct factory wholesale prices with Free COD.\n\nUse my invite code *${code}* or tap link to claim ₹50 Buyero Coins instantly on your first order:\n👉 ${shareUrl}`;
+      const code = ensureUserReferralCode() || 'AMITCEEQ';
+      const shareUrl = getUserReferralShareUrl();
+      const text = `🛍️ Shop on Buyero Stores! Get fashion & lifestyle products at direct factory wholesale prices with Free Cash on Delivery.\n\nUse my invite code *${code}* or tap link to claim 10 Buyero Coins on signup:\n👉 ${shareUrl}`;
       const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
       window.open(whatsappUrl, '_blank');
     }
 
     function shareReferralNative() {
-      const code = ensureUserReferralCode() || 'BUYERO50';
-      const baseHref = window.location.origin + window.location.pathname;
-      const shareUrl = `${baseHref}?ref=${encodeURIComponent(code)}`;
-      const text = `Shop on Buyero Stores! Use my invite code ${code} for ₹50 Buyero Coins.`;
+      const code = ensureUserReferralCode() || 'AMITCEEQ';
+      const shareUrl = getUserReferralShareUrl();
+      const text = `Shop on Buyero Stores! Use my invite code ${code} for 10 Welcome Coins.`;
 
       if (navigator.share) {
         navigator.share({
@@ -6439,7 +6559,10 @@
       const coinsBalEl = document.getElementById('chk-coins-balance');
       if (coinsBalEl) coinsBalEl.textContent = coinsBal;
       const coinsChk = document.getElementById('chk-use-coins');
-      if (coinsChk) coinsChk.checked = false;
+      if (coinsChk) {
+        coinsChk.checked = false;
+        coinsChk.disabled = (coinsBal <= 0);
+      }
 
       const couponInput = document.getElementById('chk-coupon-input');
       if (couponInput) couponInput.value = '';
@@ -6719,6 +6842,35 @@
           };
         });
 
+        // Referral & first order determination
+        let isFirstOrder = true;
+        if (fbFirestore && currentUuid) {
+          try {
+            const prevOrdersSnap = await fbFirestore.collection('orders')
+              .where('userId', '==', currentUuid)
+              .limit(1)
+              .get();
+            if (!prevOrdersSnap.empty) {
+              isFirstOrder = false;
+            }
+          } catch (e) {
+            const prevLocal = getAllStoredOrders().filter(o => o.userId === currentUuid && o.status !== 'Cancelled');
+            if (prevLocal.length > 0) isFirstOrder = false;
+          }
+        } else {
+          const prevLocal = getAllStoredOrders().filter(o => o.userId === currentUuid && o.status !== 'Cancelled');
+          if (prevLocal.length > 0) isFirstOrder = false;
+        }
+
+        const refUid = (currentUser && currentUser.referredByUid) || 
+                       sessionStorage.getItem('buyero_referred_by_uid') || 
+                       localStorage.getItem('buyero_referred_by_uid') || null;
+        const refCode = (currentUser && currentUser.referredByCode) || 
+                        sessionStorage.getItem('buyero_referred_by_code') || 
+                        localStorage.getItem('buyero_referred_by_code') || null;
+
+        const isEligibleForReferral = Boolean(isFirstOrder && refUid && refUid !== currentUuid);
+
         const newOrder = {
           orderId: newOrderId,
           timestamp: timestamp,
@@ -6739,7 +6891,11 @@
           coinsDiscount: coinsDiscount,
           couponDiscount: couponDiscount,
           appliedCoupon: checkoutState.appliedCouponCode || null,
-          referralCodeUsed: localStorage.getItem('buyero_referred_by') || null,
+          isFirstOrder: isFirstOrder,
+          referredByUid: isEligibleForReferral ? refUid : null,
+          referralCodeUsed: isEligibleForReferral ? refCode : null,
+          referralRewardStatus: isEligibleForReferral ? 'PENDING' : (isFirstOrder ? 'INELIGIBLE_NO_REFERRER' : 'INELIGIBLE_NOT_FIRST_ORDER'),
+          referralRewardProcessed: false,
           paymentMode: 'Cash on Delivery (COD)',
           transactionId: null,
           paymentStatus: 'COD_PENDING_DOORSTEP',
@@ -6808,6 +6964,19 @@
         if (checkoutState.useCoins && coinsDiscount > 0) {
           const curCoins = getUserCoins();
           const remCoins = Math.max(0, curCoins - coinsDiscount);
+          if (fbFirestore && currentUuid) {
+            try {
+              await fbFirestore.collection('users').doc(currentUuid).collection('coin_transactions').doc(`order_${newOrder.orderId}_spend`).set({
+                type: 'ORDER_SPEND',
+                amount: -coinsDiscount,
+                coinsUsed: coinsDiscount,
+                orderId: newOrder.orderId,
+                createdAt: new Date().toISOString()
+              });
+            } catch (e) {
+              console.warn("[Coin Spend TX Error]", e);
+            }
+          }
           await syncUserWalletCoins(remCoins, `ORDER_PAYMENT_${newOrder.orderId}`);
         }
 
@@ -7273,6 +7442,7 @@
       order.status = 'Cancelled';
       order.cancelReason = reason;
       order.cancelledAt = new Date().toISOString();
+      order.referralRewardStatus = 'INELIGIBLE_CANCELLED';
       if (!order.history) order.history = [];
       order.history.push({
         status: 'Cancelled',
@@ -7281,14 +7451,29 @@
         note: reason
       });
 
+      // Refund used coins if applicable (idempotent: exactly coins actually used, Section 19)
+      if (order.coinsDiscount && order.coinsDiscount > 0 && !order.coinsRefunded) {
+        order.coinsRefunded = true;
+        const refundAmt = Number(order.coinsDiscount);
+        const refunded = getUserCoins() + refundAmt;
+        syncUserWalletCoins(refunded, `ORDER_CANCEL_REFUND_${order.orderId}`);
+
+        // Record deterministic refund ledger transaction
+        if (fbFirestore && order.userId) {
+          fbFirestore.collection('users').doc(order.userId).collection('coin_transactions').doc(`order_${order.orderId}_refund`).set({
+            type: 'ORDER_REFUND',
+            amount: refundAmt,
+            orderId: order.orderId,
+            uid: order.userId,
+            createdAt: new Date().toISOString()
+          }, { merge: true }).catch((err) => {
+            console.warn("[Cancel Refund TX Error]", err);
+          });
+        }
+      }
+
       // Save orders
       saveOrders(orders);
-
-      // Refund used coins if applicable
-      if (order.coinsDiscount && order.coinsDiscount > 0) {
-        const refunded = getUserCoins() + Number(order.coinsDiscount);
-        syncUserWalletCoins(refunded, `ORDER_CANCEL_REFUND_${order.orderId}`);
-      }
 
       // Sync real-time broadcast to Admin Studio
       try {
@@ -7418,6 +7603,11 @@
         replacementSize: replacementSize,
         requestedAt: new Date().toISOString()
       };
+
+      // Disqualify referral reward if return is requested (Sections 9 & 10)
+      if (actionType === 'RETURN') {
+        order.referralRewardStatus = 'INELIGIBLE_RETURN';
+      }
 
       if (!order.history) order.history = [];
       order.history.push({
@@ -8385,6 +8575,10 @@
         // Sync cloud orders in background for this persistent user
         fetchCloudOrdersForUser(currentUser);
 
+        // Ensure permanent referral code & realtime wallet listener
+        ensureUserReferralCode();
+        listenToUserWalletRealtime(resolvedUserId);
+
         renderUserProfile();
         renderOrdersList();
         closeAuthModal();
@@ -8395,7 +8589,7 @@
       }
 
       // NEW USER (First time ever signing in with this Google account):
-      // Transition to STEP 2: Confirm Profile Details & Claim ₹50 Coins!
+      // Transition to STEP 2: Confirm Profile Details & Claim 10 Coins!
       showAuthStep('details');
 
       const verifiedEmailBadge = document.getElementById('new-user-verified-email-badge');
@@ -8436,8 +8630,8 @@
       }
     }
 
-    function submitNewUserProfile() {
-      console.log("[submitNewUserProfile] Button clicked, processing profile setup...");
+    async function submitNewUserProfile() {
+      console.log("[submitNewUserProfile] Processing new profile registration...");
       const saveBtn = document.getElementById('btn-save-profile');
       const errorBox = document.getElementById('new-user-profile-error');
       const errorText = document.getElementById('new-user-profile-error-text');
@@ -8477,7 +8671,7 @@
         const emailFromBadge = emailBadge ? emailBadge.textContent.trim() : '';
         const safeEmail = (pendingAuthEmail || emailFromBadge || (pendingGoogleAuthUser && pendingGoogleAuthUser.email) || 'user@example.com').toLowerCase();
 
-        // Safe Name Fallback (If empty, fallback to Google displayName or email prefix)
+        // Safe Name Fallback
         if (!name || name.length < 2) {
           const googleFallbackName = (pendingGoogleAuthUser && pendingGoogleAuthUser.displayName) ? pendingGoogleAuthUser.displayName.trim() : '';
           if (googleFallbackName && googleFallbackName.length >= 2) {
@@ -8502,23 +8696,48 @@
           if (usernameInput) usernameInput.value = username;
         }
 
-        // 3. Phone Handling (Friendly & Non-blocking)
+        // 3. Phone Handling
         if (rawPhone.length > 10 && rawPhone.startsWith('91')) {
           rawPhone = rawPhone.slice(-10);
         }
-        // If phone is valid 10-digit number, save it; otherwise keep it empty without blocking the user!
-        if (rawPhone && rawPhone.length !== 10) {
-          if (rawPhone.length > 10) {
-            rawPhone = rawPhone.slice(-10);
-          }
+        if (rawPhone && rawPhone.length !== 10 && rawPhone.length > 10) {
+          rawPhone = rawPhone.slice(-10);
         }
 
         const users = getRegisteredUsers();
         let existingUser = users.find(u => u.email && u.email.toLowerCase() === safeEmail);
         const fbUid = (pendingGoogleAuthUser && pendingGoogleAuthUser.uid) ? pendingGoogleAuthUser.uid : null;
         const userUuid = fbUid || generateDeterministicUserUuid(safeEmail);
-
         const userPhoto = (pendingGoogleAuthUser && pendingGoogleAuthUser.photoURL) || (existingUser && existingUser.photoURL) || '';
+
+        // Generate permanent unique uppercase referral code for this user
+        const cleanNamePart = name.replace(/[^a-zA-Z]/g, '').slice(0, 4).toUpperCase() || 'BUY';
+        const randCodePart = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const userReferralCode = `${cleanNamePart}${randCodePart}`;
+
+        // Check if user was referred by someone
+        const storedRefCode = sessionStorage.getItem('buyero_referred_by_code') || localStorage.getItem('buyero_referred_by_code') || null;
+        const storedRefUid = sessionStorage.getItem('buyero_referred_by_uid') || localStorage.getItem('buyero_referred_by_uid') || null;
+        const validReferrerUid = (storedRefUid && storedRefUid !== userUuid) ? storedRefUid : null;
+
+        // Check existing cloud user state
+        let isGenuinelyNewAccount = true;
+        let initialCoins = 10;
+
+        if (fbFirestore) {
+          try {
+            const userSnap = await fbFirestore.collection('users').doc(userUuid).get();
+            if (userSnap.exists) {
+              const uData = userSnap.data();
+              if (uData.signupBonusGranted) {
+                isGenuinelyNewAccount = false;
+                initialCoins = Number(uData.coins !== undefined ? uData.coins : (uData.walletCoins || 0));
+              }
+            }
+          } catch (e) {
+            console.warn("[Cloud check before signup bonus]", e);
+          }
+        }
 
         const newUserData = {
           uuid: userUuid,
@@ -8530,7 +8749,15 @@
           phone: rawPhone,
           city: city || 'India',
           photoURL: userPhoto,
-          walletCoins: 50,
+          coins: initialCoins,
+          walletCoins: initialCoins,
+          referralCode: userReferralCode,
+          signupBonusCoins: isGenuinelyNewAccount ? 10 : 0,
+          signupBonusGranted: true,
+          signupBonusGrantedAt: new Date().toISOString(),
+          referredByUid: validReferrerUid,
+          referredByCode: validReferrerUid ? storedRefCode : null,
+          referralJoinedAt: validReferrerUid ? new Date().toISOString() : null,
           authMethod: 'google_oauth_firebase',
           createdAt: (existingUser && existingUser.createdAt) ? existingUser.createdAt : new Date().toISOString(),
           lastLogin: new Date().toISOString()
@@ -8548,24 +8775,40 @@
         // Save active logged-in user
         currentUser = newUserData;
         localStorage.setItem('buyero_user', JSON.stringify(currentUser));
+        localStorage.setItem('buyero_user_coins', String(initialCoins));
 
-        // Credit exactly 50 welcome coins to wallet storage
-        saveUserCoins(50);
-
-        // Cloud sync to Firebase Firestore: save with primary document ID (Firebase Auth UID)
+        // Cloud sync to Firebase Firestore
         if (fbFirestore) {
           try {
-            fbFirestore.collection('users').doc(userUuid).set(newUserData, { merge: true })
-              .then(() => console.log("[Firestore] User saved with ID:", userUuid))
-              .catch(err => {
-                console.warn("[Firestore user sync]", err);
+            await fbFirestore.collection('users').doc(userUuid).set(newUserData, { merge: true });
+
+            // Record signup bonus in coin_transactions ledger
+            if (isGenuinelyNewAccount) {
+              await fbFirestore.collection('users').doc(userUuid).collection('coin_transactions').doc('signup_bonus').set({
+                type: 'SIGNUP_BONUS',
+                amount: 10,
+                createdAt: new Date().toISOString()
               });
+            }
+
+            // Register referral code in referral_codes index
+            await fbFirestore.collection('referral_codes').doc(userReferralCode).set({
+              uid: userUuid,
+              code: userReferralCode,
+              active: true,
+              createdAt: new Date().toISOString()
+            }, { merge: true });
+
+            console.log("[Firestore] User and referral code saved with ID:", userUuid, userReferralCode);
           } catch (e) {
-            console.warn("[Firestore user sync caught]", e);
+            console.warn("[Firestore user sync error]", e);
           }
         }
 
-        // Also fetch any existing orders for this user
+        // Realtime wallet listener
+        listenToUserWalletRealtime(userUuid);
+
+        // Fetch orders
         fetchCloudOrdersForUser(currentUser);
 
         // Update UI immediately
@@ -8580,7 +8823,7 @@
           }
         } catch (e) {}
 
-        alert(`🎉 Welcome ${name}!\nYour Google Account is connected and ₹50 Welcome Coins 🪙 have been added to your wallet!`);
+        alert(`🎉 Welcome ${name}!\nYour Google Account is connected and 10 Welcome Coins 🪙 have been added to your wallet!`);
 
         resumePendingAuthAction();
       } catch (err) {
@@ -8591,6 +8834,38 @@
           saveBtn.disabled = false;
           saveBtn.innerHTML = originalBtnText;
         }
+      }
+    }
+
+    let userWalletUnsubscribe = null;
+    function listenToUserWalletRealtime(uid) {
+      if (!fbFirestore || !uid) return;
+      if (userWalletUnsubscribe) {
+        userWalletUnsubscribe();
+        userWalletUnsubscribe = null;
+      }
+      try {
+        userWalletUnsubscribe = fbFirestore.collection('users').doc(uid).onSnapshot(docSnap => {
+          if (docSnap && docSnap.exists) {
+            const data = docSnap.data();
+            const serverCoins = Number(data.coins !== undefined ? data.coins : (data.walletCoins !== undefined ? data.walletCoins : 0)) || 0;
+            if (currentUser) {
+              currentUser.coins = serverCoins;
+              currentUser.walletCoins = serverCoins;
+              if (data.referralCode && !currentUser.referralCode) currentUser.referralCode = data.referralCode;
+              if (data.referredByUid && !currentUser.referredByUid) currentUser.referredByUid = data.referredByUid;
+              if (data.referredByCode && !currentUser.referredByCode) currentUser.referredByCode = data.referredByCode;
+              localStorage.setItem('buyero_user', JSON.stringify(currentUser));
+            }
+            localStorage.setItem('buyero_user_coins', String(serverCoins));
+            renderUserProfile();
+            renderCheckoutPriceBreakdown();
+          }
+        }, err => {
+          console.warn("[Realtime Wallet Listener]", err);
+        });
+      } catch (e) {
+        console.warn("[Realtime Wallet Init Error]", e);
       }
     }
 
@@ -8623,11 +8898,16 @@
     }
 
     function getUserCoins() {
-      if (currentUser && currentUser.walletCoins !== undefined && currentUser.walletCoins !== null) {
-        return Math.max(0, parseInt(currentUser.walletCoins, 10) || 0);
+      if (currentUser) {
+        if (currentUser.coins !== undefined && currentUser.coins !== null) {
+          return Math.max(0, parseInt(currentUser.coins, 10) || 0);
+        }
+        if (currentUser.walletCoins !== undefined && currentUser.walletCoins !== null) {
+          return Math.max(0, parseInt(currentUser.walletCoins, 10) || 0);
+        }
       }
       const stored = localStorage.getItem('buyero_user_coins');
-      return stored !== null ? Math.max(0, parseInt(stored, 10) || 0) : 50;
+      return stored !== null ? Math.max(0, parseInt(stored, 10) || 0) : 0;
     }
 
     async function syncUserWalletCoins(newCoins, reason = 'WALLET_UPDATE') {
@@ -8635,6 +8915,7 @@
       localStorage.setItem('buyero_user_coins', String(sanitizedCoins));
       if (currentUser) {
         currentUser.walletCoins = sanitizedCoins;
+        currentUser.coins = sanitizedCoins;
         localStorage.setItem('buyero_user', JSON.stringify(currentUser));
       }
       renderUserProfile();
@@ -8713,12 +8994,19 @@
           stripBtn.onclick = () => switchClientView('profile');
         }
       } else {
-        if (stripTitle) stripTitle.textContent = `Get ₹100 Welcome Gift Coins!`;
+        if (stripTitle) stripTitle.textContent = `Get 10 Welcome Gift Coins!`;
         if (stripSub) stripSub.textContent = `Sign in for 1-Click checkout & live order tracking`;
         if (stripBtn) {
           stripBtn.textContent = "Login";
           stripBtn.onclick = () => openAuthModal();
         }
+      }
+
+      // Sync Referral ID on Profile Screen
+      const profRefIdEl = document.getElementById('profile-referral-id');
+      if (profRefIdEl) {
+        const code = (currentUser && currentUser.referralCode) || ensureUserReferralCode();
+        profRefIdEl.textContent = code || '---';
       }
 
       const uuidEl = document.getElementById('profile-uuid-display');

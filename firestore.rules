@@ -59,7 +59,9 @@ service cloud.firestore {
           request.resource.data.paymentMode == 'Cash on Delivery (COD)' &&
           request.resource.data.status == 'Order Placed' &&
           request.resource.data.courier == '' &&
-          request.resource.data.awb == ''
+          request.resource.data.awb == '' &&
+          // Coin discount per order cannot exceed 50 coins (Section 18)
+          (!('coinsDiscount' in request.resource.data) || request.resource.data.coinsDiscount <= 50)
         )
       );
 
@@ -84,13 +86,63 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // 4. USER PROFILES & USER-SPECIFIC SUBCOLLECTIONS
+    // 4. USER PROFILES & AUTHORITATIVE COIN WALLET
     match /users/{userId} {
-      allow read, write: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+      allow read: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+      
+      // Creation: Authenticated user initializing their own profile (strictly max 10 signup bonus coins)
+      allow create: if isAdmin() || (
+        request.auth != null && request.auth.uid == userId &&
+        (!('coins' in request.resource.data) || request.resource.data.coins <= 10) &&
+        (!('walletCoins' in request.resource.data) || request.resource.data.walletCoins <= 10)
+      );
+
+      // Updates: Customers can update profile info (name, phone, addresses, cart, wishlist)
+      // They can spend coins, or restore up to 50 coins on order cancellation refund, but CANNOT tamper with referral attribution
+      allow update: if isAdmin() || (
+        request.auth != null && request.auth.uid == userId &&
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'signupBonusGranted', 'signupBonusCoins', 'signupBonusGrantedAt'
+        ])) &&
+        // Customer cannot overwrite referredByUid if already set
+        (!('referredByUid' in resource.data) || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['referredByUid', 'referredByCode'])) &&
+        // Coin balance change: either decreasing (spend) or increasing by at most 50 (order cancellation refund)
+        (!('coins' in request.resource.data) || request.resource.data.coins <= resource.data.coins + 50) &&
+        (!('walletCoins' in request.resource.data) || request.resource.data.walletCoins <= resource.data.walletCoins + 50)
+      );
+
+      allow delete: if isAdmin();
+
+      // Coin Transactions Ledger (Strict, deterministic audit records)
+      match /coin_transactions/{txId} {
+        allow read: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+        // Only Admin/Backend can credit REFERRAL_REWARD (+50) or ADMIN_ADJUSTMENT
+        // Customer can only record their one-time signup_bonus (10 coins), order spend (deduction <= 50), or cancellation refund (<= 50)
+        allow create: if isAdmin() || (
+          request.auth != null && request.auth.uid == userId && (
+            (txId == 'signup_bonus' && request.resource.data.type == 'SIGNUP_BONUS' && request.resource.data.amount == 10) ||
+            (request.resource.data.type == 'ORDER_SPEND' && request.resource.data.amount <= 0 && request.resource.data.amount >= -50) ||
+            (request.resource.data.type == 'ORDER_REFUND' && request.resource.data.amount > 0 && request.resource.data.amount <= 50)
+          )
+        );
+        allow update, delete: if isAdmin();
+      }
       
       match /{allSubcollections=**} {
         allow read, write: if isAdmin() || (request.auth != null && request.auth.uid == userId);
       }
+    }
+
+    // 5. PUBLIC REFERRAL CODES INDEX (Safe, O(1) code-to-uid resolution without exposing user profiles)
+    match /referral_codes/{code} {
+      allow read: if true;
+      allow create: if isAdmin() || (
+        request.auth != null &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.code == code &&
+        request.resource.data.active == true
+      );
+      allow update, delete: if isAdmin();
     }
 
     // 5. LIVE SUPPORT CHAT & TICKETS

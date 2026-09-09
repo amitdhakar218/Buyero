@@ -3696,20 +3696,33 @@
       let orders = getStoredOrders();
       let updated = false;
       const now = Date.now();
-      const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+      // Exact 168 hours (7 x 24 hours = 604,800,000 ms)
+      const SEVEN_DAYS_MS = 168 * 60 * 60 * 1000;
 
       for (let i = 0; i < orders.length; i++) {
         const order = orders[i];
-        // Only delivered orders where 7 days have passed and there is no active return/replacement
-        const hasActiveReturn = order.returnDetails && order.returnDetails.status !== 'Rejected';
-        if (order.status === 'Delivered' && order.deliveredAt && !hasActiveReturn) {
+        // Check if any return was initiated on the order or any order item
+        const hasReturnInitiated = (order.returnDetails && order.returnDetails.status && order.returnDetails.status !== 'Rejected') ||
+                                   (Array.isArray(order.items) && order.items.some(item => item.returnRequest && item.itemStatus && item.itemStatus.includes('RETURN')));
+
+        // If return was initiated at ANY point, permanently disqualify referral reward (Sections 9, 10)
+        if (hasReturnInitiated && order.referralRewardStatus !== 'INELIGIBLE_RETURN') {
+          order.referralRewardStatus = 'INELIGIBLE_RETURN';
+          updated = true;
+          try {
+            syncOrderUpdateToFirestore(order);
+          } catch(e) {}
+        }
+
+        // Only delivered orders where full 168 hours have passed and NO return was ever initiated
+        if (order.status === 'Delivered' && order.deliveredAt && !hasReturnInitiated && order.referralRewardStatus !== 'INELIGIBLE_RETURN') {
           const deliveredTime = new Date(order.deliveredAt).getTime();
           if (now - deliveredTime >= SEVEN_DAYS_MS) {
             order.status = 'Completed';
             order.completedAt = new Date().toISOString();
             if (!order.history) order.history = [];
             order.history.push({
-              status: 'Completed (7-Day Return Window Finished - Profit & Referral Finalized)',
+              status: 'Completed (168-Hour Return Window Finished - Profit & Referral Finalized)',
               time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
               date: new Date().toLocaleDateString()
             });
@@ -3719,7 +3732,7 @@
               await syncOrderUpdateToFirestore(order);
               await processReferralRewardForCompletedOrder(order);
             } catch (err) {
-              console.warn("[7-Day Completion Sync Warning]", err);
+              console.warn("[168-Hour Completion Sync Warning]", err);
             }
           }
         }
@@ -3732,11 +3745,33 @@
     }
 
     async function processReferralRewardForCompletedOrder(order) {
-      if (!order || order.referralRewardProcessed || order.referralRewardStatus === 'PROCESSED') return;
+      if (!order) return;
+      // Disqualification checks (Sections 6, 7, 9, 10, 11, 14)
+      if (order.referralRewardProcessed || order.referralRewardStatus === 'PROCESSED') return;
+      if (order.referralRewardStatus === 'INELIGIBLE_RETURN' || order.referralRewardStatus === 'INELIGIBLE_CANCELLED') return;
+      if (order.isFirstOrder === false) return;
+
       const referrerKey = order.referredByUid || order.referredBy || order.referralCodeUsed;
       if (!referrerKey) return;
 
-      const rewardCoins = 50; // Canonical 50 coins reward
+      // Check 168-hour requirement
+      const deliveredTime = order.deliveredAt ? new Date(order.deliveredAt).getTime() : 0;
+      const now = Date.now();
+      const SEVEN_DAYS_MS = 168 * 60 * 60 * 1000;
+      if (!deliveredTime || (now - deliveredTime) < SEVEN_DAYS_MS) {
+        return; // Return window has not elapsed yet
+      }
+
+      // Check if return was initiated
+      const hasReturn = (order.returnDetails && order.returnDetails.status && order.returnDetails.status !== 'Rejected') ||
+                        (Array.isArray(order.items) && order.items.some(item => item.returnRequest));
+      if (hasReturn) {
+        order.referralRewardStatus = 'INELIGIBLE_RETURN';
+        await syncOrderUpdateToFirestore(order);
+        return;
+      }
+
+      const rewardCoins = 50; // Exact canonical 50 coins reward (Section 6)
       let referrerUid = null;
       let referrer = null;
 
@@ -3753,35 +3788,44 @@
       if (fbFirestore) {
         try {
           if (!referrerUid) {
-            // Search by UID direct
-            const uDoc = await fbFirestore.collection('users').doc(referrerKey).get();
-            if (uDoc.exists) {
-              referrerUid = uDoc.id;
-              referrer = uDoc.data();
+            // First check public referral_codes mapping for safe O(1) resolution
+            const refCodeSnap = await fbFirestore.collection('referral_codes').doc(referrerKey.toUpperCase()).get();
+            if (refCodeSnap.exists && refCodeSnap.data().uid) {
+              referrerUid = refCodeSnap.data().uid;
             } else {
-              // Search by referralCode
-              const qSnap = await fbFirestore.collection('users').where('referralCode', '==', referrerKey).limit(1).get();
-              if (!qSnap.empty) {
-                referrerUid = qSnap.docs[0].id;
-                referrer = qSnap.docs[0].data();
+              // Search by UID direct
+              const uDoc = await fbFirestore.collection('users').doc(referrerKey).get();
+              if (uDoc.exists) {
+                referrerUid = uDoc.id;
+                referrer = uDoc.data();
+              } else {
+                // Search by referralCode field
+                const qSnap = await fbFirestore.collection('users').where('referralCode', '==', referrerKey).limit(1).get();
+                if (!qSnap.empty) {
+                  referrerUid = qSnap.docs[0].id;
+                  referrer = qSnap.docs[0].data();
+                }
               }
             }
           }
 
           if (!referrerUid) return;
 
-          // Prevent self-referral
+          // Prevent self-referral (Section 22)
           if (referrerUid === order.userId || (referrer && referrer.phone && referrer.phone === order.phone)) {
             order.referralRewardStatus = 'SELF_REFERRAL_BLOCKED';
+            await syncOrderUpdateToFirestore(order);
             return;
           }
 
-          // Idempotency check via coin_transactions ledger
-          const txRef = fbFirestore.collection('users').doc(referrerUid).collection('coin_transactions').doc(`ref_${order.orderId}`);
+          // Idempotent record per referred user (Section 13): users/{referrerUid}/coin_transactions/referral_{referredUid}
+          const txDocId = `referral_${order.userId || order.orderId}`;
+          const txRef = fbFirestore.collection('users').doc(referrerUid).collection('coin_transactions').doc(txDocId);
           const txDoc = await txRef.get();
           if (txDoc.exists) {
             order.referralRewardProcessed = true;
             order.referralRewardStatus = 'PROCESSED';
+            await syncOrderUpdateToFirestore(order);
             return;
           }
 
@@ -3790,14 +3834,15 @@
             uid: referrerUid,
             amount: rewardCoins,
             type: 'REFERRAL_REWARD',
+            referredUserUid: order.userId,
             orderId: order.orderId,
-            buyerName: order.customerName || 'Referred Friend',
-            timestamp: new Date().toISOString()
+            buyerName: order.customerName || 'Referred Buyer',
+            createdAt: new Date().toISOString()
           });
 
-          // Fetch fresh coins balance
+          // Fetch fresh coins balance & credit 50 coins atomically
           const freshUserDoc = await fbFirestore.collection('users').doc(referrerUid).get();
-          const curCoins = freshUserDoc.exists ? (Number(freshUserDoc.data().walletCoins || freshUserDoc.data().coins) || 0) : (Number(referrer.coins) || 0);
+          const curCoins = freshUserDoc.exists ? (Number(freshUserDoc.data().coins !== undefined ? freshUserDoc.data().coins : freshUserDoc.data().walletCoins) || 0) : (Number(referrer.coins) || 0);
           const newCoins = curCoins + rewardCoins;
 
           await fbFirestore.collection('users').doc(referrerUid).set({
@@ -3809,7 +3854,7 @@
           // Send push notification to referrer
           await createCustomerNotificationInFirestore(referrerUid, {
             title: `🎁 Referral Reward Unlocked!`,
-            message: `Order #${order.orderId} from your referral has completed! +50 Buyero Coins added to your wallet.`,
+            message: `Order #${order.orderId} from your referred friend has passed the 7-day return period! +50 Buyero Coins credited to your wallet.`,
             icon: '🪙',
             type: 'REFERRAL_REWARD'
           });
@@ -3823,6 +3868,7 @@
 
           order.referralRewardProcessed = true;
           order.referralRewardStatus = 'PROCESSED';
+          order.referralRewardProcessedAt = new Date().toISOString();
           await syncOrderUpdateToFirestore(order);
           logActivityEvent('REWARD', `Credited +50 Coins to referrer (${referrerUid}) for Order #${order.orderId}`);
         } catch (e) {
@@ -4338,6 +4384,7 @@
           if (!order.returnDetails) order.returnDetails = {};
           order.returnDetails.status = 'Pickup Scheduled';
           order.returnDetails.approvedAt = new Date().toISOString();
+          order.referralRewardStatus = 'INELIGIBLE_RETURN';
           if (!order.history) order.history = [];
           order.history.push({
             status: 'Return Pickup Approved & Scheduled by Support',
@@ -4388,7 +4435,7 @@
           if (!order.returnDetails) order.returnDetails = {};
           order.returnDetails.status = 'Completed';
           order.returnDetails.completedAt = new Date().toISOString();
-          order.referralRewardStatus = 'INELIGIBLE';
+          order.referralRewardStatus = 'INELIGIBLE_RETURN';
           if (!order.history) order.history = [];
           order.history.push({
             status: 'Return Completed (Item Received at Fulfillment Hub)',
