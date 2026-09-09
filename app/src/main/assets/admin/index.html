@@ -2489,6 +2489,10 @@
       updateNotificationBadge();
     }
 
+    function recordActivityLog(type, text) {
+      logActivityEvent(type, text);
+    }
+
     function updateNotificationBadge() {
       const logs = getActivityLogs();
       const badge = document.getElementById('admin-notif-count');
@@ -3696,7 +3700,9 @@
 
       for (let i = 0; i < orders.length; i++) {
         const order = orders[i];
-        if (order.status === 'Delivered' && order.deliveredAt && !order.returnDetails) {
+        // Only delivered orders where 7 days have passed and there is no active return/replacement
+        const hasActiveReturn = order.returnDetails && order.returnDetails.status !== 'Rejected';
+        if (order.status === 'Delivered' && order.deliveredAt && !hasActiveReturn) {
           const deliveredTime = new Date(order.deliveredAt).getTime();
           if (now - deliveredTime >= SEVEN_DAYS_MS) {
             order.status = 'Completed';
@@ -3726,49 +3732,101 @@
     }
 
     async function processReferralRewardForCompletedOrder(order) {
-      if (!order || order.referralRewardProcessed) return;
-      const referredBy = order.referredBy || order.referralCodeUsed;
-      if (!referredBy) return;
+      if (!order || order.referralRewardProcessed || order.referralRewardStatus === 'PROCESSED') return;
+      const referrerKey = order.referredByUid || order.referredBy || order.referralCodeUsed;
+      if (!referrerKey) return;
 
+      const rewardCoins = 50; // Canonical 50 coins reward
+      let referrerUid = null;
+      let referrer = null;
+
+      // 1. Check local cached users
       const users = getStoredUsers();
-      const referrer = users.find(u => 
-        (u.referralCode && u.referralCode.toUpperCase() === referredBy.toUpperCase()) || 
-        u.uid === referredBy || 
-        u.phone === referredBy
+      referrer = users.find(u => 
+        u.uid === referrerKey || 
+        (u.referralCode && u.referralCode.toUpperCase() === referrerKey.toUpperCase()) || 
+        u.phone === referrerKey
       );
-      if (!referrer) return;
+      if (referrer) referrerUid = referrer.uid || referrer.id;
 
-      // No self-referral
-      if (referrer.uid === order.userId || (referrer.phone && referrer.phone === order.phone)) return;
-
-      const rewardCoins = 100;
-      referrer.coins = (referrer.coins || 0) + rewardCoins;
-      if (!referrer.referralRewards) referrer.referralRewards = [];
-      referrer.referralRewards.push({
-        orderId: order.orderId,
-        buyerName: order.customerName,
-        coinsEarned: rewardCoins,
-        timestamp: new Date().toISOString()
-      });
-
-      order.referralRewardProcessed = true;
-      saveUsers(users);
-
+      // 2. Authoritative check in Firestore if needed
       if (fbFirestore) {
         try {
-          await fbFirestore.collection('users').doc(referrer.uid || referrer.id).set({
-            coins: referrer.coins,
-            referralRewards: referrer.referralRewards
+          if (!referrerUid) {
+            // Search by UID direct
+            const uDoc = await fbFirestore.collection('users').doc(referrerKey).get();
+            if (uDoc.exists) {
+              referrerUid = uDoc.id;
+              referrer = uDoc.data();
+            } else {
+              // Search by referralCode
+              const qSnap = await fbFirestore.collection('users').where('referralCode', '==', referrerKey).limit(1).get();
+              if (!qSnap.empty) {
+                referrerUid = qSnap.docs[0].id;
+                referrer = qSnap.docs[0].data();
+              }
+            }
+          }
+
+          if (!referrerUid) return;
+
+          // Prevent self-referral
+          if (referrerUid === order.userId || (referrer && referrer.phone && referrer.phone === order.phone)) {
+            order.referralRewardStatus = 'SELF_REFERRAL_BLOCKED';
+            return;
+          }
+
+          // Idempotency check via coin_transactions ledger
+          const txRef = fbFirestore.collection('users').doc(referrerUid).collection('coin_transactions').doc(`ref_${order.orderId}`);
+          const txDoc = await txRef.get();
+          if (txDoc.exists) {
+            order.referralRewardProcessed = true;
+            order.referralRewardStatus = 'PROCESSED';
+            return;
+          }
+
+          // Create ledger entry
+          await txRef.set({
+            uid: referrerUid,
+            amount: rewardCoins,
+            type: 'REFERRAL_REWARD',
+            orderId: order.orderId,
+            buyerName: order.customerName || 'Referred Friend',
+            timestamp: new Date().toISOString()
+          });
+
+          // Fetch fresh coins balance
+          const freshUserDoc = await fbFirestore.collection('users').doc(referrerUid).get();
+          const curCoins = freshUserDoc.exists ? (Number(freshUserDoc.data().walletCoins || freshUserDoc.data().coins) || 0) : (Number(referrer.coins) || 0);
+          const newCoins = curCoins + rewardCoins;
+
+          await fbFirestore.collection('users').doc(referrerUid).set({
+            coins: newCoins,
+            walletCoins: newCoins,
+            lastRewardAt: new Date().toISOString()
           }, { merge: true });
 
-          await createCustomerNotificationInFirestore(referrer.uid || referrer.id, {
+          // Send push notification to referrer
+          await createCustomerNotificationInFirestore(referrerUid, {
             title: `🎁 Referral Reward Unlocked!`,
-            message: `Order #${order.orderId} from your referral has completed! +100 Buyero Coins added to your wallet.`,
+            message: `Order #${order.orderId} from your referral has completed! +50 Buyero Coins added to your wallet.`,
             icon: '🪙',
             type: 'REFERRAL_REWARD'
           });
+
+          // Update local state if cached
+          if (referrer) {
+            referrer.coins = newCoins;
+            referrer.walletCoins = newCoins;
+            saveUsers(users);
+          }
+
+          order.referralRewardProcessed = true;
+          order.referralRewardStatus = 'PROCESSED';
+          await syncOrderUpdateToFirestore(order);
+          logActivityEvent('REWARD', `Credited +50 Coins to referrer (${referrerUid}) for Order #${order.orderId}`);
         } catch (e) {
-          console.warn("[Referral Reward Sync]", e);
+          console.warn("[Referral Reward Sync Error]", e);
         }
       }
     }
@@ -3957,15 +4015,33 @@
 
           ${o.returnDetails ? `
             <div class="p-2.5 bg-amber-50 border border-amber-200 rounded-2xl text-xs space-y-1.5">
-              <div class="font-bold text-amber-900 flex items-center gap-1.5">
-                <i class="fa-solid fa-arrow-rotate-left text-amber-600"></i>
-                <span>Customer Return Request (${o.returnDetails.type})</span>
+              <div class="font-bold text-amber-900 flex items-center justify-between">
+                <div class="flex items-center gap-1.5">
+                  <i class="fa-solid fa-arrow-rotate-left text-amber-600"></i>
+                  <span>Customer Return Request (${o.returnDetails.type || 'RETURN'})</span>
+                </div>
+                <span class="text-[10px] px-2 py-0.5 rounded-full font-bold ${o.returnDetails.status === 'Completed' ? 'bg-slate-200 text-slate-700' : (o.returnDetails.status === 'Rejected' ? 'bg-rose-100 text-rose-700' : 'bg-amber-200 text-amber-900')}">
+                  ${o.returnDetails.status || 'Requested'}
+                </span>
               </div>
-              <p class="text-amber-800 text-[11px]">Reason: "${o.returnDetails.reason}"</p>
-              ${o.returnDetails.notes ? `<p class="text-amber-700 text-[10px]">${o.returnDetails.notes}</p>` : ''}
-              <button onclick="approveOrderReturn('${o.orderId}')" class="w-full py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs transition">
-                Approve Doorstep Pickup & Settlement
-              </button>
+              <p class="text-amber-800 text-[11px]">Reason: "${o.returnDetails.reason || 'Not specified'}"</p>
+              ${o.returnDetails.replacementSize ? `<p class="text-blue-700 text-[10px] font-semibold">Requested Exchange Size: ${o.returnDetails.replacementSize}</p>` : ''}
+              ${o.returnDetails.status !== 'Completed' && o.returnDetails.status !== 'Rejected' ? `
+                <div class="flex gap-2 pt-1">
+                  ${o.status !== 'Return Pickup Scheduled' && o.status !== 'Returned' ? `
+                    <button onclick="approveOrderReturn('${o.orderId}')" class="flex-1 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs transition">
+                      Approve Pickup
+                    </button>
+                  ` : `
+                    <button onclick="completeOrderReturn('${o.orderId}')" class="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition">
+                      <i class="fa-solid fa-box-check mr-1"></i> Mark Returned (Received)
+                    </button>
+                  `}
+                  <button onclick="rejectOrderReturn('${o.orderId}')" class="py-1.5 px-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs transition">
+                    Reject
+                  </button>
+                </div>
+              ` : ''}
             </div>
           ` : ''}
 
@@ -4092,8 +4168,26 @@
           if (!order.deliveredAt) order.deliveredAt = new Date().toISOString();
           order.paymentStatus = 'COLLECTED_AT_DOORSTEP';
         } else if (status === 'Completed') {
+          const daysElapsed = order.deliveredAt ? Math.floor((Date.now() - new Date(order.deliveredAt).getTime()) / (24 * 60 * 60 * 1000)) : 0;
+          if (!order.deliveredAt || daysElapsed < 7) {
+            alert(`Order #${orderId} cannot be marked Completed yet. The 7-day customer return & protection window must elapse first (${daysElapsed}/7 days elapsed since delivery).`);
+            if (btn) {
+              btn.disabled = false;
+              btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> <span>Save & Sync Order Status</span>';
+            }
+            return;
+          }
+          const hasActiveReturn = order.returnDetails && order.returnDetails.status !== 'Rejected';
+          if (hasActiveReturn) {
+            alert(`Order #${orderId} has an active return request (${order.returnDetails.status}). Cannot complete order while return is active.`);
+            if (btn) {
+              btn.disabled = false;
+              btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> <span>Save & Sync Order Status</span>';
+            }
+            return;
+          }
           if (!order.completedAt) order.completedAt = new Date().toISOString();
-          processReferralRewardForCompletedOrder(order);
+          await processReferralRewardForCompletedOrder(order);
         }
 
         if (!order.history) order.history = [];
@@ -4226,6 +4320,9 @@
         const order = orders.find(o => o.orderId === orderId);
         if (order) {
           order.status = 'Return Pickup Scheduled';
+          if (!order.returnDetails) order.returnDetails = {};
+          order.returnDetails.status = 'Pickup Scheduled';
+          order.returnDetails.approvedAt = new Date().toISOString();
           if (!order.history) order.history = [];
           order.history.push({
             status: 'Return Pickup Approved & Scheduled by Support',
@@ -4239,7 +4336,7 @@
             if (order.userId) {
               await createCustomerNotificationInFirestore(order.userId, {
                 title: `🔄 Return Pickup Scheduled`,
-                message: `Return pickup for Order #${orderId} has been scheduled. Our logistics partner will arrive soon.`,
+                message: `Return pickup for Order #${orderId} has been scheduled. Our logistics partner will arrive soon for doorstep pickup.`,
                 icon: '🔄',
                 orderId: orderId,
                 type: 'ORDER_RETURN'
@@ -4267,8 +4364,101 @@
       }
     }
 
+    async function completeOrderReturn(orderId) {
+      if (confirm(`Mark Order #${orderId} as Returned (Item Received at Fulfillment Hub)?\nThis will permanently reverse/exclude profit from realized metrics, mark referral ineligible, and close the return.`)) {
+        let orders = getStoredOrders();
+        const order = orders.find(o => o.orderId === orderId);
+        if (order) {
+          order.status = 'Returned';
+          if (!order.returnDetails) order.returnDetails = {};
+          order.returnDetails.status = 'Completed';
+          order.returnDetails.completedAt = new Date().toISOString();
+          order.referralRewardStatus = 'INELIGIBLE';
+          if (!order.history) order.history = [];
+          order.history.push({
+            status: 'Return Completed (Item Received at Fulfillment Hub)',
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            date: new Date().toLocaleDateString()
+          });
+
+          try {
+            await syncOrderUpdateToFirestore(order);
+
+            if (order.userId) {
+              await createCustomerNotificationInFirestore(order.userId, {
+                title: `📦 Return Completed`,
+                message: `Return for Order #${orderId} is complete. Returned item was received and verified.`,
+                icon: '📦',
+                orderId: orderId,
+                type: 'ORDER_RETURN_COMPLETED'
+              });
+            }
+          } catch (err) {
+            console.error("Return completion sync error:", err);
+            alert("Failed to sync return completion to Firebase: " + (err.message || "Network error") + ". Please retry.");
+            return;
+          }
+
+          saveOrders(orders);
+          logActivityEvent('ORDER', `Order #${orderId} marked as Returned (Return Completed)`);
+          try {
+            syncChannel.postMessage({
+              type: 'ORDER_STATUS_UPDATED',
+              orderId: orderId,
+              status: 'Returned'
+            });
+          } catch(e) {}
+          calculateAnalysisMetrics();
+          renderFilteredOrders();
+          alert(`Order #${orderId} marked as Returned successfully!`);
+        }
+      }
+    }
+
+    async function rejectOrderReturn(orderId) {
+      const reason = prompt(`Reject return request for Order #${orderId}?\nPlease enter reason for customer notification:`, "Return request does not meet policy criteria");
+      if (reason === null) return;
+
+      let orders = getStoredOrders();
+      const order = orders.find(o => o.orderId === orderId);
+      if (order) {
+        if (!order.returnDetails) order.returnDetails = {};
+        order.returnDetails.status = 'Rejected';
+        order.returnDetails.rejectionReason = reason.trim() || 'Did not meet policy criteria';
+        if (!order.history) order.history = [];
+        order.history.push({
+          status: `Return Request Rejected: ${order.returnDetails.rejectionReason}`,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          date: new Date().toLocaleDateString()
+        });
+
+        try {
+          await syncOrderUpdateToFirestore(order);
+
+          if (order.userId) {
+            await createCustomerNotificationInFirestore(order.userId, {
+              title: `❌ Return Request Update`,
+              message: `Return request for Order #${orderId} was rejected: ${order.returnDetails.rejectionReason}`,
+              icon: '❌',
+              orderId: orderId,
+              type: 'ORDER_RETURN_REJECTED'
+            });
+          }
+        } catch (err) {
+          console.error("Return rejection sync error:", err);
+          alert("Failed to sync return rejection: " + (err.message || "Network error"));
+          return;
+        }
+
+        saveOrders(orders);
+        logActivityEvent('ORDER', `Rejected Return for Order #${orderId}: ${order.returnDetails.rejectionReason}`);
+        renderFilteredOrders();
+        alert(`Return request for Order #${orderId} rejected.`);
+      }
+    }
+
     async function completeOrderAction(orderId) {
-      if (confirm(`Mark Order #${orderId} as Completed & Delivered?\nThis will transfer the order to History and permanently record profit.`)) {
+      if (confirm(`Mark Order #${orderId} as Delivered?\nThis records doorstep cash collection and starts the mandatory 7-day customer return & protection window before final order completion.`)) {
         let orders = getStoredOrders();
         const order = orders.find(o => o.orderId === orderId);
         if (order) {
@@ -4277,7 +4467,7 @@
           if (!order.deliveredAt) order.deliveredAt = new Date().toISOString();
           if (!order.history) order.history = [];
           order.history.push({
-            status: 'Delivered',
+            status: 'Delivered (Doorstep COD Collected - 7-Day Protection Window Started)',
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             date: new Date().toLocaleDateString()
           });
@@ -4301,7 +4491,7 @@
           }
 
           saveOrders(orders);
-          logActivityEvent('ORDER', `Order #${orderId} moved to Completed (Delivered)`);
+          logActivityEvent('ORDER', `Order #${orderId} marked as Delivered (7-Day Window Started)`);
 
           try {
             syncChannel.postMessage({
@@ -4313,7 +4503,7 @@
 
           calculateAnalysisMetrics();
           renderFilteredOrders();
-          alert(`Order #${orderId} marked as Delivered & Completed!`);
+          alert(`Order #${orderId} marked as Delivered! 7-day customer return window is now active.`);
         }
       }
     }

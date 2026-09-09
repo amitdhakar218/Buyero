@@ -2555,6 +2555,85 @@
   </div>
 
   <!-- ========================================== -->
+  <!-- REFERRAL & APP SHARE MODAL -->
+  <!-- ========================================== -->
+  <div id="modal-referral" class="hidden fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onclick="if(event.target === this) closeReferralModal();">
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-200" onclick="event.stopPropagation();">
+      <!-- Header -->
+      <div class="p-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-2xl bg-white/20 text-white flex items-center justify-center text-lg shadow-inner">
+            🎁
+          </div>
+          <div>
+            <h3 class="font-poppins font-bold text-sm">Refer & Earn 50 Coins</h3>
+            <p class="text-[10px] text-white/90">Invite friends & earn ₹50 on every completed order!</p>
+          </div>
+        </div>
+        <button onclick="closeReferralModal()" class="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center text-xs transition" title="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-4 space-y-4">
+        <!-- Referral Code Display Box -->
+        <div class="p-4 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl text-center space-y-2">
+          <span class="text-[11px] font-bold text-amber-800 uppercase tracking-wider">Your Exclusive Referral Code</span>
+          <div class="flex items-center justify-center gap-2">
+            <span id="referral-code-display" class="font-mono font-bold text-2xl tracking-widest text-slate-900 bg-white px-4 py-1.5 rounded-xl border border-dashed border-amber-300 shadow-xs">BUYERO50</span>
+            <button onclick="copyReferralCodeOnly()" class="px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-xs shadow-xs transition active:scale-95 flex items-center gap-1">
+              <i class="fa-solid fa-copy"></i>
+              <span>Copy</span>
+            </button>
+          </div>
+          <p class="text-[11px] text-amber-900/80">Friends get ₹50 off • You get 50 Buyero Coins when their order completes!</p>
+        </div>
+
+        <!-- Shareable Link Box -->
+        <div>
+          <label class="block text-[11px] font-bold text-slate-700 mb-1">Your Direct Invite Link:</label>
+          <div class="flex items-center gap-2">
+            <input 
+              type="text" 
+              id="referral-link-input" 
+              readonly 
+              class="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-700 font-mono outline-none select-all" 
+            />
+            <button 
+              onclick="copyReferralLink()" 
+              id="btn-copy-referral-link"
+              class="px-3 py-2 bg-brand-navy hover:bg-brand-deep text-white font-bold rounded-xl text-xs shadow-xs transition active:scale-95 whitespace-nowrap"
+            >
+              Copy Link
+            </button>
+          </div>
+          <div id="referral-copied-banner" class="hidden mt-1.5 text-[11px] font-bold text-emerald-600 flex items-center gap-1">
+            <i class="fa-solid fa-circle-check"></i> Copied to clipboard! Share on WhatsApp or Instagram.
+          </div>
+        </div>
+
+        <!-- 1-Tap WhatsApp Share -->
+        <button 
+          onclick="shareReferralViaWhatsApp()" 
+          class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-md transition active:scale-95"
+        >
+          <i class="fa-brands fa-whatsapp text-lg"></i>
+          <span>Share via WhatsApp</span>
+        </button>
+
+        <!-- Native Share / Web Share API -->
+        <button 
+          onclick="shareReferralNative()" 
+          class="w-full py-2.5 border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition"
+        >
+          <i class="fa-solid fa-share-nodes"></i>
+          <span>More Sharing Options</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
   <!-- PRODUCT REEL & VIDEO PLAYER MODAL -->
   <!-- ========================================== -->
   <div id="modal-product-video" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-4" onclick="if(event.target === this) closeProductVideoModal();">
@@ -5304,6 +5383,115 @@
       }
     }
 
+    /* Aliases for modal back buttons / legacy handlers */
+    function closeShareProductModal() {
+      closeShareModal();
+    }
+
+    function closeCatalogFiltersModal() {
+      closeCatalogFilterModal();
+    }
+
+    function renderOrdersList() {
+      loadUserOrders();
+    }
+
+    /* =========================================================
+       REFERRAL & APP SHARE ENGINE (50 COINS REWARD)
+       ========================================================= */
+    function ensureUserReferralCode() {
+      if (!currentUser) currentUser = getStoredUser() || {};
+      if (!currentUser.referralCode) {
+        const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const cleanName = (currentUser.name ? currentUser.name.replace(/[^a-zA-Z]/g, '').slice(0, 4).toUpperCase() : '') || 'BYR';
+        currentUser.referralCode = `${cleanName}${rand}`;
+        localStorage.setItem('buyero_user', JSON.stringify(currentUser));
+        if (fbFirestore && (currentUser.uuid || currentUser.userId)) {
+          const uid = currentUser.uuid || currentUser.userId;
+          fbFirestore.collection('users').doc(uid).set({
+            referralCode: currentUser.referralCode
+          }, { merge: true }).catch(() => {});
+        }
+      }
+      return currentUser.referralCode;
+    }
+
+    function handleShareApp() {
+      const code = ensureUserReferralCode() || 'BUYERO50';
+      const baseHref = window.location.origin + window.location.pathname;
+      const shareUrl = `${baseHref}?ref=${encodeURIComponent(code)}`;
+
+      const codeEl = document.getElementById('referral-code-display');
+      const inputEl = document.getElementById('referral-link-input');
+      if (codeEl) codeEl.textContent = code;
+      if (inputEl) inputEl.value = shareUrl;
+
+      const modal = document.getElementById('modal-referral');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeReferralModal() {
+      const modal = document.getElementById('modal-referral');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function copyReferralCodeOnly() {
+      const code = ensureUserReferralCode() || 'BUYERO50';
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(() => {
+          alert(`Referral code "${code}" copied to clipboard!`);
+        }).catch(() => {
+          prompt("Copy your referral code:", code);
+        });
+      } else {
+        prompt("Copy your referral code:", code);
+      }
+    }
+
+    function copyReferralLink() {
+      const inputEl = document.getElementById('referral-link-input');
+      const text = inputEl ? inputEl.value : window.location.href;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          const banner = document.getElementById('referral-copied-banner');
+          if (banner) {
+            banner.classList.remove('hidden');
+            setTimeout(() => banner.classList.add('hidden'), 3500);
+          }
+        }).catch(() => {
+          prompt("Copy your referral link:", text);
+        });
+      } else {
+        prompt("Copy your referral link:", text);
+      }
+    }
+
+    function shareReferralViaWhatsApp() {
+      const code = ensureUserReferralCode() || 'BUYERO50';
+      const baseHref = window.location.origin + window.location.pathname;
+      const shareUrl = `${baseHref}?ref=${encodeURIComponent(code)}`;
+      const text = `🛍️ Hey! Check out Buyero Stores for latest fashion & lifestyle at direct factory wholesale prices with Free COD.\n\nUse my invite code *${code}* or tap link to claim ₹50 Buyero Coins instantly on your first order:\n👉 ${shareUrl}`;
+      const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+      window.open(whatsappUrl, '_blank');
+    }
+
+    function shareReferralNative() {
+      const code = ensureUserReferralCode() || 'BUYERO50';
+      const baseHref = window.location.origin + window.location.pathname;
+      const shareUrl = `${baseHref}?ref=${encodeURIComponent(code)}`;
+      const text = `Shop on Buyero Stores! Use my invite code ${code} for ₹50 Buyero Coins.`;
+
+      if (navigator.share) {
+        navigator.share({
+          title: 'Buyero Stores - Invite & Earn',
+          text: text,
+          url: shareUrl
+        }).catch(() => {});
+      } else {
+        copyReferralLink();
+      }
+    }
+
     /* =========================================================
        PRODUCT REEL & VIDEO PLAYER CONTROLLER
        Handles YouTube Shorts, HTML5 Video & Social Media Links
@@ -7259,18 +7447,47 @@
         : `✅ Exchange request for size (${replacementSize}) submitted! Replacement shipment will be processed upon doorstep pickup.`);
     }
 
+    let activeClientOrdersTab = 'live';
+
+    function switchClientOrdersTab(tab) {
+      activeClientOrdersTab = tab;
+      const btnLive = document.getElementById('tab-client-orders-live');
+      const btnCompleted = document.getElementById('tab-client-orders-completed');
+      if (btnLive) {
+        btnLive.className = (tab === 'live')
+          ? "flex-1 py-2 rounded-lg bg-brand-navy text-white transition font-bold"
+          : "flex-1 py-2 rounded-lg text-slate-500 hover:text-slate-800 transition font-bold";
+      }
+      if (btnCompleted) {
+        btnCompleted.className = (tab === 'completed')
+          ? "flex-1 py-2 rounded-lg bg-brand-navy text-white transition font-bold"
+          : "flex-1 py-2 rounded-lg text-slate-500 hover:text-slate-800 transition font-bold";
+      }
+      loadUserOrders();
+    }
+
     function loadUserOrders() {
       const container = document.getElementById('orders-container');
       if (!container) return;
 
-      const orders = getStoredOrders();
+      const allUserOrders = getStoredOrders();
+      const liveOrders = allUserOrders.filter(o => o.status !== 'Completed' && o.status !== 'Cancelled' && o.status !== 'Returned');
+      const completedOrders = allUserOrders.filter(o => o.status === 'Completed' || o.status === 'Cancelled' || o.status === 'Returned');
 
-      if (orders.length === 0) {
+      const liveCountEl = document.getElementById('client-live-orders-count');
+      const completedCountEl = document.getElementById('client-completed-orders-count');
+      if (liveCountEl) liveCountEl.textContent = liveOrders.length;
+      if (completedCountEl) completedCountEl.textContent = completedOrders.length;
+
+      const displayOrders = (activeClientOrdersTab === 'completed') ? completedOrders : liveOrders;
+
+      if (displayOrders.length === 0) {
+        const isCompletedTab = activeClientOrdersTab === 'completed';
         container.innerHTML = `
           <div class="py-16 text-center text-slate-400 bg-white rounded-2xl border border-slate-200">
-            <i class="fa-solid fa-truck-ramp-box text-5xl mb-3 text-slate-300"></i>
-            <h4 class="font-bold text-slate-700 text-sm">No Orders Placed Yet</h4>
-            <p class="text-xs text-slate-400 mt-1">Start shopping to track your deliveries live!</p>
+            <i class="fa-solid ${isCompletedTab ? 'fa-box-archive' : 'fa-truck-ramp-box'} text-5xl mb-3 text-slate-300"></i>
+            <h4 class="font-bold text-slate-700 text-sm">${isCompletedTab ? 'No Completed Orders Yet' : 'No Active Orders'}</h4>
+            <p class="text-xs text-slate-400 mt-1">${isCompletedTab ? 'Orders finalized after the 7-day return window will appear here.' : 'Start shopping to track your deliveries live!'}</p>
             <button onclick="switchClientView('shop')" class="mt-4 px-4 py-2 bg-brand-navy text-white text-xs font-bold rounded-xl shadow">
               Explore Storefront
             </button>
@@ -7279,7 +7496,7 @@
         return;
       }
 
-      container.innerHTML = orders.map(order => {
+      container.innerHTML = displayOrders.map(order => {
         let effectiveStatus = order.status || 'Order Placed';
 
         const isCancelled = (order.status === 'Cancelled');

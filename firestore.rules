@@ -75,8 +75,8 @@ service cloud.firestore {
           request.auth != null &&
           resource.data.userId == request.auth.uid &&
           request.resource.data.userId == request.auth.uid &&
-          request.resource.data.status in ['Cancelled', 'Order Placed', 'Return Pickup Scheduled'] &&
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['cancellationReason', 'returnDetails', 'status', 'history'])
+          request.resource.data.status in ['Cancelled', 'Order Placed', 'Return Pickup Scheduled', 'Return Requested'] &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['cancellationReason', 'cancelReason', 'returnDetails', 'status', 'history', 'referralRewardStatus'])
         )
       );
 
@@ -108,7 +108,9 @@ service cloud.firestore {
         request.resource.data.userId == request.auth.uid &&
         request.resource.data.isAdmin == false
       );
-      allow update, delete: if isAdmin();
+      // Admin can edit their own messages (with edited metadata) or update seen receipt; customer cannot edit; nobody can delete
+      allow update: if isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text', 'isEdited', 'editedAt', 'seen', 'seenAt', 'status']);
+      allow delete: if false;
     }
     
     match /support_tickets/{ticketId} {
