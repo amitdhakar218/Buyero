@@ -180,6 +180,15 @@ async function processAtomicReferralReward(referralData, orderData) {
         referralRewardProcessedAt: admin.firestore.FieldValue.serverTimestamp()
       }, { merge: true });
 
+      // E. Update referred user document referralRewardStatus
+      const referredUserDocRef = db.collection('users').doc(referredUid);
+      transaction.set(referredUserDocRef, {
+        referralRewardStatus: 'REWARDED',
+        rewardTransactionId: deterministicTxId,
+        rewardedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+
       success = true;
     });
 
@@ -206,23 +215,24 @@ async function processAtomicReferralReward(referralData, orderData) {
 }
 
 /**
- * Scheduled Cloud Function (Runs every 1 hour)
+ * Scheduled Cloud Function (Runs every 15 minutes)
  * Scans all pending referrals with delivered orders and processes eligible ones
+ * Pure server-side execution: operates completely independent of frontend/admin state
  */
-exports.processReferralRewardsJob = functions.pubsub.schedule('every 1 hours').onRun(async (context) => {
-  console.log("[Scheduled Job] Starting referral reward eligibility scan...");
+exports.processReferralRewardsJob = functions.pubsub.schedule('every 15 minutes').onRun(async (context) => {
+  console.log("[Scheduled Job] Starting 168-hour referral reward eligibility scan...");
 
   try {
     const pendingSnap = await db.collection('referrals')
-      .where('rewardStatus', '==', 'PENDING')
+      .where('rewardStatus', 'in', ['PENDING', 'WAITING_FOR_FIRST_ORDER', 'ORDER_DELIVERED_WAITING_168H'])
       .get();
 
-    console.log(`[Scheduled Job] Found ${pendingSnap.size} pending referral records.`);
+    console.log(`[Scheduled Job] Found ${pendingSnap.size} potentially active/pending referral records.`);
 
     for (const doc of pendingSnap.docs) {
       const referral = doc.data();
       if (!referral.firstOrderId) {
-        continue; // Still waiting for first order
+        continue; // Still waiting for first order placement
       }
 
       const orderSnap = await db.collection('orders').doc(referral.firstOrderId).get();
@@ -231,16 +241,18 @@ exports.processReferralRewardsJob = functions.pubsub.schedule('every 1 hours').o
       }
       const order = orderSnap.data();
 
-      // Check if delivered and 168 hours elapsed
-      if (order.status === 'Delivered' && order.deliveredAt) {
+      // Check if delivered and exact 168 hours (604,800,000 ms) have elapsed
+      if ((order.status === 'Delivered' || order.status === 'Completed') && order.deliveredAt) {
         const deliveredTime = new Date(order.deliveredAt).getTime();
-        if (Date.now() - deliveredTime >= SEVEN_DAYS_MS) {
+        const now = Date.now();
+        if (now - deliveredTime >= SEVEN_DAYS_MS) {
+          console.log(`[Scheduled Job] Referral ${referral.referredUid} order #${order.orderId} passed 168 hours. Processing reward...`);
           await processAtomicReferralReward(referral, order);
         }
       }
     }
 
-    console.log("[Scheduled Job] Referral eligibility scan completed successfully.");
+    console.log("[Scheduled Job] 168-hour referral eligibility scan completed successfully.");
     return null;
   } catch (error) {
     console.error("[Scheduled Job Error]", error);
