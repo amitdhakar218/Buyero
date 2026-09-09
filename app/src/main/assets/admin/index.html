@@ -4292,6 +4292,21 @@
               orderId: orderId,
               type: 'ORDER_CANCELLED'
             });
+
+            // Refund coins in Firestore if applied to cancelled order
+            if (order.coinsDiscount && order.coinsDiscount > 0 && fbFirestore) {
+              try {
+                const uDocRef = fbFirestore.collection('users').doc(order.userId);
+                const uDoc = await uDocRef.get();
+                if (uDoc.exists) {
+                  const curC = Number(uDoc.data().walletCoins || uDoc.data().coins) || 0;
+                  const refC = curC + Number(order.coinsDiscount);
+                  await uDocRef.set({ walletCoins: refC, coins: refC, walletUpdatedAt: new Date().toISOString() }, { merge: true });
+                }
+              } catch (e) {
+                console.warn("[Admin Order Cancel Coin Refund Error]", e);
+              }
+            }
           }
         } catch (err) {
           console.error("Cancel order sync error:", err);

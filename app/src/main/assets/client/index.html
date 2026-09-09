@@ -3723,6 +3723,15 @@
         }, 400);
       }
 
+      // Capture referral parameter from URL (?ref=... or ?referrer=...)
+      try {
+        const refUrlParams = new URLSearchParams(window.location.search);
+        const refParam = refUrlParams.get('ref') || refUrlParams.get('referrer') || refUrlParams.get('r');
+        if (refParam) {
+          localStorage.setItem('buyero_referred_by', refParam.trim().toUpperCase());
+        }
+      } catch (e) {}
+
       const hash = window.location.hash.replace(/^#\/?/, '').trim();
       if (hash === 'orders') switchClientView('orders');
       if (hash === 'support') switchClientView('support');
@@ -6264,7 +6273,7 @@
       const discount = Math.max(0, totalMrp - subtotal);
 
       // Coins calculation (UI/UX calculation for Phase 1)
-      const userCoins = (currentUser && currentUser.walletCoins !== undefined) ? currentUser.walletCoins : 50;
+      const userCoins = getUserCoins();
       let coinsDiscount = 0;
       if (checkoutState.useCoins && userCoins > 0) {
         coinsDiscount = Math.min(50, userCoins, Math.max(0, subtotal - 1));
@@ -6426,7 +6435,7 @@
         coinsDiscount: 0
       };
 
-      const coinsBal = (currentUser && currentUser.walletCoins !== undefined) ? currentUser.walletCoins : 50;
+      const coinsBal = getUserCoins();
       const coinsBalEl = document.getElementById('chk-coins-balance');
       if (coinsBalEl) coinsBalEl.textContent = coinsBal;
       const coinsChk = document.getElementById('chk-use-coins');
@@ -6730,6 +6739,7 @@
           coinsDiscount: coinsDiscount,
           couponDiscount: couponDiscount,
           appliedCoupon: checkoutState.appliedCouponCode || null,
+          referralCodeUsed: localStorage.getItem('buyero_referred_by') || null,
           paymentMode: 'Cash on Delivery (COD)',
           transactionId: null,
           paymentStatus: 'COD_PENDING_DOORSTEP',
@@ -6796,10 +6806,9 @@
 
         // 3. Deduct wallet coins if applied
         if (checkoutState.useCoins && coinsDiscount > 0) {
-          const curCoins = (currentUser && currentUser.walletCoins !== undefined) ? currentUser.walletCoins : 50;
-          currentUser.walletCoins = Math.max(0, curCoins - coinsDiscount);
-          localStorage.setItem('buyero_user', JSON.stringify(currentUser));
-          renderUserProfile();
+          const curCoins = getUserCoins();
+          const remCoins = Math.max(0, curCoins - coinsDiscount);
+          await syncUserWalletCoins(remCoins, `ORDER_PAYMENT_${newOrder.orderId}`);
         }
 
         // 4. Update user profile
@@ -7276,10 +7285,9 @@
       saveOrders(orders);
 
       // Refund used coins if applicable
-      if (order.coinsDiscount && order.coinsDiscount > 0 && currentUser) {
-        currentUser.walletCoins = (currentUser.walletCoins || 0) + order.coinsDiscount;
-        localStorage.setItem('buyero_user', JSON.stringify(currentUser));
-        renderUserProfile();
+      if (order.coinsDiscount && order.coinsDiscount > 0) {
+        const refunded = getUserCoins() + Number(order.coinsDiscount);
+        syncUserWalletCoins(refunded, `ORDER_CANCEL_REFUND_${order.orderId}`);
       }
 
       // Sync real-time broadcast to Admin Studio
@@ -8614,63 +8622,42 @@
       closeAuthModal();
     }
 
-    function loginAsAmitDhakar() {
-      const amitEmail = "amitdhakar218@gmail.com";
-      const amitUuid = generateDeterministicUserUuid(amitEmail);
-      currentUser = {
-        uuid: amitUuid,
-        userId: amitUuid,
-        name: "Amit Dhakar",
-        phone: "9174573889",
-        email: amitEmail,
-        city: "New Delhi",
-        state: "Delhi",
-        pincode: "110001",
-        address: "Block B-4, Connaught Place, Central City",
-        role: "Owner / Administrator"
-      };
-      localStorage.setItem('buyero_user', JSON.stringify(currentUser));
-      fetchCloudOrdersForUser(currentUser);
-      renderUserProfile();
-      loadUserOrders();
-      closeAuthModal();
-      alert("👑 Welcome Amit Dhakar! Signed in with full account access.");
-      logAppVisitorAnalytics();
-      resumePendingAuthAction();
-    }
-
-    function quickDemoLogin() {
-      const demoEmail = "rahul.sharma@example.com";
-      const demoUuid = generateDeterministicUserUuid(demoEmail);
-      currentUser = {
-        uuid: demoUuid,
-        userId: demoUuid,
-        name: "Rahul Sharma",
-        phone: "9876543210",
-        email: demoEmail,
-        city: "Mumbai",
-        state: "Maharashtra",
-        pincode: "400001",
-        address: "Flat 402, Lotus Heights, MG Road"
-      };
-      localStorage.setItem('buyero_user', JSON.stringify(currentUser));
-      fetchCloudOrdersForUser(currentUser);
-      renderUserProfile();
-      loadUserOrders();
-      closeAuthModal();
-      alert("🛍️ Logged in as Demo User: Rahul Sharma");
-      logAppVisitorAnalytics();
-      resumePendingAuthAction();
-    }
-
     function getUserCoins() {
+      if (currentUser && currentUser.walletCoins !== undefined && currentUser.walletCoins !== null) {
+        return Math.max(0, parseInt(currentUser.walletCoins, 10) || 0);
+      }
       const stored = localStorage.getItem('buyero_user_coins');
-      return stored !== null ? parseInt(stored, 10) : 50; // Exactly 50 welcome coins per Section 10 & 13
+      return stored !== null ? Math.max(0, parseInt(stored, 10) || 0) : 50;
+    }
+
+    async function syncUserWalletCoins(newCoins, reason = 'WALLET_UPDATE') {
+      const sanitizedCoins = Math.max(0, parseInt(newCoins, 10) || 0);
+      localStorage.setItem('buyero_user_coins', String(sanitizedCoins));
+      if (currentUser) {
+        currentUser.walletCoins = sanitizedCoins;
+        localStorage.setItem('buyero_user', JSON.stringify(currentUser));
+      }
+      renderUserProfile();
+
+      // Authoritative cloud persistence
+      const targetUid = (fbAuth && fbAuth.currentUser && fbAuth.currentUser.uid) ||
+                        (currentUser && currentUser.authUid) ||
+                        (currentUser && currentUser.uuid && !currentUser.uuid.startsWith('usr_') ? currentUser.uuid : null);
+      if (fbFirestore && targetUid) {
+        try {
+          await fbFirestore.collection('users').doc(targetUid).set({
+            walletCoins: sanitizedCoins,
+            coins: sanitizedCoins,
+            walletUpdatedAt: new Date().toISOString()
+          }, { merge: true });
+        } catch (err) {
+          console.warn("[Cloud Wallet Sync Error]", err);
+        }
+      }
     }
 
     function saveUserCoins(coins) {
-      localStorage.setItem('buyero_user_coins', String(coins));
-      renderUserProfile();
+      syncUserWalletCoins(coins);
     }
 
     function renderUserProfile() {
