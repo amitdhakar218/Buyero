@@ -97,20 +97,26 @@ service cloud.firestore {
         (!('walletCoins' in request.resource.data) || request.resource.data.walletCoins <= 10)
       );
 
-      // Updates: Customers can update profile info (name, phone, addresses, cart, wishlist)
-      // They can spend coins, or restore up to 50 coins on order cancellation refund, but CANNOT tamper with referral attribution, referralLocked or bonus status
+      // Updates: Customers can update general profile info (name, phone, addresses, cart, wishlist)
+      // Customers CANNOT modify referral attribution, referralLocked, rewardStatus, or bonus status.
+      // Customers CANNOT arbitrarily increase their coin balance (only spend up to 50 coins deduction).
       allow update: if isAdmin() || (
         request.auth != null && request.auth.uid == userId &&
         (!request.resource.data.diff(resource.data).affectedKeys().hasAny([
-          'signupBonusGranted', 'signupBonusCoins', 'signupBonusGrantedAt', 'signupBonusTransactionId',
+          'signupBonusGranted', 'signupBonusCoins', 'signupBonusGrantedAt', 'signupBonusTransactionId', 'signupBonusAt',
           'referralAttributionStatus', 'referralAttributedAt', 'referralCapturedAt', 'referralRewardStatus',
-          'referralLocked', 'rewardTransactionId', 'rewardedAt', 'eligibilityAt', 'referrerUid'
+          'referralLocked', 'rewardTransactionId', 'rewardedAt', 'eligibilityAt', 'referrerUid',
+          'firstOrderId', 'firstOrderDeliveredAt', 'returnInitiatedAt', 'cancelledAt', 'disqualificationReason',
+          'referralRewardAmount', 'referralRewardCoins', 'referralStatus', 'referralLifecycleStatus'
         ])) &&
         // Customer cannot overwrite referredByUid or referredByCode if already set
         (!('referredByUid' in resource.data) || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['referredByUid', 'referredByCode', 'referralLocked'])) &&
-        // Coin balance change: either decreasing (spend) or increasing by at most 50 (order cancellation refund)
-        (!('coins' in request.resource.data) || request.resource.data.coins <= resource.data.coins + 50) &&
-        (!('walletCoins' in request.resource.data) || request.resource.data.walletCoins <= resource.data.walletCoins + 50)
+        // Coin balance security: Customers CANNOT increase their own coin balance.
+        // Balance changes from customer can only be deductions (spending up to 50 coins at checkout).
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['coins', 'walletCoins']) || (
+          (!('coins' in request.resource.data) || (request.resource.data.coins <= resource.data.coins && resource.data.coins - request.resource.data.coins <= 50)) &&
+          (!('walletCoins' in request.resource.data) || (request.resource.data.walletCoins <= resource.data.walletCoins && resource.data.walletCoins - request.resource.data.walletCoins <= 50))
+        ))
       );
 
       allow delete: if isAdmin();
@@ -118,19 +124,38 @@ service cloud.firestore {
       // Coin Transactions Ledger (Strict, deterministic audit records)
       match /coin_transactions/{txId} {
         allow read: if isAdmin() || (request.auth != null && request.auth.uid == userId);
-        // Only Admin/Backend can credit REFERRAL_REWARD (+50) or ADMIN_ADJUSTMENT
-        // Customer can only record their one-time signup_bonus (10 coins), order spend (deduction <= 50), or cancellation refund (<= 50)
+        // Only Admin/Backend can credit REFERRAL_REWARD (+50), ORDER_REFUND, or ADMIN_ADJUSTMENT
+        // Customer can only record their one-time signup_bonus (10 coins) or order spend (deduction <= 50)
         allow create: if isAdmin() || (
           request.auth != null && request.auth.uid == userId && (
             ((txId == 'signup_bonus' || txId == ('signupBonus_' + userId)) && request.resource.data.type == 'SIGNUP_BONUS' && request.resource.data.amount == 10) ||
-            ((request.resource.data.type == 'ORDER_SPEND' || request.resource.data.type == 'ORDER_DISCOUNT') && request.resource.data.amount <= 0 && request.resource.data.amount >= -50) ||
-            ((request.resource.data.type == 'ORDER_REFUND' || request.resource.data.type == 'ORDER_COIN_REFUND') && request.resource.data.amount > 0 && request.resource.data.amount <= 50)
+            ((request.resource.data.type == 'ORDER_SPEND' || request.resource.data.type == 'ORDER_DISCOUNT') && request.resource.data.amount <= 0 && request.resource.data.amount >= -50)
           )
         );
         allow update, delete: if isAdmin();
       }
-      
-      match /{allSubcollections=**} {
+
+      // Explicit User Subcollections (Replacing broad wildcard to ensure sensitive subcollections are never overridden)
+      match /orders/{orderId} {
+        allow read: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+        allow create, update: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+        allow delete: if isAdmin();
+      }
+
+      match /notifications/{notifId} {
+        allow read, update, delete: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+        allow create: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+      }
+
+      match /addresses/{addressId} {
+        allow read, write: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+      }
+
+      match /cart/{cartItemId} {
+        allow read, write: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+      }
+
+      match /wishlist/{wishId} {
         allow read, write: if isAdmin() || (request.auth != null && request.auth.uid == userId);
       }
     }
@@ -158,14 +183,16 @@ service cloud.firestore {
         request.resource.data.rewardCoins == 50
       );
 
-      // Updates: Customer can link their first qualifying order or update order events
-      // They are STRICTLY FORBIDDEN from altering rewardStatus, rewardedAt, rewardTransactionId, referrerUid or referredUid, eligibilityAt, returnInitiatedAt, cancelledAt
+      // Updates: Customer can link their first qualifying order if not yet linked
+      // They are STRICTLY FORBIDDEN from altering rewardStatus, rewardedAt, rewardTransactionId, referrerUid or referredUid, eligibilityAt, returnInitiatedAt, cancelledAt, or changing firstOrderId once set
       allow update: if isAdmin() || (
         request.auth != null &&
         request.auth.uid == referredUid &&
         request.resource.data.referrerUid == resource.data.referrerUid &&
         request.resource.data.referredUid == resource.data.referredUid &&
         request.resource.data.rewardStatus == resource.data.rewardStatus &&
+        // Customer cannot alter or replace firstOrderId once established
+        (!('firstOrderId' in resource.data) || request.resource.data.firstOrderId == resource.data.firstOrderId) &&
         !request.resource.data.diff(resource.data).affectedKeys().hasAny([
           'rewardStatus', 'rewardedAt', 'rewardTransactionId', 'rewardCoins', 'referrerUid', 'referredUid',
           'eligibilityAt', 'returnInitiatedAt', 'cancelledAt', 'cancellationAt', 'disqualificationReason'

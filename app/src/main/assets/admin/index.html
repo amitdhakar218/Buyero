@@ -3852,9 +3852,13 @@
         return; // Return window has not elapsed yet
       }
 
-      // Check if return was initiated
-      const hasReturn = (order.returnDetails && order.returnDetails.status && order.returnDetails.status !== 'Rejected') ||
-                        (Array.isArray(order.items) && order.items.some(item => item.returnRequest));
+      // Check if return was initiated (any return request permanently disqualifies even if later rejected)
+      const hasReturn = Boolean(
+        order.returnInitiatedAt ||
+        order.returnRequested ||
+        order.returnDetails ||
+        (Array.isArray(order.items) && order.items.some(item => item.returnRequest))
+      );
       if (hasReturn) {
         order.referralRewardStatus = 'INELIGIBLE_RETURN';
         await syncOrderUpdateToFirestore(order);
@@ -5597,9 +5601,13 @@ FINANCIAL BREAKDOWN:
 
         totalScanned++;
 
-        // Check return or exchange requests
-        const hasReturn = (order.returnDetails && order.returnDetails.status && order.returnDetails.status !== 'Rejected') ||
-                          (Array.isArray(order.items) && order.items.some(it => it.returnRequest));
+        // Check return or exchange requests (permanent disqualification even if later rejected)
+        const hasReturn = Boolean(
+          order.returnInitiatedAt ||
+          order.returnRequested ||
+          order.returnDetails ||
+          (Array.isArray(order.items) && order.items.some(it => it.returnRequest))
+        );
         
         if (hasReturn && order.referralRewardStatus !== 'INELIGIBLE_RETURN') {
           order.referralRewardStatus = 'INELIGIBLE_RETURN';

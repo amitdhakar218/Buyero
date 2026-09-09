@@ -3793,9 +3793,9 @@
                 if (isPathAttribution) window.history.replaceState({}, '', '/');
                 return;
               }
-              // Prevent altering established referral for registered user
-              if (currentUser && currentUser.referredByUid) {
-                console.log("[Referral] User already permanently referred by:", currentUser.referredByUid);
+              // Prevent altering established referral for registered user, or attaching to existing user
+              if (currentUser || currentAuthUid) {
+                console.log("[Referral] User is already registered/logged in. Referral links are only valid for new account signups.");
                 if (isPathAttribution) window.history.replaceState({}, '', '/');
                 return;
               }
@@ -8820,10 +8820,13 @@
             const userSnap = await fbFirestore.collection('users').doc(userUuid).get();
             if (userSnap.exists) {
               const uData = userSnap.data();
+              isGenuinelyNewAccount = false;
               if (uData.referralCode) {
                 finalReferralCode = uData.referralCode;
               }
-              // NEW USER ONLY RULE: If user already has referredByUid, preserve it permanently!
+              // PERMANENT ATTRIBUTION RULE:
+              // If user already had a referrer, it is permanently locked and immutable.
+              // If user already signed up without a referrer, never attach a referrer later!
               if (uData.referredByUid) {
                 finalReferredByUid = uData.referredByUid;
                 finalReferredByCode = uData.referredByCode || finalReferredByCode;
@@ -8832,9 +8835,13 @@
                 referralCapturedAt = uData.referralCapturedAt || referralCapturedAt;
                 referralFirstOrderId = uData.referralFirstOrderId || null;
                 referralRewardStatus = uData.referralRewardStatus || referralRewardStatus;
+              } else {
+                finalReferredByUid = null;
+                finalReferredByCode = null;
+                referralAttributionStatus = 'UNATTRIBUTED';
+                referralRewardStatus = 'INELIGIBLE_NO_REFERRER';
               }
               if (uData.signupBonusGranted) {
-                isGenuinelyNewAccount = false;
                 initialCoins = Number(uData.coins !== undefined ? uData.coins : (uData.walletCoins || 0));
                 signupBonusGranted = uData.signupBonusGranted;
                 signupBonusTransactionId = uData.signupBonusTransactionId || `signupBonus_${userUuid}`;
@@ -8865,8 +8872,9 @@
           referredByUid: finalReferredByUid,
           referredByCode: finalReferredByCode,
           referralAttributionStatus: referralAttributionStatus,
-          referralCapturedAt: referralCapturedAt,
-          referralAttributedAt: referralAttributedAt,
+          referralCapturedAt: referralCapturedAt || (finalReferredByUid ? new Date().toISOString() : null),
+          referralAttributedAt: referralAttributedAt || (finalReferredByUid ? new Date().toISOString() : null),
+          referralLocked: Boolean(finalReferredByUid),
           referralFirstOrderId: referralFirstOrderId,
           referralRewardStatus: referralRewardStatus,
           authMethod: 'google_oauth_firebase',
@@ -8946,6 +8954,13 @@
               active: true,
               createdAt: new Date().toISOString()
             }, { merge: true });
+
+            // Clean up temporary referral navigation state (Firebase is the permanent authoritative source of truth)
+            sessionStorage.removeItem('buyero_referred_by_code');
+            sessionStorage.removeItem('buyero_referred_by_uid');
+            localStorage.removeItem('buyero_referred_by_code');
+            localStorage.removeItem('buyero_referred_by_uid');
+            localStorage.removeItem('buyero_referred_by');
 
             console.log("[Firestore] User and referral code saved with ID:", userUuid, finalReferralCode);
           } catch (e) {
