@@ -156,7 +156,12 @@
       </div>
 
       <!-- Action Icons -->
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-1.5">
+        <!-- Refresh Live Data Button -->
+        <button onclick="refreshAppData(this)" id="btn-header-refresh" class="relative p-2 text-slate-600 hover:text-brand-navy rounded-full hover:bg-slate-100 transition" title="Refresh Live Data">
+          <i class="fa-solid fa-rotate-right text-base"></i>
+        </button>
+
         <!-- Notification Bell -->
         <button onclick="toggleNotificationDrawer()" class="relative p-2 text-slate-600 hover:text-slate-900 rounded-full hover:bg-slate-100 transition" title="Notifications">
           <i class="fa-regular fa-bell text-lg"></i>
@@ -327,13 +332,34 @@
         </button>
       </div>
 
-      <!-- Live Orders vs Completed Orders Toggle -->
-      <div class="flex border-b border-slate-200 text-xs font-bold bg-white rounded-xl p-1 shadow-sm">
-        <button onclick="switchClientOrdersTab('live')" id="tab-client-orders-live" class="flex-1 py-2 rounded-lg bg-brand-navy text-white transition">
-          <i class="fa-solid fa-truck-fast mr-1"></i> Live Orders (<span id="client-live-orders-count">0</span>)
+      <!-- 4 Order Tabs: Live, Processing, Completed, Returns -->
+      <div class="grid grid-cols-4 gap-1 border-b border-slate-200 text-[11px] font-bold bg-white rounded-xl p-1 shadow-sm">
+        <button type="button" onclick="switchClientOrdersTab('live')" id="tab-client-orders-live" class="py-2 px-1 rounded-lg bg-brand-navy text-white transition text-center flex flex-col sm:flex-row items-center justify-center gap-1">
+          <i class="fa-solid fa-truck-fast"></i>
+          <span>Live (<span id="client-live-orders-count">0</span>)</span>
         </button>
-        <button onclick="switchClientOrdersTab('completed')" id="tab-client-orders-completed" class="flex-1 py-2 rounded-lg text-slate-500 hover:text-slate-800 transition">
-          <i class="fa-solid fa-circle-check mr-1"></i> Completed (<span id="client-completed-orders-count">0</span>)
+        <button type="button" onclick="switchClientOrdersTab('processing')" id="tab-client-orders-processing" class="py-2 px-1 rounded-lg text-slate-500 hover:text-slate-800 transition text-center flex flex-col sm:flex-row items-center justify-center gap-1">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          <span>Processing (<span id="client-processing-orders-count">0</span>)</span>
+        </button>
+        <button type="button" onclick="switchClientOrdersTab('completed')" id="tab-client-orders-completed" class="py-2 px-1 rounded-lg text-slate-500 hover:text-slate-800 transition text-center flex flex-col sm:flex-row items-center justify-center gap-1">
+          <i class="fa-solid fa-circle-check"></i>
+          <span>Completed (<span id="client-completed-orders-count">0</span>)</span>
+        </button>
+        <button type="button" onclick="switchClientOrdersTab('returns')" id="tab-client-orders-returns" class="py-2 px-1 rounded-lg text-slate-500 hover:text-slate-800 transition text-center flex flex-col sm:flex-row items-center justify-center gap-1">
+          <i class="fa-solid fa-arrow-rotate-left"></i>
+          <span>Returns (<span id="client-returns-orders-count">0</span>)</span>
+        </button>
+      </div>
+
+      <!-- Cancelled Orders Sub-Filter Banner -->
+      <div id="cancelled-orders-toggle-wrap" class="hidden flex items-center justify-between px-3 py-2 bg-slate-100/80 border border-slate-200 rounded-xl text-xs">
+        <span class="text-slate-600 text-[11px] font-medium flex items-center gap-1.5">
+          <i class="fa-solid fa-ban text-rose-500 text-xs"></i>
+          <span>Cancelled Orders (<span id="client-cancelled-orders-count">0</span>)</span>
+        </span>
+        <button type="button" onclick="switchClientOrdersTab('cancelled')" id="tab-client-orders-cancelled" class="text-xs font-bold text-rose-600 hover:underline">
+          View Cancelled
         </button>
       </div>
 
@@ -1166,20 +1192,49 @@
             <i class="fa-solid fa-tags text-brand-orange"></i> Offers & Discounts
           </h4>
 
-          <!-- Buyero Coins Checkbox -->
-          <label class="flex items-start gap-3 p-3 bg-amber-50/60 border border-amber-200 rounded-xl cursor-pointer">
-            <input type="checkbox" id="chk-use-coins" onchange="toggleCheckoutCoins()" class="mt-0.5 text-brand-orange focus:ring-brand-orange rounded">
-            <div class="text-xs flex-1">
-              <div class="flex items-center justify-between">
-                <span class="font-bold text-slate-800 flex items-center gap-1">
-                  🪙 Apply Buyero Coins
-                  <span class="text-[10px] text-amber-800 bg-amber-200/70 font-semibold px-1.5 py-0.2 rounded">Max ₹50 off</span>
-                </span>
-                <span class="text-[10px] text-slate-500 font-medium">1 Coin = ₹1</span>
+          <!-- Buyero Coins Selector (Authoritative Stepper & Quick Step Pills) -->
+          <div class="p-3.5 bg-amber-50/70 border border-amber-200/80 rounded-2xl space-y-2.5">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-base shadow-xs">
+                  🪙
+                </div>
+                <div>
+                  <div class="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                    <span>Buyero Coins</span>
+                    <span class="text-[9px] font-semibold bg-amber-200/80 text-amber-900 px-1.5 py-0.2 rounded-full">1 Coin = ₹1</span>
+                  </div>
+                  <p class="text-[10px] text-slate-500">Available: <strong id="chk-coins-available-display" class="text-amber-700">0</strong> Coins (Max ₹50 off)</p>
+                </div>
               </div>
-              <p class="text-[10px] text-slate-500 mt-0.5">Your balance: <span id="chk-coins-balance" class="font-bold text-amber-700">0</span> Coins • Min. payable ₹1</p>
+              <span id="chk-coins-discount-tag" class="text-[10px] font-bold text-slate-600 bg-white border border-amber-200 px-2 py-0.5 rounded-lg shadow-2xs">₹0 Applied</span>
             </div>
-          </label>
+
+            <!-- Stepper Selector: [-]  ₹0  [+] -->
+            <div class="flex items-center justify-between bg-white border border-amber-200 rounded-xl p-1.5 shadow-2xs">
+              <span class="text-[11px] font-semibold text-slate-600 pl-2">Use Coins:</span>
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="adjustCheckoutCoins(-10)" id="btn-coins-minus" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 active:scale-95 flex items-center justify-center text-slate-700 font-bold transition">
+                  <i class="fa-solid fa-minus text-xs"></i>
+                </button>
+                <span id="chk-coins-selected-display" class="font-poppins font-bold text-sm text-slate-900 min-w-[54px] text-center">₹0</span>
+                <button type="button" onclick="adjustCheckoutCoins(10)" id="btn-coins-plus" class="w-8 h-8 rounded-lg bg-amber-500 hover:bg-amber-600 text-white active:scale-95 flex items-center justify-center font-bold transition shadow-2xs">
+                  <i class="fa-solid fa-plus text-xs"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Quick Step Chips -->
+            <div class="flex flex-wrap gap-1.5 pt-0.5" id="checkout-coins-quick-chips">
+              <button type="button" onclick="setCheckoutCoinsDiscount(0)" class="px-2 py-1 bg-white border border-slate-200 rounded-lg text-[10px] font-semibold text-slate-600 hover:border-amber-400 transition">₹0 (None)</button>
+              <button type="button" onclick="setCheckoutCoinsDiscount(10)" class="px-2 py-1 bg-white border border-slate-200 rounded-lg text-[10px] font-semibold text-slate-600 hover:border-amber-400 transition">₹10</button>
+              <button type="button" onclick="setCheckoutCoinsDiscount(20)" class="px-2 py-1 bg-white border border-slate-200 rounded-lg text-[10px] font-semibold text-slate-600 hover:border-amber-400 transition">₹20</button>
+              <button type="button" onclick="setCheckoutCoinsDiscount(30)" class="px-2 py-1 bg-white border border-slate-200 rounded-lg text-[10px] font-semibold text-slate-600 hover:border-amber-400 transition">₹30</button>
+              <button type="button" onclick="setCheckoutCoinsDiscount(40)" class="px-2 py-1 bg-white border border-slate-200 rounded-lg text-[10px] font-semibold text-slate-600 hover:border-amber-400 transition">₹40</button>
+              <button type="button" onclick="setCheckoutCoinsDiscount(50)" class="px-2 py-1 bg-amber-100 border border-amber-300 rounded-lg text-[10px] font-bold text-amber-900 hover:bg-amber-200 transition">₹50 (Max)</button>
+            </div>
+            <p class="text-[9px] text-slate-400 leading-tight">Note: Maximum ₹50 discount allowed per order. Coins cannot pay the entire price (min payable ₹1).</p>
+          </div>
 
           <!-- Coupon Code Input -->
           <div class="space-y-1.5">
@@ -3367,18 +3422,18 @@
       localStorage.setItem('buyero_orders', JSON.stringify(orders));
     }
 
-    // Cloud Firestore Orders Synchronizer for current user
+    // Cloud Firestore Orders Synchronizer for current user (Permission-Safe & Subcollection Supported)
     function fetchCloudOrdersForUser(user) {
       const targetUser = user || currentUser;
       if (!targetUser || !fbFirestore) return;
       const uEmail = (targetUser.email || '').toLowerCase().trim();
       const uId = targetUser.uuid || targetUser.userId;
-      const authUid = targetUser.authUid || (uId && !uId.startsWith('usr_') ? uId : null);
-      const detId = uEmail ? generateDeterministicUserUuid(uEmail) : null;
+      const authUid = (fbAuth && fbAuth.currentUser && fbAuth.currentUser.uid) || targetUser.authUid || (uId && !uId.startsWith('usr_') ? uId : null);
+      const effectiveUid = authUid || uId;
 
-      if (!uEmail && !uId && !detId) return;
+      if (!effectiveUid && !uEmail) return;
 
-      fbFirestore.collection('orders').get().then((snapshot) => {
+      const mergeCloudDocs = (snapshot) => {
         if (!snapshot || snapshot.empty) return;
         let localAllOrders = getAllStoredOrders();
         let changed = false;
@@ -3387,39 +3442,46 @@
           const remoteOrder = doc.data();
           if (!remoteOrder || !remoteOrder.orderId) return;
 
-          const remoteOrderEmail = (remoteOrder.customerEmail || '').toLowerCase().trim();
-          const matchUser = (remoteOrder.userId && uId && remoteOrder.userId === uId) ||
-                            (remoteOrder.userId && authUid && remoteOrder.userId === authUid) ||
-                            (remoteOrder.userId && detId && remoteOrder.userId === detId) ||
-                            (remoteOrderEmail && uEmail && remoteOrderEmail === uEmail);
-
-          if (matchUser) {
-            const existingIdx = localAllOrders.findIndex(o => o.orderId === remoteOrder.orderId);
-            if (existingIdx >= 0) {
+          const existingIdx = localAllOrders.findIndex(o => o.orderId === remoteOrder.orderId);
+          if (existingIdx >= 0) {
+            if (JSON.stringify(localAllOrders[existingIdx]) !== JSON.stringify(remoteOrder)) {
               localAllOrders[existingIdx] = Object.assign({}, localAllOrders[existingIdx], remoteOrder);
               changed = true;
-            } else {
-              localAllOrders.unshift(remoteOrder);
-              changed = true;
             }
+          } else {
+            localAllOrders.unshift(remoteOrder);
+            changed = true;
           }
         });
 
         if (changed) {
           saveOrders(localAllOrders);
           loadUserOrders();
+          updateProfileCounts();
           if (typeof renderOrdersList === 'function') renderOrdersList();
           if (typeof renderUserProfile === 'function') renderUserProfile();
         }
-      }).catch((err) => {
-        console.warn("[Buyero Cloud Orders Sync]", err);
-      });
+      };
+
+      // 1. Query root collection filtered by userId
+      if (effectiveUid) {
+        fbFirestore.collection('orders').where('userId', '==', effectiveUid).get()
+          .then(mergeCloudDocs)
+          .catch((err) => console.warn("[Orders Root Query Note]", err));
+
+        // 2. Query user orders subcollection
+        fbFirestore.collection('users').doc(effectiveUid).collection('orders').get()
+          .then(mergeCloudDocs)
+          .catch((err) => console.warn("[Orders Subcollection Query Note]", err));
+      }
 
       // Also attach realtime listener
       listenToUserOrdersRealtime(targetUser);
     }
 
     let userOrdersUnsubscribe = null;
+    let userSubOrdersUnsubscribe = null;
+
     function listenToUserOrdersRealtime(user) {
       const targetUser = user || currentUser;
       if (!targetUser || !fbFirestore) return;
@@ -3427,64 +3489,71 @@
         try { userOrdersUnsubscribe(); } catch(e) {}
         userOrdersUnsubscribe = null;
       }
-      const uEmail = (targetUser.email || '').toLowerCase().trim();
+      if (userSubOrdersUnsubscribe) {
+        try { userSubOrdersUnsubscribe(); } catch(e) {}
+        userSubOrdersUnsubscribe = null;
+      }
+
       const uId = targetUser.uuid || targetUser.userId;
-      const authUid = targetUser.authUid || (uId && !uId.startsWith('usr_') ? uId : null);
-      const detId = uEmail ? generateDeterministicUserUuid(uEmail) : null;
-      const uPhone = (targetUser.phone || '').trim();
+      const authUid = (fbAuth && fbAuth.currentUser && fbAuth.currentUser.uid) || targetUser.authUid || (uId && !uId.startsWith('usr_') ? uId : null);
+      const effectiveUid = authUid || uId;
 
-      if (!uEmail && !uId && !detId && !uPhone) return;
+      if (!effectiveUid) return;
 
-      try {
-        userOrdersUnsubscribe = fbFirestore.collection('orders').onSnapshot((snapshot) => {
-          if (!snapshot || snapshot.empty) return;
-          let localAllOrders = getAllStoredOrders();
-          let changed = false;
+      const handleRealtimeSnapshot = (snapshot) => {
+        if (!snapshot || snapshot.empty) return;
+        let localAllOrders = getAllStoredOrders();
+        let changed = false;
 
-          snapshot.forEach((doc) => {
-            const remoteOrder = doc.data();
-            if (!remoteOrder || !remoteOrder.orderId) return;
+        snapshot.forEach((doc) => {
+          const remoteOrder = doc.data();
+          if (!remoteOrder || !remoteOrder.orderId) return;
 
-            const remoteOrderEmail = (remoteOrder.customerEmail || '').toLowerCase().trim();
-            const remotePhone = (remoteOrder.phone || '').trim();
-            const matchUser = (remoteOrder.userId && uId && remoteOrder.userId === uId) ||
-                              (remoteOrder.userId && authUid && remoteOrder.userId === authUid) ||
-                              (remoteOrder.userId && detId && remoteOrder.userId === detId) ||
-                              (remoteOrderEmail && uEmail && remoteOrderEmail === uEmail) ||
-                              (remotePhone && uPhone && remotePhone === uPhone);
-
-            if (matchUser) {
-              const existingIdx = localAllOrders.findIndex(o => o.orderId === remoteOrder.orderId);
-              if (existingIdx >= 0) {
-                if (JSON.stringify(localAllOrders[existingIdx]) !== JSON.stringify(remoteOrder)) {
-                  localAllOrders[existingIdx] = Object.assign({}, localAllOrders[existingIdx], remoteOrder);
-                  changed = true;
-                }
-              } else {
-                localAllOrders.unshift(remoteOrder);
-                changed = true;
-              }
+          const existingIdx = localAllOrders.findIndex(o => o.orderId === remoteOrder.orderId);
+          if (existingIdx >= 0) {
+            if (JSON.stringify(localAllOrders[existingIdx]) !== JSON.stringify(remoteOrder)) {
+              localAllOrders[existingIdx] = Object.assign({}, localAllOrders[existingIdx], remoteOrder);
+              changed = true;
             }
-          });
+          } else {
+            localAllOrders.unshift(remoteOrder);
+            changed = true;
+          }
+        });
 
-          if (changed) {
-            saveOrders(localAllOrders);
-            loadUserOrders();
-            if (typeof renderOrdersList === 'function') renderOrdersList();
-            const modal = document.getElementById('modal-order-details');
-            if (modal && !modal.classList.contains('hidden')) {
-              const idHeader = document.getElementById('ord-detail-id-header');
-              if (idHeader) {
-                const currentOpenedId = idHeader.textContent.replace('#', '').trim();
-                if (currentOpenedId) openOrderDetailsModal(currentOpenedId);
-              }
+        if (changed) {
+          saveOrders(localAllOrders);
+          loadUserOrders();
+          updateProfileCounts();
+          if (typeof renderOrdersList === 'function') renderOrdersList();
+          const modal = document.getElementById('modal-order-details');
+          if (modal && !modal.classList.contains('hidden')) {
+            const idHeader = document.getElementById('ord-detail-id-header');
+            if (idHeader) {
+              const currentOpenedId = idHeader.textContent.replace('#', '').trim();
+              if (currentOpenedId) openOrderDetailsModal(currentOpenedId);
             }
           }
-        }, (err) => {
-          console.warn("[Realtime Orders Listener Error]", err);
-        });
+        }
+      };
+
+      try {
+        userOrdersUnsubscribe = fbFirestore.collection('orders')
+          .where('userId', '==', effectiveUid)
+          .onSnapshot(handleRealtimeSnapshot, (err) => {
+            console.warn("[Realtime Orders Root Listener Note]", err);
+          });
       } catch (e) {
         console.warn("[Orders Listener Setup]", e);
+      }
+
+      try {
+        userSubOrdersUnsubscribe = fbFirestore.collection('users').doc(effectiveUid).collection('orders')
+          .onSnapshot(handleRealtimeSnapshot, (err) => {
+            console.warn("[Realtime Orders Sub Listener Note]", err);
+          });
+      } catch (e) {
+        console.warn("[Sub Orders Listener Setup]", e);
       }
     }
 
@@ -6392,16 +6461,15 @@
       const totalMrp = itemsToOrder.reduce((sum, i) => sum + ((i.mrp || Math.round(i.sellingPrice * 1.6)) * i.quantity), 0);
       const discount = Math.max(0, totalMrp - subtotal);
 
-      // Coins calculation (UI/UX calculation for Phase 1)
+      // Coins calculation (Rules: max ₹50, cannot exceed user balance, min payable ₹1)
       const userCoins = getUserCoins();
-      let coinsDiscount = 0;
-      if (checkoutState.useCoins && userCoins > 0) {
-        coinsDiscount = Math.min(50, userCoins, Math.max(0, subtotal - 1));
-      }
+      const maxAllowedCoins = Math.min(50, userCoins, Math.max(0, subtotal - 1));
+      let coinsDiscount = Math.min(maxAllowedCoins, checkoutState.coinsDiscount || 0);
+      if (!checkoutState.useCoins) coinsDiscount = 0;
       checkoutState.coinsDiscount = coinsDiscount;
 
-      // Coupon calculation
-      const couponDiscount = Math.min(checkoutState.couponDiscount, Math.max(0, subtotal - coinsDiscount - 1));
+      // Coupon calculation (clamped so payable remains >= 1)
+      const couponDiscount = Math.min(checkoutState.couponDiscount || 0, Math.max(0, subtotal - coinsDiscount - 1));
 
       // Final payable amount (clamped so minimum is always >= 1)
       const finalTotal = Math.max(1, subtotal - coinsDiscount - couponDiscount);
@@ -6444,10 +6512,55 @@
       }
     }
 
-    function toggleCheckoutCoins() {
-      const chk = document.getElementById('chk-use-coins');
-      checkoutState.useCoins = chk ? chk.checked : false;
+    function adjustCheckoutCoins(delta) {
+      const itemsToOrder = getCheckoutItems();
+      const subtotal = itemsToOrder.reduce((sum, i) => sum + (i.sellingPrice * i.quantity), 0);
+      const userCoins = getUserCoins();
+      const maxAllowed = Math.min(50, userCoins, Math.max(0, subtotal - 1));
+      const current = checkoutState.coinsDiscount || 0;
+      const target = Math.max(0, Math.min(maxAllowed, current + delta));
+      setCheckoutCoinsDiscount(target);
+    }
+
+    function setCheckoutCoinsDiscount(amount) {
+      const itemsToOrder = getCheckoutItems();
+      const subtotal = itemsToOrder.reduce((sum, i) => sum + (i.sellingPrice * i.quantity), 0);
+      const userCoins = getUserCoins();
+      const maxAllowed = Math.min(50, userCoins, Math.max(0, subtotal - 1));
+      const safeAmount = Math.max(0, Math.min(maxAllowed, Math.floor(Number(amount) || 0)));
+
+      checkoutState.coinsDiscount = safeAmount;
+      checkoutState.useCoins = safeAmount > 0;
+
+      const disp = document.getElementById('chk-coins-selected-display');
+      if (disp) disp.textContent = `₹${safeAmount}`;
+      const tag = document.getElementById('chk-coins-discount-tag');
+      if (tag) {
+        if (safeAmount > 0) {
+          tag.textContent = `₹${safeAmount} Applied`;
+          tag.className = "text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-lg shadow-2xs";
+        } else {
+          tag.textContent = `₹0 Applied`;
+          tag.className = "text-[10px] font-bold text-slate-600 bg-white border border-amber-200 px-2 py-0.5 rounded-lg shadow-2xs";
+        }
+      }
+
+      const minusBtn = document.getElementById('btn-coins-minus');
+      const plusBtn = document.getElementById('btn-coins-plus');
+      if (minusBtn) minusBtn.disabled = safeAmount <= 0;
+      if (plusBtn) plusBtn.disabled = safeAmount >= maxAllowed;
+
       renderCheckoutPriceBreakdown();
+    }
+
+    function toggleCheckoutCoins() {
+      const isCurrentlyUsing = checkoutState.coinsDiscount > 0;
+      if (isCurrentlyUsing) {
+        setCheckoutCoinsDiscount(0);
+      } else {
+        const userCoins = getUserCoins();
+        setCheckoutCoinsDiscount(Math.min(50, userCoins));
+      }
     }
 
     function setCheckoutCouponChip(code) {
@@ -6556,13 +6669,11 @@
       };
 
       const coinsBal = getUserCoins();
+      const availCoinsEl = document.getElementById('chk-coins-available-display');
+      if (availCoinsEl) availCoinsEl.textContent = coinsBal;
       const coinsBalEl = document.getElementById('chk-coins-balance');
       if (coinsBalEl) coinsBalEl.textContent = coinsBal;
-      const coinsChk = document.getElementById('chk-use-coins');
-      if (coinsChk) {
-        coinsChk.checked = false;
-        coinsChk.disabled = (coinsBal <= 0);
-      }
+      setCheckoutCoinsDiscount(0);
 
       const couponInput = document.getElementById('chk-coupon-input');
       if (couponInput) couponInput.value = '';
@@ -7726,22 +7837,106 @@
         : `✅ Exchange request for size (${replacementSize}) submitted! Replacement shipment will be processed upon doorstep pickup.`);
     }
 
+    const SEVEN_DAYS_MS = 604800000; // 7 * 24 * 60 * 60 * 1000
+
+    function updateProfileCounts() {
+      const allUserOrders = getStoredOrders();
+      const ordersBadge = document.getElementById('profile-orders-badge');
+      if (ordersBadge) ordersBadge.textContent = allUserOrders.length;
+
+      const liked = getLikedProducts();
+      const wishlistBadge = document.getElementById('profile-wishlist-badge');
+      if (wishlistBadge) wishlistBadge.textContent = liked.length;
+
+      const wishlistPill = document.getElementById('wishlist-count-pill');
+      if (wishlistPill) wishlistPill.textContent = `${liked.length} Item${liked.length !== 1 ? 's' : ''}`;
+
+      const headerWishlist = document.getElementById('header-wishlist-badge');
+      if (headerWishlist) {
+        if (liked.length > 0) {
+          headerWishlist.textContent = liked.length;
+          headerWishlist.classList.remove('hidden');
+        } else {
+          headerWishlist.classList.add('hidden');
+        }
+      }
+
+      // Also ensure chat identity header is updated
+      const chatIdentityEl = document.getElementById('chat-identity-display');
+      if (chatIdentityEl) {
+        const u = currentUser;
+        chatIdentityEl.textContent = u ? `${u.name || 'Customer'} (${(u.uuid || u.userId || 'USR').slice(0, 8)})` : 'Guest Mode';
+      }
+    }
+
+    function isOrderCancelled(order) {
+      if (!order) return false;
+      const s = (order.status || '').toLowerCase().trim();
+      return s === 'cancelled' || s === 'canceled';
+    }
+
+    function isOrderReturnOrExchange(order) {
+      if (!order || isOrderCancelled(order)) return false;
+      const s = (order.status || '').toLowerCase().trim();
+      if (s.includes('return') || s.includes('exchange')) return true;
+      if (order.returnDetails || order.returnRequested) return true;
+      if (Array.isArray(order.items) && order.items.some(i => i.itemStatus === 'RETURN_REQUESTED' || i.itemStatus === 'EXCHANGE_REQUESTED' || i.returnRequest || i.returnStatus)) return true;
+      return false;
+    }
+
+    function getOrderDeliveredTimestamp(order) {
+      if (!order) return null;
+      if (order.deliveredAt) {
+        const t = new Date(order.deliveredAt).getTime();
+        if (!isNaN(t)) return t;
+      }
+      if (Array.isArray(order.history)) {
+        const deliv = order.history.find(h => (h.status || '').toLowerCase().includes('delivered'));
+        if (deliv) {
+          const t = new Date(deliv.timestamp || deliv.date).getTime();
+          if (!isNaN(t)) return t;
+        }
+      }
+      const s = (order.status || '').toLowerCase().trim();
+      if (s === 'delivered') {
+        const t = new Date(order.timestamp).getTime();
+        if (!isNaN(t)) return t;
+      }
+      return null;
+    }
+
+    function isOrderCompletedFinalized(order) {
+      if (!order || isOrderCancelled(order) || isOrderReturnOrExchange(order)) return false;
+      const s = (order.status || '').toLowerCase().trim();
+      if (s === 'completed') return true;
+      if (s !== 'delivered') return false;
+      const delivTime = getOrderDeliveredTimestamp(order);
+      if (!delivTime) return false;
+      return (Date.now() - delivTime) >= SEVEN_DAYS_MS;
+    }
+
+    function isOrderProcessing(order) {
+      if (!order || isOrderCancelled(order) || isOrderReturnOrExchange(order) || isOrderCompletedFinalized(order)) return false;
+      const s = (order.status || '').toLowerCase().trim();
+      return s === 'order placed' || s === 'processing' || s === 'confirmed' || s === 'packed' || s === '';
+    }
+
+    function isOrderLiveInTransit(order) {
+      if (!order || isOrderCancelled(order) || isOrderReturnOrExchange(order) || isOrderCompletedFinalized(order)) return false;
+      const s = (order.status || '').toLowerCase().trim();
+      if (s === 'delivered') {
+        const delivTime = getOrderDeliveredTimestamp(order);
+        if (delivTime && (Date.now() - delivTime) < SEVEN_DAYS_MS) {
+          return true; // Still within 7-day return window, so considered active/live
+        }
+      }
+      return s.includes('shipped') || s.includes('transit') || s.includes('out for delivery') || s.includes('dispatched') || s.includes('assigned');
+    }
+
     let activeClientOrdersTab = 'live';
 
     function switchClientOrdersTab(tab) {
       activeClientOrdersTab = tab;
-      const btnLive = document.getElementById('tab-client-orders-live');
-      const btnCompleted = document.getElementById('tab-client-orders-completed');
-      if (btnLive) {
-        btnLive.className = (tab === 'live')
-          ? "flex-1 py-2 rounded-lg bg-brand-navy text-white transition font-bold"
-          : "flex-1 py-2 rounded-lg text-slate-500 hover:text-slate-800 transition font-bold";
-      }
-      if (btnCompleted) {
-        btnCompleted.className = (tab === 'completed')
-          ? "flex-1 py-2 rounded-lg bg-brand-navy text-white transition font-bold"
-          : "flex-1 py-2 rounded-lg text-slate-500 hover:text-slate-800 transition font-bold";
-      }
       loadUserOrders();
     }
 
@@ -7750,23 +7945,94 @@
       if (!container) return;
 
       const allUserOrders = getStoredOrders();
-      const liveOrders = allUserOrders.filter(o => o.status !== 'Completed' && o.status !== 'Cancelled' && o.status !== 'Returned');
-      const completedOrders = allUserOrders.filter(o => o.status === 'Completed' || o.status === 'Cancelled' || o.status === 'Returned');
 
+      const liveOrders = allUserOrders.filter(isOrderLiveInTransit);
+      const processingOrders = allUserOrders.filter(isOrderProcessing);
+      const completedOrders = allUserOrders.filter(isOrderCompletedFinalized);
+      const returnsOrders = allUserOrders.filter(isOrderReturnOrExchange);
+      const cancelledOrders = allUserOrders.filter(isOrderCancelled);
+
+      // Update counters
       const liveCountEl = document.getElementById('client-live-orders-count');
+      const processingCountEl = document.getElementById('client-processing-orders-count');
       const completedCountEl = document.getElementById('client-completed-orders-count');
-      if (liveCountEl) liveCountEl.textContent = liveOrders.length;
-      if (completedCountEl) completedCountEl.textContent = completedOrders.length;
+      const returnsCountEl = document.getElementById('client-returns-orders-count');
+      const cancelledCountEl = document.getElementById('client-cancelled-orders-count');
 
-      const displayOrders = (activeClientOrdersTab === 'completed') ? completedOrders : liveOrders;
+      if (liveCountEl) liveCountEl.textContent = liveOrders.length;
+      if (processingCountEl) processingCountEl.textContent = processingOrders.length;
+      if (completedCountEl) completedCountEl.textContent = completedOrders.length;
+      if (returnsCountEl) returnsCountEl.textContent = returnsOrders.length;
+      if (cancelledCountEl) cancelledCountEl.textContent = cancelledOrders.length;
+
+      // Toggle cancelled banner visibility
+      const cancelledToggleWrap = document.getElementById('cancelled-orders-toggle-wrap');
+      if (cancelledToggleWrap) {
+        if (cancelledOrders.length > 0) {
+          cancelledToggleWrap.classList.remove('hidden');
+        } else {
+          cancelledToggleWrap.classList.add('hidden');
+          if (activeClientOrdersTab === 'cancelled') activeClientOrdersTab = 'live';
+        }
+      }
+
+      // Update Tab Button Styles
+      const orderTabs = ['live', 'processing', 'completed', 'returns'];
+      orderTabs.forEach(t => {
+        const btn = document.getElementById(`tab-client-orders-${t}`);
+        if (btn) {
+          if (activeClientOrdersTab === t) {
+            btn.className = "py-2 px-1 rounded-lg bg-brand-navy text-white transition text-center flex flex-col sm:flex-row items-center justify-center gap-1 font-bold shadow-xs";
+          } else {
+            btn.className = "py-2 px-1 rounded-lg text-slate-500 hover:text-slate-800 transition text-center flex flex-col sm:flex-row items-center justify-center gap-1 font-semibold";
+          }
+        }
+      });
+
+      const cancelledBtn = document.getElementById('tab-client-orders-cancelled');
+      if (cancelledBtn) {
+        cancelledBtn.className = (activeClientOrdersTab === 'cancelled')
+          ? "text-xs font-bold text-white bg-rose-600 px-2.5 py-1 rounded-lg shadow-xs"
+          : "text-xs font-bold text-rose-600 hover:underline";
+      }
+
+      // Determine items to display
+      let displayOrders = liveOrders;
+      let emptyTitle = "No Active Orders";
+      let emptySubtitle = "Start shopping to track your deliveries live!";
+      let emptyIcon = "fa-truck-fast";
+
+      if (activeClientOrdersTab === 'processing') {
+        displayOrders = processingOrders;
+        emptyTitle = "No Orders in Processing";
+        emptySubtitle = "Orders being confirmed or packed by the warehouse will show here.";
+        emptyIcon = "fa-clock-rotate-left";
+      } else if (activeClientOrdersTab === 'completed') {
+        displayOrders = completedOrders;
+        emptyTitle = "No Completed Orders Yet";
+        emptySubtitle = "Orders finalized after the full 7-day return window will appear here.";
+        emptyIcon = "fa-box-archive";
+      } else if (activeClientOrdersTab === 'returns') {
+        displayOrders = returnsOrders;
+        emptyTitle = "No Returns or Exchanges";
+        emptySubtitle = "Any products you have requested a return or exchange for will appear here.";
+        emptyIcon = "fa-arrow-rotate-left";
+      } else if (activeClientOrdersTab === 'cancelled') {
+        displayOrders = cancelledOrders;
+        emptyTitle = "No Cancelled Orders";
+        emptySubtitle = "Cancelled orders will appear here for your reference.";
+        emptyIcon = "fa-ban";
+      }
+
+      // Update profile counts
+      updateProfileCounts();
 
       if (displayOrders.length === 0) {
-        const isCompletedTab = activeClientOrdersTab === 'completed';
         container.innerHTML = `
           <div class="py-16 text-center text-slate-400 bg-white rounded-2xl border border-slate-200">
-            <i class="fa-solid ${isCompletedTab ? 'fa-box-archive' : 'fa-truck-ramp-box'} text-5xl mb-3 text-slate-300"></i>
-            <h4 class="font-bold text-slate-700 text-sm">${isCompletedTab ? 'No Completed Orders Yet' : 'No Active Orders'}</h4>
-            <p class="text-xs text-slate-400 mt-1">${isCompletedTab ? 'Orders finalized after the 7-day return window will appear here.' : 'Start shopping to track your deliveries live!'}</p>
+            <i class="fa-solid ${emptyIcon} text-5xl mb-3 text-slate-300"></i>
+            <h4 class="font-bold text-slate-700 text-sm">${emptyTitle}</h4>
+            <p class="text-xs text-slate-400 mt-1 max-w-xs mx-auto">${emptySubtitle}</p>
             <button onclick="switchClientView('shop')" class="mt-4 px-4 py-2 bg-brand-navy text-white text-xs font-bold rounded-xl shadow">
               Explore Storefront
             </button>
@@ -7977,46 +8243,97 @@
         btn.innerHTML = '<i class="fa-solid fa-rotate-right fa-spin"></i> Refreshing...';
       }
       try {
-        if (fbFirestore) {
-          const snapshot = await fbFirestore.collection('orders').get();
-          if (snapshot && !snapshot.empty) {
-            let localAllOrders = getAllStoredOrders();
-            const targetUser = currentUser;
-            const uEmail = targetUser ? (targetUser.email || '').toLowerCase().trim() : '';
-            const uId = targetUser ? (targetUser.uuid || targetUser.userId) : '';
-            const authUid = targetUser ? (targetUser.authUid || (uId && !uId.startsWith('usr_') ? uId : null)) : null;
-            const detId = uEmail ? generateDeterministicUserUuid(uEmail) : null;
-            const uPhone = targetUser ? (targetUser.phone || '').trim() : '';
-
-            snapshot.forEach((doc) => {
-              const remoteOrder = doc.data();
-              if (!remoteOrder || !remoteOrder.orderId) return;
-              const remoteOrderEmail = (remoteOrder.customerEmail || '').toLowerCase().trim();
-              const matchUser = !targetUser ||
-                                (remoteOrder.userId && uId && remoteOrder.userId === uId) ||
-                                (remoteOrder.userId && authUid && remoteOrder.userId === authUid) ||
-                                (remoteOrder.userId && detId && remoteOrder.userId === detId) ||
-                                (remoteOrderEmail && uEmail && remoteOrderEmail === uEmail) ||
-                                (remoteOrder.phone && uPhone && remoteOrder.phone === uPhone);
-              if (matchUser) {
-                const existingIdx = localAllOrders.findIndex(o => o.orderId === remoteOrder.orderId);
-                if (existingIdx >= 0) {
-                  localAllOrders[existingIdx] = Object.assign({}, localAllOrders[existingIdx], remoteOrder);
-                } else {
-                  localAllOrders.unshift(remoteOrder);
-                }
-              }
-            });
-            saveOrders(localAllOrders);
-          }
+        if (typeof fetchCloudOrdersForUser === 'function') {
+          await fetchCloudOrdersForUser();
         }
       } catch (err) {
         console.warn("[Refresh Orders Error]", err);
       } finally {
         loadUserOrders();
+        updateProfileCounts();
         if (btn) {
           btn.disabled = false;
-          btn.innerHTML = origHtml;
+          btn.innerHTML = origHtml || '<i class="fa-solid fa-rotate-right"></i> Refresh';
+        }
+      }
+    }
+
+    /* GLOBAL APP DATA REFRESH TRIGGER */
+    let isAppRefreshing = false;
+    async function refreshAppData(btn) {
+      if (isAppRefreshing) return;
+      isAppRefreshing = true;
+
+      const refreshBtn = btn || document.getElementById('btn-header-refresh');
+      let origHtml = '';
+      if (refreshBtn) {
+        origHtml = refreshBtn.innerHTML;
+        refreshBtn.disabled = true;
+        refreshBtn.innerHTML = '<i class="fa-solid fa-rotate-right fa-spin text-brand-orange"></i>';
+      }
+
+      showBuyeroToast('Syncing Buyero with cloud data...', 'INFO', 1800);
+
+      try {
+        // 1. Sync user profile from Firestore if authenticated
+        if (fbAuth && fbAuth.currentUser && fbFirestore) {
+          const authUser = fbAuth.currentUser;
+          try {
+            const userDoc = await fbFirestore.collection('users').doc(authUser.uid).get();
+            if (userDoc.exists) {
+              const uData = userDoc.data();
+              currentUser = Object.assign({}, currentUser || {}, uData, {
+                authUid: authUser.uid,
+                uuid: authUser.uid,
+                email: authUser.email || uData.email,
+                name: uData.name || currentUser?.name || authUser.displayName || 'Customer'
+              });
+              localStorage.setItem('buyero_user', JSON.stringify(currentUser));
+              restoreCloudUserData(uData);
+            }
+          } catch (e) {
+            console.warn("[Refresh User Profile Error]", e);
+          }
+        }
+
+        // 2. Refresh authoritative coins balance
+        if (typeof checkAuthoritativeWalletBalance === 'function') {
+          await checkAuthoritativeWalletBalance().catch(() => {});
+        }
+
+        // 3. Refresh user orders
+        if (typeof fetchCloudOrdersForUser === 'function') {
+          await fetchCloudOrdersForUser();
+        }
+
+        // 4. Reload products catalog
+        if (typeof loadProductsFromFirestore === 'function') {
+          await loadProductsFromFirestore().catch(() => {});
+        } else if (typeof loadCatalogFromFirestore === 'function') {
+          await loadCatalogFromFirestore().catch(() => {});
+        }
+
+        // 5. Refresh chat messages
+        if (typeof refreshClientChatMessages === 'function') {
+          await refreshClientChatMessages().catch(() => {});
+        }
+
+        // 6. Refresh UI counts across views
+        updateProfileCounts();
+        updateCartBadges();
+        updateWishlistBadge();
+        loadUserOrders();
+        renderUserProfile();
+
+        showBuyeroToast('All Buyero data refreshed!', 'SUCCESS', 2200);
+      } catch (err) {
+        console.error("[refreshAppData error]", err);
+        showBuyeroToast('Data refresh completed with offline cache.', 'INFO', 2500);
+      } finally {
+        isAppRefreshing = false;
+        if (refreshBtn) {
+          refreshBtn.disabled = false;
+          refreshBtn.innerHTML = origHtml || '<i class="fa-solid fa-rotate-right text-base"></i>';
         }
       }
     }
@@ -9220,6 +9537,8 @@
           authMainBtn.onclick = handleAuthActionClick;
         }
       }
+
+      updateProfileCounts();
     }
 
     function handleAuthActionClick() {
