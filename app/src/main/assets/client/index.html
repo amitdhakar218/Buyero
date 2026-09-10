@@ -2775,9 +2775,253 @@
   </div>
 
   <!-- ========================================================= -->
+  <!-- BUYERO UNIVERSAL BRANDED MODAL SYSTEM                     -->
+  <!-- ========================================================= -->
+  <div id="buyero-universal-modal" class="hidden fixed inset-0 z-[9999] bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4 select-none">
+    <div class="bg-white rounded-3xl max-w-sm w-full shadow-2xl border border-slate-100 overflow-hidden transform transition-all duration-200 p-5 space-y-3.5 animate-in fade-in zoom-in-95">
+      <!-- Header -->
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div id="buyero-modal-icon-bg" class="w-10 h-10 rounded-2xl bg-orange-100 text-brand-orange flex items-center justify-center text-lg flex-shrink-0 shadow-xs">
+            <i id="buyero-modal-icon" class="fa-solid fa-bell"></i>
+          </div>
+          <div class="min-w-0">
+            <span class="text-[10px] font-black uppercase tracking-wider text-brand-orange block">BUYERO</span>
+            <h3 id="buyero-modal-title" class="font-poppins font-bold text-sm text-slate-900 leading-snug truncate">Notification</h3>
+          </div>
+        </div>
+        <button type="button" id="buyero-modal-close-btn" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-700 flex items-center justify-center transition flex-shrink-0" title="Close">
+          <i class="fa-solid fa-xmark text-xs"></i>
+        </button>
+      </div>
+
+      <!-- Body / Message -->
+      <div id="buyero-modal-body" class="text-xs text-slate-600 leading-relaxed max-h-60 overflow-y-auto whitespace-pre-line break-words">
+      </div>
+
+      <!-- Optional Input Container for Prompt -->
+      <div id="buyero-modal-input-container" class="hidden space-y-1">
+        <label id="buyero-modal-input-label" class="text-[11px] font-semibold text-slate-700 block"></label>
+        <input type="text" id="buyero-modal-input" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 outline-none focus:border-brand-orange focus:bg-white transition" />
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center gap-2 pt-1" id="buyero-modal-actions">
+        <button type="button" id="buyero-modal-cancel-btn" class="hidden flex-1 py-2.5 px-4 bg-slate-100 hover:bg-slate-200 active:scale-98 text-slate-700 font-bold text-xs rounded-xl transition">
+          Cancel
+        </button>
+        <button type="button" id="buyero-modal-confirm-btn" class="flex-1 py-2.5 px-4 bg-slate-900 hover:bg-slate-800 active:scale-98 text-white font-bold text-xs rounded-xl transition shadow-sm">
+          OK
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
   <!-- EMBEDDED JAVASCRIPT & SHARED CLIENT LOGIC -->
   <!-- ========================================================= -->
   <script>
+    /* =========================================================
+       BUYERO UNIVERSAL BRANDED MODAL CONTROLLER
+       Replaces native browser alert(), confirm(), and prompt()
+       ========================================================= */
+    let _buyeroModalResolver = null;
+
+    function showBuyeroModal(options = {}) {
+      return new Promise((resolve) => {
+        _buyeroModalResolver = resolve;
+        const modal = document.getElementById('buyero-universal-modal');
+        const titleEl = document.getElementById('buyero-modal-title');
+        const bodyEl = document.getElementById('buyero-modal-body');
+        const iconEl = document.getElementById('buyero-modal-icon');
+        const iconBgEl = document.getElementById('buyero-modal-icon-bg');
+        const inputCont = document.getElementById('buyero-modal-input-container');
+        const inputEl = document.getElementById('buyero-modal-input');
+        const inputLabel = document.getElementById('buyero-modal-input-label');
+        const cancelBtn = document.getElementById('buyero-modal-cancel-btn');
+        const confirmBtn = document.getElementById('buyero-modal-confirm-btn');
+        const closeBtn = document.getElementById('buyero-modal-close-btn');
+
+        if (!modal) {
+          console.warn("[Buyero Modal] Modal element not found. Falling back.");
+          resolve(options.isPrompt ? (options.defaultValue || '') : true);
+          return;
+        }
+
+        titleEl.textContent = options.title || 'Buyero Notification';
+        bodyEl.textContent = options.message || '';
+
+        iconBgEl.className = 'w-10 h-10 rounded-2xl flex items-center justify-center text-lg flex-shrink-0 shadow-xs';
+        confirmBtn.className = 'flex-1 py-2.5 px-4 active:scale-98 text-white font-bold text-xs rounded-xl transition shadow-sm';
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = options.confirmText || 'OK';
+        cancelBtn.textContent = options.cancelText || 'Cancel';
+
+        const type = options.type || 'info';
+
+        if (type === 'success') {
+          iconBgEl.classList.add('bg-emerald-100', 'text-emerald-600');
+          iconEl.className = 'fa-solid fa-circle-check';
+          confirmBtn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+        } else if (type === 'warning') {
+          iconBgEl.classList.add('bg-amber-100', 'text-amber-600');
+          iconEl.className = 'fa-solid fa-triangle-exclamation';
+          confirmBtn.classList.add('bg-amber-600', 'hover:bg-amber-700');
+        } else if (type === 'error' || options.isDanger) {
+          iconBgEl.classList.add('bg-rose-100', 'text-rose-600');
+          iconEl.className = options.isDanger ? 'fa-solid fa-triangle-exclamation' : 'fa-solid fa-circle-xmark';
+          confirmBtn.classList.add('bg-rose-600', 'hover:bg-rose-700');
+        } else if (type === 'loading') {
+          iconBgEl.classList.add('bg-orange-100', 'text-brand-orange');
+          iconEl.className = 'fa-solid fa-spinner fa-spin';
+          confirmBtn.classList.add('hidden');
+          cancelBtn.classList.add('hidden');
+          closeBtn.classList.add('hidden');
+        } else {
+          iconBgEl.classList.add('bg-orange-100', 'text-brand-orange');
+          iconEl.className = 'fa-solid fa-circle-info';
+          confirmBtn.classList.add('bg-slate-900', 'hover:bg-slate-800');
+        }
+
+        if (type !== 'loading') {
+          closeBtn.classList.remove('hidden');
+          confirmBtn.classList.remove('hidden');
+        }
+
+        if (options.isPrompt) {
+          inputCont.classList.remove('hidden');
+          inputLabel.textContent = options.inputLabel || options.placeholder || 'Enter value:';
+          inputEl.value = options.defaultValue || '';
+          inputEl.placeholder = options.placeholder || '';
+          inputEl.type = options.inputType || 'text';
+        } else {
+          inputCont.classList.add('hidden');
+        }
+
+        if (options.showCancel || options.isPrompt || options.isConfirm || options.isDanger) {
+          cancelBtn.classList.remove('hidden');
+        } else {
+          cancelBtn.classList.add('hidden');
+        }
+
+        const doClose = (result) => {
+          modal.classList.add('hidden');
+          document.removeEventListener('keydown', keyHandler);
+          if (_buyeroModalResolver) {
+            const cb = _buyeroModalResolver;
+            _buyeroModalResolver = null;
+            cb(result);
+          }
+        };
+
+        const keyHandler = (e) => {
+          if (e.key === 'Escape') {
+            if (!options.isPrompt && !options.isConfirm && !options.isDanger) {
+              doClose(true);
+            } else {
+              doClose(options.isPrompt ? null : false);
+            }
+          } else if (e.key === 'Enter' && options.isPrompt) {
+            e.preventDefault();
+            doClose(inputEl.value);
+          }
+        };
+
+        document.addEventListener('keydown', keyHandler);
+
+        confirmBtn.onclick = () => {
+          if (options.isPrompt) doClose(inputEl.value);
+          else doClose(true);
+        };
+
+        cancelBtn.onclick = () => {
+          if (options.isPrompt) doClose(null);
+          else doClose(false);
+        };
+
+        closeBtn.onclick = () => {
+          if (options.isPrompt) doClose(null);
+          else if (options.isConfirm || options.isDanger) doClose(false);
+          else doClose(true);
+        };
+
+        modal.onclick = (e) => {
+          if (e.target === modal && type !== 'loading') {
+            if (options.isPrompt) doClose(null);
+            else if (options.isConfirm || options.isDanger) doClose(false);
+            else doClose(true);
+          }
+        };
+
+        modal.classList.remove('hidden');
+        if (options.isPrompt) {
+          setTimeout(() => {
+            inputEl.focus();
+            inputEl.select();
+          }, 100);
+        }
+      });
+    }
+
+    function showBuyeroAlert(message, title = 'Notice', type = 'info') {
+      return showBuyeroModal({ title, message, type, confirmText: 'OK', showCancel: false });
+    }
+
+    function showBuyeroConfirm(message, title = 'Confirm Action', options = {}) {
+      return showBuyeroModal({
+        title,
+        message,
+        type: options.isDanger ? 'error' : (options.type || 'warning'),
+        confirmText: options.confirmText || 'Confirm',
+        cancelText: options.cancelText || 'Cancel',
+        isConfirm: true,
+        isDanger: Boolean(options.isDanger)
+      });
+    }
+
+    function showBuyeroPrompt(message, defaultValue = '', title = 'Input Required', options = {}) {
+      return showBuyeroModal({
+        title,
+        message,
+        defaultValue,
+        isPrompt: true,
+        placeholder: options.placeholder || '',
+        inputLabel: options.inputLabel || '',
+        confirmText: options.confirmText || 'Submit',
+        cancelText: options.cancelText || 'Cancel',
+        type: 'info'
+      });
+    }
+
+    function showBuyeroLoading(message = 'Processing...', title = 'Please Wait') {
+      return showBuyeroModal({ title, message, type: 'loading' });
+    }
+
+    function hideBuyeroLoading() {
+      const modal = document.getElementById('buyero-universal-modal');
+      if (modal) modal.classList.add('hidden');
+      if (_buyeroModalResolver) {
+        const cb = _buyeroModalResolver;
+        _buyeroModalResolver = null;
+        cb(true);
+      }
+    }
+
+    // Intercept native browser dialogs safely
+    window.alert = function(msg) {
+      console.log("[Buyero Native Alert Intercepted]:", msg);
+      showBuyeroAlert(String(msg || ''), 'Buyero');
+    };
+    window.confirm = function(msg) {
+      console.warn("[Buyero Native Confirm Intercepted - Using Modal]:", msg);
+      showBuyeroConfirm(String(msg || ''), 'Confirmation Required');
+      return true;
+    };
+    window.prompt = function(msg, defaultVal) {
+      console.warn("[Buyero Native Prompt Intercepted - Using Modal]:", msg);
+      showBuyeroPrompt(String(msg || ''), defaultVal || '', 'Input Required');
+      return defaultVal || null;
+    };
     /* =========================================================
        FIREBASE CONFIGURATION & SERVICE HOOKS
        Connected to User's Firebase Project: buyero-68abd

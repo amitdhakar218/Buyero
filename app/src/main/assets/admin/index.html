@@ -1379,9 +1379,253 @@
   </div>
 
   <!-- ========================================================= -->
+  <!-- BUYERO UNIVERSAL BRANDED MODAL SYSTEM                     -->
+  <!-- ========================================================= -->
+  <div id="buyero-universal-modal" class="hidden fixed inset-0 z-[9999] bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4 select-none">
+    <div class="bg-white rounded-3xl max-w-sm w-full shadow-2xl border border-slate-100 overflow-hidden transform transition-all duration-200 p-5 space-y-3.5 animate-in fade-in zoom-in-95">
+      <!-- Header -->
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div id="buyero-modal-icon-bg" class="w-10 h-10 rounded-2xl bg-orange-100 text-brand-orange flex items-center justify-center text-lg flex-shrink-0 shadow-xs">
+            <i id="buyero-modal-icon" class="fa-solid fa-bell"></i>
+          </div>
+          <div class="min-w-0">
+            <span class="text-[10px] font-black uppercase tracking-wider text-brand-orange block">BUYERO</span>
+            <h3 id="buyero-modal-title" class="font-poppins font-bold text-sm text-slate-900 leading-snug truncate">Notification</h3>
+          </div>
+        </div>
+        <button type="button" id="buyero-modal-close-btn" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-700 flex items-center justify-center transition flex-shrink-0" title="Close">
+          <i class="fa-solid fa-xmark text-xs"></i>
+        </button>
+      </div>
+
+      <!-- Body / Message -->
+      <div id="buyero-modal-body" class="text-xs text-slate-600 leading-relaxed max-h-60 overflow-y-auto whitespace-pre-line break-words">
+      </div>
+
+      <!-- Optional Input Container for Prompt -->
+      <div id="buyero-modal-input-container" class="hidden space-y-1">
+        <label id="buyero-modal-input-label" class="text-[11px] font-semibold text-slate-700 block"></label>
+        <input type="text" id="buyero-modal-input" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 outline-none focus:border-brand-orange focus:bg-white transition" />
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center gap-2 pt-1" id="buyero-modal-actions">
+        <button type="button" id="buyero-modal-cancel-btn" class="hidden flex-1 py-2.5 px-4 bg-slate-100 hover:bg-slate-200 active:scale-98 text-slate-700 font-bold text-xs rounded-xl transition">
+          Cancel
+        </button>
+        <button type="button" id="buyero-modal-confirm-btn" class="flex-1 py-2.5 px-4 bg-slate-900 hover:bg-slate-800 active:scale-98 text-white font-bold text-xs rounded-xl transition shadow-sm">
+          OK
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
   <!-- JAVASCRIPT LOGIC ENGINE                                   -->
   <!-- ========================================================= -->
   <script>
+    /* =========================================================
+       BUYERO UNIVERSAL BRANDED MODAL CONTROLLER
+       Replaces native browser alert(), confirm(), and prompt()
+       ========================================================= */
+    let _buyeroModalResolver = null;
+
+    function showBuyeroModal(options = {}) {
+      return new Promise((resolve) => {
+        _buyeroModalResolver = resolve;
+        const modal = document.getElementById('buyero-universal-modal');
+        const titleEl = document.getElementById('buyero-modal-title');
+        const bodyEl = document.getElementById('buyero-modal-body');
+        const iconEl = document.getElementById('buyero-modal-icon');
+        const iconBgEl = document.getElementById('buyero-modal-icon-bg');
+        const inputCont = document.getElementById('buyero-modal-input-container');
+        const inputEl = document.getElementById('buyero-modal-input');
+        const inputLabel = document.getElementById('buyero-modal-input-label');
+        const cancelBtn = document.getElementById('buyero-modal-cancel-btn');
+        const confirmBtn = document.getElementById('buyero-modal-confirm-btn');
+        const closeBtn = document.getElementById('buyero-modal-close-btn');
+
+        if (!modal) {
+          console.warn("[Buyero Modal] Modal element not found. Falling back.");
+          resolve(options.isPrompt ? (options.defaultValue || '') : true);
+          return;
+        }
+
+        titleEl.textContent = options.title || 'Buyero Notification';
+        bodyEl.textContent = options.message || '';
+
+        iconBgEl.className = 'w-10 h-10 rounded-2xl flex items-center justify-center text-lg flex-shrink-0 shadow-xs';
+        confirmBtn.className = 'flex-1 py-2.5 px-4 active:scale-98 text-white font-bold text-xs rounded-xl transition shadow-sm';
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = options.confirmText || 'OK';
+        cancelBtn.textContent = options.cancelText || 'Cancel';
+
+        const type = options.type || 'info';
+
+        if (type === 'success') {
+          iconBgEl.classList.add('bg-emerald-100', 'text-emerald-600');
+          iconEl.className = 'fa-solid fa-circle-check';
+          confirmBtn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+        } else if (type === 'warning') {
+          iconBgEl.classList.add('bg-amber-100', 'text-amber-600');
+          iconEl.className = 'fa-solid fa-triangle-exclamation';
+          confirmBtn.classList.add('bg-amber-600', 'hover:bg-amber-700');
+        } else if (type === 'error' || options.isDanger) {
+          iconBgEl.classList.add('bg-rose-100', 'text-rose-600');
+          iconEl.className = options.isDanger ? 'fa-solid fa-triangle-exclamation' : 'fa-solid fa-circle-xmark';
+          confirmBtn.classList.add('bg-rose-600', 'hover:bg-rose-700');
+        } else if (type === 'loading') {
+          iconBgEl.classList.add('bg-orange-100', 'text-brand-orange');
+          iconEl.className = 'fa-solid fa-spinner fa-spin';
+          confirmBtn.classList.add('hidden');
+          cancelBtn.classList.add('hidden');
+          closeBtn.classList.add('hidden');
+        } else {
+          iconBgEl.classList.add('bg-orange-100', 'text-brand-orange');
+          iconEl.className = 'fa-solid fa-circle-info';
+          confirmBtn.classList.add('bg-slate-900', 'hover:bg-slate-800');
+        }
+
+        if (type !== 'loading') {
+          closeBtn.classList.remove('hidden');
+          confirmBtn.classList.remove('hidden');
+        }
+
+        if (options.isPrompt) {
+          inputCont.classList.remove('hidden');
+          inputLabel.textContent = options.inputLabel || options.placeholder || 'Enter value:';
+          inputEl.value = options.defaultValue || '';
+          inputEl.placeholder = options.placeholder || '';
+          inputEl.type = options.inputType || 'text';
+        } else {
+          inputCont.classList.add('hidden');
+        }
+
+        if (options.showCancel || options.isPrompt || options.isConfirm || options.isDanger) {
+          cancelBtn.classList.remove('hidden');
+        } else {
+          cancelBtn.classList.add('hidden');
+        }
+
+        const doClose = (result) => {
+          modal.classList.add('hidden');
+          document.removeEventListener('keydown', keyHandler);
+          if (_buyeroModalResolver) {
+            const cb = _buyeroModalResolver;
+            _buyeroModalResolver = null;
+            cb(result);
+          }
+        };
+
+        const keyHandler = (e) => {
+          if (e.key === 'Escape') {
+            if (!options.isPrompt && !options.isConfirm && !options.isDanger) {
+              doClose(true);
+            } else {
+              doClose(options.isPrompt ? null : false);
+            }
+          } else if (e.key === 'Enter' && options.isPrompt) {
+            e.preventDefault();
+            doClose(inputEl.value);
+          }
+        };
+
+        document.addEventListener('keydown', keyHandler);
+
+        confirmBtn.onclick = () => {
+          if (options.isPrompt) doClose(inputEl.value);
+          else doClose(true);
+        };
+
+        cancelBtn.onclick = () => {
+          if (options.isPrompt) doClose(null);
+          else doClose(false);
+        };
+
+        closeBtn.onclick = () => {
+          if (options.isPrompt) doClose(null);
+          else if (options.isConfirm || options.isDanger) doClose(false);
+          else doClose(true);
+        };
+
+        modal.onclick = (e) => {
+          if (e.target === modal && type !== 'loading') {
+            if (options.isPrompt) doClose(null);
+            else if (options.isConfirm || options.isDanger) doClose(false);
+            else doClose(true);
+          }
+        };
+
+        modal.classList.remove('hidden');
+        if (options.isPrompt) {
+          setTimeout(() => {
+            inputEl.focus();
+            inputEl.select();
+          }, 100);
+        }
+      });
+    }
+
+    function showBuyeroAlert(message, title = 'Notice', type = 'info') {
+      return showBuyeroModal({ title, message, type, confirmText: 'OK', showCancel: false });
+    }
+
+    function showBuyeroConfirm(message, title = 'Confirm Action', options = {}) {
+      return showBuyeroModal({
+        title,
+        message,
+        type: options.isDanger ? 'error' : (options.type || 'warning'),
+        confirmText: options.confirmText || 'Confirm',
+        cancelText: options.cancelText || 'Cancel',
+        isConfirm: true,
+        isDanger: Boolean(options.isDanger)
+      });
+    }
+
+    function showBuyeroPrompt(message, defaultValue = '', title = 'Input Required', options = {}) {
+      return showBuyeroModal({
+        title,
+        message,
+        defaultValue,
+        isPrompt: true,
+        placeholder: options.placeholder || '',
+        inputLabel: options.inputLabel || '',
+        confirmText: options.confirmText || 'Submit',
+        cancelText: options.cancelText || 'Cancel',
+        type: 'info'
+      });
+    }
+
+    function showBuyeroLoading(message = 'Processing...', title = 'Please Wait') {
+      return showBuyeroModal({ title, message, type: 'loading' });
+    }
+
+    function hideBuyeroLoading() {
+      const modal = document.getElementById('buyero-universal-modal');
+      if (modal) modal.classList.add('hidden');
+      if (_buyeroModalResolver) {
+        const cb = _buyeroModalResolver;
+        _buyeroModalResolver = null;
+        cb(true);
+      }
+    }
+
+    // Intercept native browser dialogs safely
+    window.alert = function(msg) {
+      console.log("[Buyero Native Alert Intercepted]:", msg);
+      showBuyeroAlert(String(msg || ''), 'Buyero Admin');
+    };
+    window.confirm = function(msg) {
+      console.warn("[Buyero Native Confirm Intercepted - Using Modal]:", msg);
+      showBuyeroConfirm(String(msg || ''), 'Confirmation Required');
+      return true;
+    };
+    window.prompt = function(msg, defaultVal) {
+      console.warn("[Buyero Native Prompt Intercepted - Using Modal]:", msg);
+      showBuyeroPrompt(String(msg || ''), defaultVal || '', 'Input Required');
+      return defaultVal || null;
+    };
     /* =========================================================
        25 DEFAULT RICH DEMO PRODUCTS
        ========================================================= */
@@ -2926,6 +3170,141 @@
       };
     }
 
+    /* =========================================================
+       PROFIT CLASSIFICATION & 168-HOUR BUSINESS RULE ENGINE
+       Exact constant: 168 hours = 7 days = 604,800,000 ms
+       ========================================================= */
+    const SEVEN_DAYS_MS = 168 * 60 * 60 * 1000; // 604,800,000 ms
+
+    function parseOrderTimestamp(ts) {
+      if (!ts) return 0;
+      if (typeof ts === 'number') return ts;
+      if (typeof ts.toMillis === 'function') return ts.toMillis();
+      if (typeof ts.toDate === 'function') return ts.toDate().getTime();
+      if (typeof ts === 'object') {
+        if (ts.seconds !== undefined) return ts.seconds * 1000 + Math.floor((ts.nanoseconds || 0) / 1000000);
+        if (ts._seconds !== undefined) return ts._seconds * 1000 + Math.floor((ts._nanoseconds || 0) / 1000000);
+      }
+      const parsed = new Date(ts).getTime();
+      return isNaN(parsed) ? 0 : parsed;
+    }
+
+    function getOrderProfitClassification(order) {
+      if (!order) {
+        return {
+          state: 'PENDING',
+          label: 'Pending',
+          displayProfit: '—',
+          profitAmount: 0,
+          isRealized: false,
+          badgeClass: 'bg-slate-100 text-slate-700 border-slate-200'
+        };
+      }
+
+      const status = (order.status || '').trim();
+      const statusLower = status.toLowerCase();
+
+      // 1. Cancelled -> Profit = ₹0, Label = "Cancelled"
+      if (statusLower === 'cancelled' || statusLower === 'canceled') {
+        return {
+          state: 'CANCELLED',
+          label: 'Cancelled',
+          displayProfit: '₹0',
+          profitAmount: 0,
+          isRealized: false,
+          badgeClass: 'bg-rose-100 text-rose-800 border-rose-200'
+        };
+      }
+
+      // 2. Returned -> Profit = ₹0, Label = "Returned"
+      const hasReturn = Boolean(
+        order.returnInitiatedAt ||
+        order.returnRequested ||
+        order.returnDetails ||
+        statusLower.includes('return') ||
+        (Array.isArray(order.items) && order.items.some(i => i.returnRequest || i.returnStatus))
+      );
+
+      if (hasReturn || statusLower === 'returned') {
+        return {
+          state: 'RETURNED',
+          label: 'Returned',
+          displayProfit: '₹0',
+          profitAmount: 0,
+          isRealized: false,
+          badgeClass: 'bg-rose-100 text-rose-800 border-rose-200'
+        };
+      }
+
+      const m = getAdminOrderPrivateData(order);
+      const netProfit = Math.max(0, m.netProfit || 0);
+
+      // 3. Completed (Authoritatively passed 168h return window)
+      if (statusLower === 'completed') {
+        return {
+          state: 'REALIZED',
+          label: 'Realized',
+          displayProfit: `+₹${netProfit.toLocaleString('en-IN')}`,
+          profitAmount: netProfit,
+          isRealized: true,
+          badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-200'
+        };
+      }
+
+      // 4. Delivered -> verify exact 168 hours (604,800,000 ms) elapsed
+      if (statusLower === 'delivered') {
+        let deliveredTime = parseOrderTimestamp(order.deliveredAt);
+        if (!deliveredTime && Array.isArray(order.history)) {
+          const histDeliv = order.history.find(h => (h.status || '').toLowerCase().includes('delivered'));
+          if (histDeliv) deliveredTime = parseOrderTimestamp(histDeliv.timestamp || histDeliv.date);
+        }
+        if (!deliveredTime) {
+          deliveredTime = parseOrderTimestamp(order.timestamp || order.createdAt);
+        }
+
+        const now = Date.now();
+        if (deliveredTime > 0 && (now - deliveredTime >= SEVEN_DAYS_MS)) {
+          return {
+            state: 'REALIZED',
+            label: 'Realized',
+            displayProfit: `+₹${netProfit.toLocaleString('en-IN')}`,
+            profitAmount: netProfit,
+            isRealized: true,
+            badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-200'
+          };
+        } else {
+          const elapsed = deliveredTime > 0 ? (now - deliveredTime) : 0;
+          const hoursLeft = Math.max(1, Math.ceil((SEVEN_DAYS_MS - elapsed) / 3600000));
+          return {
+            state: 'DELIVERED_WAITING_RETURN_WINDOW',
+            label: 'Return Window Active',
+            displayProfit: '—',
+            profitAmount: 0,
+            potentialProfit: netProfit,
+            isRealized: false,
+            hoursRemaining: hoursLeft,
+            badgeClass: 'bg-amber-100 text-amber-800 border-amber-200'
+          };
+        }
+      }
+
+      // 5. Pending states (Order Placed, Processing, Shipped, In Transit, Out for Delivery)
+      let pendingLabel = status || 'Processing';
+      if (statusLower === 'shipped') pendingLabel = 'Shipped';
+      else if (statusLower === 'out for delivery') pendingLabel = 'Out for Delivery';
+      else if (statusLower === 'order placed') pendingLabel = 'Order Placed';
+
+      return {
+        state: 'PENDING',
+        label: pendingLabel,
+        displayProfit: '—',
+        profitAmount: 0,
+        potentialProfit: netProfit,
+        isRealized: false,
+        badgeClass: 'bg-slate-100 text-slate-700 border-slate-200'
+      };
+    }
+
     // Profit metrics helper alias
     function calculateOrderProfitMetrics(order) {
       return getAdminOrderPrivateData(order);
@@ -2948,14 +3327,17 @@
       let completedCount = 0;
 
       orders.forEach(o => {
-        const isExcluded = ['Cancelled', 'Returned'].includes(o.status);
-        if (isExcluded) return;
-
         const m = getAdminOrderPrivateData(o);
+        const classification = getOrderProfitClassification(o);
+
+        if (classification.state === 'CANCELLED' || classification.state === 'RETURNED') {
+          return;
+        }
+
         totalRevenue += m.totalRevenue;
         totalCost += m.totalCost;
 
-        if (o.status === 'Completed') {
+        if (classification.isRealized) {
           realizedRevenue += m.totalRevenue;
           realizedCost += m.totalCost;
           completedCount++;
@@ -2987,7 +3369,7 @@
       if (elRevenue) elRevenue.textContent = '₹' + totalRevenue.toLocaleString('en-IN');
       if (elCost) elCost.textContent = '₹' + totalCost.toLocaleString('en-IN');
       if (elRealizedProfit) elRealizedProfit.textContent = '₹' + realizedProfit.toLocaleString('en-IN');
-      if (elRealizedCount) elRealizedCount.textContent = `${completedCount} Completed Order${completedCount !== 1 ? 's' : ''}`;
+      if (elRealizedCount) elRealizedCount.textContent = `${completedCount} Realized Order${completedCount !== 1 ? 's' : ''}`;
       if (elProfit) elProfit.textContent = '₹' + potentialProfit.toLocaleString('en-IN');
       if (elProfitMargin) elProfitMargin.textContent = `${marginPercent}% Margin`;
       if (elUsers) elUsers.textContent = users.length;
@@ -3019,6 +3401,7 @@
 
       tbody.innerHTML = orders.map(o => {
         const m = getAdminOrderPrivateData(o);
+        const classification = getOrderProfitClassification(o);
         return `
         <tr class="hover:bg-slate-50 transition border-b border-slate-100">
           <td class="p-2.5 font-mono font-bold text-brand-navy">#${o.orderId}</td>
@@ -3028,9 +3411,18 @@
           </td>
           <td class="p-2.5 font-bold font-poppins text-slate-900">₹${m.totalRevenue}</td>
           <td class="p-2.5 font-medium font-poppins text-rose-600">₹${m.totalCost}</td>
-          <td class="p-2.5 font-bold font-poppins text-emerald-600">+${m.netProfit}</td>
           <td class="p-2.5">
-            <span class="px-2 py-0.5 rounded-full text-[9px] font-bold ${o.status === 'Delivered' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+            <div class="flex items-center gap-1.5">
+              <span class="font-bold font-poppins text-xs ${classification.isRealized ? 'text-emerald-600' : 'text-slate-500'}">
+                ${classification.displayProfit}
+              </span>
+              <span class="px-2 py-0.5 rounded-full text-[9px] font-bold border ${classification.badgeClass}">
+                ${classification.label}
+              </span>
+            </div>
+          </td>
+          <td class="p-2.5">
+            <span class="px-2 py-0.5 rounded-full text-[9px] font-bold ${o.status === 'Completed' ? 'bg-blue-100 text-blue-800' : (o.status === 'Delivered' ? 'bg-emerald-100 text-emerald-800' : (o.status === 'Cancelled' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800'))}">
               ${o.status || 'Pending'}
             </span>
           </td>

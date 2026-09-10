@@ -313,6 +313,63 @@ exports.processReferralRewardsJob = functions.pubsub.schedule('every 15 minutes'
         if (deliveredTime > 0 && (now - deliveredTime >= SEVEN_DAYS_MS)) {
           console.log(`[Scheduled Job] Referral ${referral.referredUid} order #${order.orderId} passed 168 hours (${now - deliveredTime}ms >= ${SEVEN_DAYS_MS}ms). Processing reward...`);
           await processAtomicReferralReward(referral, order);
+
+          // Mark order Completed & profit realized if still in Delivered status
+          if (order.status === 'Delivered') {
+            await db.collection('orders').doc(order.orderId).set({
+              status: 'Completed',
+              completedAt: admin.firestore.FieldValue.serverTimestamp(),
+              profitRealized: true,
+              updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+
+            if (order.userId) {
+              await db.collection('users').doc(order.userId).collection('orders').doc(order.orderId).set({
+                status: 'Completed',
+                completedAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+              }, { merge: true }).catch(() => {});
+            }
+          }
+        }
+      }
+    }
+
+    // Additional scan: Finalize ALL delivered orders older than 168 hours without return
+    const deliveredOrdersSnap = await db.collection('orders')
+      .where('status', '==', 'Delivered')
+      .get();
+
+    const now = Date.now();
+    for (const doc of deliveredOrdersSnap.docs) {
+      const ord = doc.data();
+      if (!ord || !ord.deliveredAt) continue;
+
+      const delivTime = parseTimestampMillis(ord.deliveredAt);
+      if (delivTime > 0 && (now - delivTime >= SEVEN_DAYS_MS)) {
+        const hasReturn = Boolean(
+          ord.returnInitiatedAt ||
+          ord.returnRequested ||
+          ord.returnDetails ||
+          (Array.isArray(ord.items) && ord.items.some(item => item.returnRequest))
+        );
+
+        if (!hasReturn && ord.status !== 'Cancelled') {
+          console.log(`[Scheduled Job] Order #${ord.orderId} passed 168h return window. Auto-finalizing to Completed...`);
+          await db.collection('orders').doc(ord.orderId).set({
+            status: 'Completed',
+            completedAt: admin.firestore.FieldValue.serverTimestamp(),
+            profitRealized: true,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
+
+          if (ord.userId) {
+            await db.collection('users').doc(ord.userId).collection('orders').doc(ord.orderId).set({
+              status: 'Completed',
+              completedAt: admin.firestore.FieldValue.serverTimestamp(),
+              updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            }, { merge: true }).catch(() => {});
+          }
         }
       }
     }
@@ -471,9 +528,25 @@ exports.onOrderWritten = functions.firestore.document('orders/{orderId}').onWrit
           await refDocRef.set(updates, { merge: true });
         }
 
-        // If already 168 hours have passed, process reward!
-        if (Date.now() - deliveredTime >= SEVEN_DAYS_MS && refData.rewardStatus === 'PENDING') {
-          await processAtomicReferralReward(refData, order);
+        // If already 168 hours have passed, process reward & mark order Completed
+        if (Date.now() - deliveredTime >= SEVEN_DAYS_MS) {
+          if (refData.rewardStatus === 'PENDING') {
+            await processAtomicReferralReward(refData, order);
+          }
+          if (order.status === 'Delivered') {
+            await db.collection('orders').doc(orderId).set({
+              status: 'Completed',
+              completedAt: admin.firestore.FieldValue.serverTimestamp(),
+              profitRealized: true,
+              updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+
+            await db.collection('users').doc(userId).collection('orders').doc(orderId).set({
+              status: 'Completed',
+              completedAt: admin.firestore.FieldValue.serverTimestamp(),
+              updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            }, { merge: true }).catch(() => {});
+          }
         }
       }
     }
