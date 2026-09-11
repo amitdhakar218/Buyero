@@ -822,7 +822,7 @@
             <!-- Active Thread Header -->
             <div class="p-2.5 bg-brand-navy text-white flex items-center justify-between">
               <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-full bg-brand-orange text-white flex items-center justify-center font-bold text-xs" id="active-chat-avatar">
+                <div class="w-8 h-8 rounded-full bg-brand-orange text-white flex items-center justify-center font-bold text-xs overflow-hidden" id="active-chat-avatar">
                   U
                 </div>
                 <div>
@@ -1164,7 +1164,7 @@
       <div class="flex-1 overflow-y-auto space-y-3 pr-1">
         <!-- Avatar & Basic Identity -->
         <div class="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200/80 rounded-2xl">
-          <div class="w-14 h-14 rounded-full bg-gradient-to-tr from-brand-navy to-brand-orange text-white flex items-center justify-center text-xl font-bold shadow-md flex-shrink-0" id="modal-cust-avatar">
+          <div class="w-14 h-14 rounded-full bg-gradient-to-tr from-brand-navy to-brand-orange text-white flex items-center justify-center text-xl font-bold shadow-md flex-shrink-0 overflow-hidden" id="modal-cust-avatar">
             C
           </div>
           <div class="min-w-0 flex-1">
@@ -5373,6 +5373,7 @@ FINANCIAL BREAKDOWN:
             name: u.name || u.displayName || 'Customer',
             phone: u.phone || u.phoneNumber || '',
             email: u.email || '',
+            photoURL: u.photoURL || u.photo || '',
             walletBalance: u.walletBalance !== undefined ? u.walletBalance : (u.coins !== undefined ? u.coins : 50),
             savedAddresses: u.addresses || (u.address ? [u.address] : []),
             createdAt: u.createdAt || '',
@@ -5380,6 +5381,32 @@ FINANCIAL BREAKDOWN:
           });
         }
       });
+
+      // Also read local registered users if any
+      try {
+        const localReg = JSON.parse(localStorage.getItem('buyero_registered_users') || '[]');
+        localReg.forEach(u => {
+          const key = u.uuid || u.userId || u.phone || u.email;
+          if (key) {
+            let existing = userMap.get(key);
+            if (existing) {
+              if (!existing.photoURL && u.photoURL) existing.photoURL = u.photoURL;
+            } else {
+              userMap.set(key, {
+                uid: u.uuid || u.userId || '',
+                name: u.name || 'Customer',
+                phone: u.phone || '',
+                email: u.email || '',
+                photoURL: u.photoURL || '',
+                walletBalance: 50,
+                savedAddresses: u.address ? [u.address] : [],
+                createdAt: u.createdAt || '',
+                orders: []
+              });
+            }
+          }
+        });
+      } catch (e) {}
 
       // Enrich or add from existing orders
       orders.forEach(o => {
@@ -5509,8 +5536,8 @@ FINANCIAL BREAKDOWN:
           <div class="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-sm hover:border-indigo-300 transition space-y-2.5">
             <div class="flex items-start justify-between gap-2">
               <div class="flex items-center gap-2.5 min-w-0">
-                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-brand-navy to-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0">
-                  ${(u.name || 'C')[0].toUpperCase()}
+                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-brand-navy to-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0 overflow-hidden">
+                  ${u.photoURL ? `<img src="${u.photoURL}" alt="${u.name}" class="w-full h-full object-cover" onerror="this.outerHTML='<span>${(u.name || 'C')[0].toUpperCase()}</span>'"/>` : `<span>${(u.name || 'C')[0].toUpperCase()}</span>`}
                 </div>
                 <div class="min-w-0">
                   <h4 class="font-bold text-xs text-slate-900 truncate">${u.name}</h4>
@@ -5595,7 +5622,17 @@ FINANCIAL BREAKDOWN:
         return sum + amt;
       }, 0);
 
-      if (avatarEl) avatarEl.textContent = (displayName || 'C')[0].toUpperCase();
+      // Find user photo in cached users or orders
+      const matchedUser = cachedAdminUsers.find(u => (phone && u.phone === phone) || (uid && u.uid === uid) || (email && u.email === email));
+      const userPhoto = matchedUser?.photoURL || customerOrders[0]?.photoURL || '';
+
+      if (avatarEl) {
+        if (userPhoto) {
+          avatarEl.innerHTML = `<img src="${userPhoto}" alt="${displayName}" class="w-full h-full object-cover" onerror="this.outerHTML='<span>${(displayName || 'C')[0].toUpperCase()}</span>'"/>`;
+        } else {
+          avatarEl.innerHTML = `<span>${(displayName || 'C')[0].toUpperCase()}</span>`;
+        }
+      }
       if (nameEl) nameEl.textContent = displayName;
       if (phoneEl) phoneEl.textContent = displayPhone ? `+91 ${displayPhone}` : 'No mobile registered';
       if (emailEl) emailEl.textContent = displayEmail;
@@ -6193,7 +6230,17 @@ FINANCIAL BREAKDOWN:
       const idEl = document.getElementById('active-chat-id');
       const profileBtn = document.getElementById('btn-chat-view-profile');
 
-      if (avatarEl) avatarEl.textContent = (clientName || 'C')[0].toUpperCase();
+      // Find client photo from cached users
+      const matchedClient = cachedAdminUsers.find(u => u.uid === clientId || u.phone === clientId || u.name === clientName);
+      const clientPhoto = matchedClient?.photoURL || '';
+
+      if (avatarEl) {
+        if (clientPhoto) {
+          avatarEl.innerHTML = `<img src="${clientPhoto}" alt="${clientName || 'C'}" class="w-full h-full object-cover" onerror="this.outerHTML='<span>${(clientName || 'C')[0].toUpperCase()}</span>'"/>`;
+        } else {
+          avatarEl.innerHTML = `<span>${(clientName || 'C')[0].toUpperCase()}</span>`;
+        }
+      }
       if (nameEl) nameEl.textContent = clientName || 'Customer';
       if (idEl) idEl.textContent = `ID: ${clientId}`;
       if (profileBtn) profileBtn.classList.remove('hidden');
