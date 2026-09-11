@@ -604,45 +604,107 @@
         </span>
       </div>
 
-      <!-- 2. BIG BOX: Live Chat with Support Team (WhatsApp-style with Seen/Unseen & Timestamps) -->
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col overflow-hidden h-[420px]">
-        <!-- Chat Header -->
-        <div class="p-3.5 bg-brand-navy text-white flex items-center justify-between">
-          <div class="flex items-center gap-2.5">
-            <div class="w-9 h-9 rounded-full bg-brand-orange text-white flex items-center justify-center text-sm font-bold shadow">
+      <!-- 2. BIG BOX: Live Chat with Support Team (WhatsApp-style with Audio/Video Call, Wallpaper & Mic/Send Button) -->
+      <div class="bg-white rounded-3xl border border-slate-200 shadow-md flex flex-col overflow-hidden h-[480px] max-h-[80vh]">
+        <!-- WhatsApp Header -->
+        <div class="p-3 bg-[#008069] text-white flex items-center justify-between shadow-xs">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-9 h-9 rounded-full bg-[#128C7E] text-white border border-white/20 flex items-center justify-center text-sm font-bold shadow-xs flex-shrink-0">
               <i class="fa-solid fa-headset"></i>
             </div>
-            <div>
-              <div class="flex items-center gap-2">
-                <h4 class="font-bold text-xs font-poppins">Live Support Team</h4>
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5">
+                <h4 class="font-bold text-xs font-poppins truncate">Buyero Support</h4>
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-ping"></span>
               </div>
-              <p class="text-[10px] text-slate-300">
-                Logged as: <span id="chat-identity-display" class="font-semibold text-brand-orange">Client ID: USR_Loading</span>
+              <p class="text-[10px] text-emerald-100 truncate">
+                online • <span id="chat-identity-display">Client ID: USR_Loading</span>
               </p>
             </div>
           </div>
-          <button onclick="refreshClientChatMessages(this)" class="text-xs text-slate-300 hover:text-white p-1" title="Refresh messages">
-            <i class="fa-solid fa-rotate-right"></i>
-          </button>
+
+          <!-- WhatsApp Call Icons: Video, Voice & Refresh -->
+          <div class="flex items-center gap-1 flex-shrink-0">
+            <!-- Video Call (Show option) -->
+            <button 
+              type="button" 
+              onclick="showClientCallNotice('Video')" 
+              class="w-8 h-8 rounded-full hover:bg-white/15 active:scale-90 flex items-center justify-center text-white transition" 
+              title="WhatsApp Video Call"
+            >
+              <i class="fa-solid fa-video text-sm"></i>
+            </button>
+
+            <!-- Audio Call (Show option) -->
+            <button 
+              type="button" 
+              onclick="showClientCallNotice('Voice')" 
+              class="w-8 h-8 rounded-full hover:bg-white/15 active:scale-90 flex items-center justify-center text-white transition" 
+              title="WhatsApp Voice Call"
+            >
+              <i class="fa-solid fa-phone text-sm"></i>
+            </button>
+
+            <!-- Refresh messages -->
+            <button 
+              onclick="refreshClientChatMessages(this)" 
+              class="w-8 h-8 rounded-full hover:bg-white/15 flex items-center justify-center text-emerald-100 hover:text-white transition" 
+              title="Refresh messages"
+            >
+              <i class="fa-solid fa-rotate-right text-xs"></i>
+            </button>
+          </div>
         </div>
 
-        <!-- Chat Messages List (White User Bubbles, Navy Admin Bubbles, Seen status ✓✓) -->
-        <div id="client-chat-messages" class="flex-1 p-3.5 overflow-y-auto space-y-3 bg-slate-50 text-xs">
+        <!-- WhatsApp Chat Messages Wallpaper & Scroll Stream -->
+        <div 
+          id="client-chat-messages" 
+          class="flex-1 p-3.5 overflow-y-auto space-y-2 text-xs" 
+          style="background-color: #efeae2; background-image: radial-gradient(#d1c7b7 0.8px, #efeae2 0.8px); background-size: 16px 16px;"
+        >
           <!-- Populated by JS -->
         </div>
 
-        <!-- Chat Input Form -->
-        <form onsubmit="handleSendClientChatMessage(event)" class="p-2.5 bg-white border-t border-slate-200 flex items-center gap-2">
+        <!-- WhatsApp Chat Bottom Bar: Attachment, Camera, Input, Mic / Send Button -->
+        <form onsubmit="handleSendClientChatMessage(event)" class="p-2 bg-[#f0f2f5] border-t border-slate-200 flex items-center gap-1.5 flex-shrink-0">
+          <!-- Attachment Button -->
+          <button type="button" onclick="showClientAttachmentNotice()" class="w-9 h-9 text-slate-500 hover:text-slate-700 flex items-center justify-center rounded-full hover:bg-slate-200 transition" title="Attach file">
+            <i class="fa-solid fa-paperclip text-sm"></i>
+          </button>
+
+          <!-- Camera Button -->
+          <button type="button" onclick="showClientCameraNotice()" class="w-9 h-9 text-slate-500 hover:text-slate-700 flex items-center justify-center rounded-full hover:bg-slate-200 transition" title="Camera">
+            <i class="fa-solid fa-camera text-sm"></i>
+          </button>
+
+          <!-- Input Field -->
           <input 
             type="text" 
             id="client-chat-input" 
-            required
-            placeholder="Type your message / problem here..." 
-            class="flex-1 px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy outline-none"
+            oninput="toggleClientChatSendMicButton(this.value)"
+            placeholder="Type a message..." 
+            class="flex-1 px-3.5 py-2 text-xs bg-white border border-slate-200 rounded-full outline-none focus:border-[#00a884] focus:ring-1 focus:ring-[#00a884]"
           />
-          <button type="submit" class="w-9 h-9 bg-brand-orange hover:bg-orange-600 text-white rounded-xl flex items-center justify-center text-xs transition shadow flex-shrink-0 active:scale-95">
-            <i class="fa-solid fa-paper-plane"></i>
+
+          <!-- Microphone Button (Default when empty) -->
+          <button 
+            type="button" 
+            id="client-chat-mic-btn" 
+            onclick="showClientMicNotice()" 
+            class="w-9 h-9 bg-[#00a884] hover:bg-[#008f6f] text-white rounded-full flex items-center justify-center text-sm shadow-sm transition active:scale-95 flex-shrink-0"
+            title="Hold for Voice Message"
+          >
+            <i class="fa-solid fa-microphone"></i>
+          </button>
+
+          <!-- Send Button (Dynamically appears when typing) -->
+          <button 
+            type="submit" 
+            id="client-chat-send-btn" 
+            class="hidden w-9 h-9 bg-[#00a884] hover:bg-[#008f6f] text-white rounded-full flex items-center justify-center text-sm shadow-md transition active:scale-95 flex-shrink-0"
+            title="Send message"
+          >
+            <i class="fa-solid fa-paper-plane text-xs"></i>
           </button>
         </form>
       </div>
@@ -2782,40 +2844,52 @@
   <!-- ========================================================= -->
   <!-- BUYERO UNIVERSAL BRANDED MODAL SYSTEM                     -->
   <!-- ========================================================= -->
-  <div id="buyero-universal-modal" class="hidden fixed inset-0 z-[9999] bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4 select-none">
-    <div class="bg-white rounded-3xl max-w-sm w-full shadow-2xl border border-slate-100 overflow-hidden transform transition-all duration-200 p-5 space-y-3.5 animate-in fade-in zoom-in-95">
-      <!-- Header -->
+  <div id="buyero-universal-modal" class="hidden fixed inset-0 z-[99999] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 select-none">
+    <div class="bg-gradient-to-b from-[#0f172a] via-[#162033] to-[#0b1120] text-white rounded-3xl max-w-sm w-full shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border border-amber-500/30 overflow-hidden transform transition-all duration-200 p-5 space-y-4 animate-in fade-in zoom-in-95">
+      <!-- Header with Official Buyero App Icon & Verified Badge -->
       <div class="flex items-start justify-between gap-3">
-        <div class="flex items-center gap-2.5 min-w-0">
-          <div id="buyero-modal-icon-bg" class="w-10 h-10 rounded-2xl bg-orange-100 text-brand-orange flex items-center justify-center text-lg flex-shrink-0 shadow-xs">
-            <i id="buyero-modal-icon" class="fa-solid fa-bell"></i>
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="relative flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-[#1e293b] to-[#0f172a] p-2 shadow-lg border border-amber-400/30 flex-shrink-0">
+            <!-- Official Buyero Shopping Bag Logo -->
+            <svg class="w-8 h-8" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <g><polygon points="12,46 22,41 22,90 12,88" fill="#13a388" /><polygon points="22,41 56,43 56,92 22,90" fill="#20d5a3" /><path d="M 28,42 C 28,26 48,26 48,42" stroke="#68ffd8" stroke-width="3.5" stroke-linecap="round" fill="none" /></g>
+              <g><path d="M 47,58 C 47,44 65,44 65,58" stroke="#ffaec3" stroke-width="3.5" stroke-linecap="round" fill="none" /><polygon points="38,62 48,58 48,99 38,96" fill="#d84f7b" /><polygon points="48,58 78,57 78,96 48,99" fill="#ff8ba0" /></g>
+            </svg>
+            <span id="buyero-modal-status-badge" class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] shadow-sm border-2 border-[#0f172a]">
+              <i id="buyero-modal-icon" class="fa-solid fa-check"></i>
+            </span>
           </div>
-          <div class="min-w-0">
-            <span class="text-[10px] font-black uppercase tracking-wider text-brand-orange block">BUYERO</span>
-            <h3 id="buyero-modal-title" class="font-poppins font-bold text-sm text-slate-900 leading-snug truncate">Notification</h3>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-1.5">
+              <span class="font-poppins font-black text-base text-white tracking-tight">Buyer<span class="text-brand-orange" style="color:#f77f33;">o</span></span>
+              <span class="px-2 py-0.5 bg-amber-400/20 text-amber-300 border border-amber-400/30 font-extrabold text-[9px] rounded-full uppercase tracking-wider flex items-center gap-1">
+                <i class="fa-solid fa-shield-check text-[9px]"></i> Official
+              </span>
+            </div>
+            <h3 id="buyero-modal-title" class="font-poppins font-semibold text-xs text-slate-300 truncate mt-0.5">Notification</h3>
           </div>
         </div>
-        <button type="button" id="buyero-modal-close-btn" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-700 flex items-center justify-center transition flex-shrink-0" title="Close">
+        <button type="button" id="buyero-modal-close-btn" class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition flex-shrink-0" title="Close">
           <i class="fa-solid fa-xmark text-xs"></i>
         </button>
       </div>
 
       <!-- Body / Message -->
-      <div id="buyero-modal-body" class="text-xs text-slate-600 leading-relaxed max-h-60 overflow-y-auto whitespace-pre-line break-words">
+      <div id="buyero-modal-body" class="text-xs text-slate-200 leading-relaxed max-h-60 overflow-y-auto whitespace-pre-line break-words bg-slate-900/80 p-3.5 rounded-2xl border border-slate-700/70 shadow-inner">
       </div>
 
       <!-- Optional Input Container for Prompt -->
       <div id="buyero-modal-input-container" class="hidden space-y-1">
-        <label id="buyero-modal-input-label" class="text-[11px] font-semibold text-slate-700 block"></label>
-        <input type="text" id="buyero-modal-input" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 outline-none focus:border-brand-orange focus:bg-white transition" />
+        <label id="buyero-modal-input-label" class="text-[11px] font-semibold text-slate-300 block"></label>
+        <input type="text" id="buyero-modal-input" class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange transition" />
       </div>
 
       <!-- Action Buttons -->
       <div class="flex items-center gap-2 pt-1" id="buyero-modal-actions">
-        <button type="button" id="buyero-modal-cancel-btn" class="hidden flex-1 py-2.5 px-4 bg-slate-100 hover:bg-slate-200 active:scale-98 text-slate-700 font-bold text-xs rounded-xl transition">
+        <button type="button" id="buyero-modal-cancel-btn" class="hidden flex-1 py-2.5 px-4 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 font-bold text-xs rounded-xl border border-slate-700 transition">
           Cancel
         </button>
-        <button type="button" id="buyero-modal-confirm-btn" class="flex-1 py-2.5 px-4 bg-slate-900 hover:bg-slate-800 active:scale-98 text-white font-bold text-xs rounded-xl transition shadow-sm">
+        <button type="button" id="buyero-modal-confirm-btn" class="flex-1 py-2.5 px-4 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 active:scale-95 text-white font-bold text-xs rounded-xl transition shadow-lg shadow-orange-500/30 flex items-center justify-center gap-1.5">
           OK
         </button>
       </div>
@@ -2839,7 +2913,7 @@
         const titleEl = document.getElementById('buyero-modal-title');
         const bodyEl = document.getElementById('buyero-modal-body');
         const iconEl = document.getElementById('buyero-modal-icon');
-        const iconBgEl = document.getElementById('buyero-modal-icon-bg');
+        const statusBadgeEl = document.getElementById('buyero-modal-status-badge');
         const inputCont = document.getElementById('buyero-modal-input-container');
         const inputEl = document.getElementById('buyero-modal-input');
         const inputLabel = document.getElementById('buyero-modal-input-label');
@@ -2856,8 +2930,10 @@
         titleEl.textContent = options.title || 'Buyero Notification';
         bodyEl.textContent = options.message || '';
 
-        iconBgEl.className = 'w-10 h-10 rounded-2xl flex items-center justify-center text-lg flex-shrink-0 shadow-xs';
-        confirmBtn.className = 'flex-1 py-2.5 px-4 active:scale-98 text-white font-bold text-xs rounded-xl transition shadow-sm';
+        if (statusBadgeEl) {
+          statusBadgeEl.className = 'absolute -bottom-1 -right-1 w-5 h-5 rounded-full text-white flex items-center justify-center text-[10px] shadow-sm border-2 border-[#0f172a]';
+        }
+        confirmBtn.className = 'flex-1 py-2.5 px-4 active:scale-95 text-white font-bold text-xs rounded-xl transition shadow-lg flex items-center justify-center gap-1.5';
         confirmBtn.disabled = false;
         confirmBtn.textContent = options.confirmText || 'OK';
         cancelBtn.textContent = options.cancelText || 'Cancel';
@@ -2865,27 +2941,27 @@
         const type = options.type || 'info';
 
         if (type === 'success') {
-          iconBgEl.classList.add('bg-emerald-100', 'text-emerald-600');
-          iconEl.className = 'fa-solid fa-circle-check';
-          confirmBtn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+          if (statusBadgeEl) statusBadgeEl.classList.add('bg-emerald-500');
+          if (iconEl) iconEl.className = 'fa-solid fa-check';
+          confirmBtn.classList.add('bg-gradient-to-r', 'from-emerald-600', 'to-teal-600', 'hover:from-emerald-700', 'hover:to-teal-700');
         } else if (type === 'warning') {
-          iconBgEl.classList.add('bg-amber-100', 'text-amber-600');
-          iconEl.className = 'fa-solid fa-triangle-exclamation';
-          confirmBtn.classList.add('bg-amber-600', 'hover:bg-amber-700');
+          if (statusBadgeEl) statusBadgeEl.classList.add('bg-amber-500');
+          if (iconEl) iconEl.className = 'fa-solid fa-triangle-exclamation';
+          confirmBtn.classList.add('bg-gradient-to-r', 'from-amber-500', 'to-orange-500', 'hover:from-amber-600', 'hover:to-orange-600');
         } else if (type === 'error' || options.isDanger) {
-          iconBgEl.classList.add('bg-rose-100', 'text-rose-600');
-          iconEl.className = options.isDanger ? 'fa-solid fa-triangle-exclamation' : 'fa-solid fa-circle-xmark';
-          confirmBtn.classList.add('bg-rose-600', 'hover:bg-rose-700');
+          if (statusBadgeEl) statusBadgeEl.classList.add('bg-rose-500');
+          if (iconEl) iconEl.className = options.isDanger ? 'fa-solid fa-triangle-exclamation' : 'fa-solid fa-xmark';
+          confirmBtn.classList.add('bg-gradient-to-r', 'from-rose-600', 'to-red-600', 'hover:from-rose-700', 'hover:to-red-700');
         } else if (type === 'loading') {
-          iconBgEl.classList.add('bg-orange-100', 'text-brand-orange');
-          iconEl.className = 'fa-solid fa-spinner fa-spin';
+          if (statusBadgeEl) statusBadgeEl.classList.add('bg-brand-orange');
+          if (iconEl) iconEl.className = 'fa-solid fa-spinner fa-spin';
           confirmBtn.classList.add('hidden');
           cancelBtn.classList.add('hidden');
           closeBtn.classList.add('hidden');
         } else {
-          iconBgEl.classList.add('bg-orange-100', 'text-brand-orange');
-          iconEl.className = 'fa-solid fa-circle-info';
-          confirmBtn.classList.add('bg-slate-900', 'hover:bg-slate-800');
+          if (statusBadgeEl) statusBadgeEl.classList.add('bg-blue-600');
+          if (iconEl) iconEl.className = 'fa-solid fa-info';
+          confirmBtn.classList.add('bg-gradient-to-r', 'from-orange-500', 'via-amber-500', 'to-orange-600', 'hover:from-orange-600', 'hover:to-orange-700');
         }
 
         if (type !== 'loading') {
@@ -10334,6 +10410,71 @@
       }
     }
 
+    function toggleClientChatSendMicButton(val) {
+      const micBtn = document.getElementById('client-chat-mic-btn');
+      const sendBtn = document.getElementById('client-chat-send-btn');
+      const hasText = Boolean(val && val.trim().length > 0);
+      if (micBtn && sendBtn) {
+        if (hasText) {
+          micBtn.classList.add('hidden');
+          sendBtn.classList.remove('hidden');
+        } else {
+          micBtn.classList.remove('hidden');
+          sendBtn.classList.add('hidden');
+        }
+      }
+    }
+
+    function showClientCallNotice(type) {
+      showBuyeroModal({
+        title: `WhatsApp ${type} Call`,
+        message: `Connect directly with our support executive via WhatsApp ${type} Call (+91 9174573889).`,
+        confirmText: 'Call via WhatsApp',
+        type: 'info'
+      }).then(confirmed => {
+        if (confirmed) {
+          window.open('https://wa.me/919174573889?text=Hello%20Buyero%20Support,%20I%20need%20assistance', '_blank');
+        }
+      });
+    }
+
+    function showClientAttachmentNotice() {
+      const inp = document.createElement('input');
+      inp.type = 'file';
+      inp.accept = 'image/*,application/pdf';
+      inp.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const input = document.getElementById('client-chat-input');
+          if (input) {
+            input.value = `[Sent Attachment: ${file.name}]`;
+            toggleClientChatSendMicButton(input.value);
+          }
+        }
+      };
+      inp.click();
+    }
+
+    function showClientCameraNotice() {
+      showBuyeroModal({
+        title: 'Upload Photo',
+        message: 'Take or choose a photo of the product issue or packaging to share with Buyero Support.',
+        confirmText: 'Choose Photo',
+        type: 'info'
+      }).then(c => {
+        if (c) showClientAttachmentNotice();
+      });
+    }
+
+    function showClientMicNotice() {
+      showBuyeroModal({
+        title: 'Voice Message',
+        message: 'Hold to record your voice message for Buyero Support. (Voice recording ready).',
+        confirmText: 'OK',
+        type: 'info'
+      });
+    }
+
     function saveSupportMessages(messages) {
       localStorage.setItem('buyero_support_chat_messages', JSON.stringify(messages));
     }
@@ -10347,29 +10488,49 @@
       
       // Filter for this specific customer
       const myMessages = allMessages.filter(msg => 
-        msg.clientId === 'ALL' || msg.clientId === identity.clientId || (!msg.clientId && msg.isAdmin)
+        msg.clientId === 'ALL' || 
+        msg.clientId === identity.clientId || 
+        msg.userId === identity.userId || 
+        (!msg.clientId && msg.isAdmin)
       );
 
-      container.innerHTML = myMessages.map(msg => `
-        <div class="flex ${msg.isAdmin ? 'justify-start' : 'justify-end'}">
-          <div class="max-w-[80%] p-2.5 rounded-2xl shadow-sm text-xs ${
-            msg.isAdmin 
-              ? 'bg-white text-slate-800 border border-slate-200 rounded-tl-none' 
-              : 'bg-brand-navy text-white rounded-tr-none'
+      if (myMessages.length === 0) {
+        container.innerHTML = `
+          <div class="py-16 text-center text-slate-500">
+            <i class="fa-brands fa-whatsapp text-4xl mb-2 text-[#25D366]/70"></i>
+            <p class="font-semibold text-xs text-slate-700">Say hello to Buyero Support!</p>
+            <span class="text-[10px] text-slate-400 block mt-0.5">We reply within minutes 24/7</span>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = myMessages.map(msg => {
+        const isUserMsg = !msg.isAdmin;
+
+        return `
+        <div class="flex ${isUserMsg ? 'justify-end' : 'justify-start'} animate-in fade-in duration-150">
+          <div class="relative max-w-[82%] px-3 py-2 text-xs shadow-xs transition ${
+            isUserMsg 
+              ? 'bg-[#d9fdd3] text-slate-900 rounded-2xl rounded-tr-xs border border-emerald-100' 
+              : 'bg-white text-slate-900 rounded-2xl rounded-tl-xs border border-slate-100'
           }">
-            <div class="flex items-center justify-between gap-3 mb-1">
-              <span class="font-bold text-[10px] ${msg.isAdmin ? 'text-brand-orange' : 'text-slate-300'}">
-                ${msg.isAdmin ? 'Support Team' : identity.clientName}
+            <div class="flex items-center justify-between gap-3 mb-0.5">
+              <span class="font-bold text-[10px] ${isUserMsg ? 'text-[#008069]' : 'text-slate-500'}">
+                ${isUserMsg ? 'You' : 'Buyero Support'}
               </span>
-              <div class="flex items-center gap-1.5 text-[9px] opacity-70">
-                ${msg.isEdited ? '<span class="italic text-brand-orange font-medium">(Edited)</span>' : ''}
-                <span>${msg.timestamp || ''}</span>
-              </div>
+              ${msg.isEdited ? '<span class="italic text-[9px] text-amber-600 font-medium">(Edited)</span>' : ''}
             </div>
-            <p class="leading-relaxed whitespace-pre-wrap">${msg.text}</p>
+
+            <p class="leading-relaxed whitespace-pre-wrap text-[11.5px]">${escapeHtml(msg.text)}</p>
+
+            <div class="flex items-center justify-end gap-1 mt-1 text-[9px] text-slate-500 font-mono select-none">
+              <span>${msg.timestamp || ''}</span>
+              ${isUserMsg ? '<i class="fa-solid fa-check-double text-[10px] text-[#53bdeb]"></i>' : ''}
+            </div>
           </div>
         </div>
-      `).join('');
+      `}).join('');
 
       container.scrollTop = container.scrollHeight;
     }
@@ -10382,7 +10543,11 @@
 
       if (!currentUser) {
         openAuthModal('support');
-        alert("Please sign in to send messages to customer support.");
+        showBuyeroModal({
+          title: 'Sign In Required',
+          message: 'Please sign in to send messages to customer support.',
+          type: 'info'
+        });
         return;
       }
 
@@ -10393,11 +10558,13 @@
         clientId: identity.clientId,
         userId: identity.userId,
         sender: identity.clientName,
+        clientName: identity.clientName,
         userPhone: identity.clientPhone,
         userEmail: currentUser ? currentUser.email : '',
         text: text,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        isAdmin: false
+        isAdmin: false,
+        createdAt: new Date().toISOString()
       };
 
       const messages = getStoredSupportMessages();
@@ -10405,6 +10572,7 @@
       saveSupportMessages(messages);
       loadClientChatMessages();
       input.value = '';
+      toggleClientChatSendMicButton('');
 
       // Broadcast to Admin Studio
       try {

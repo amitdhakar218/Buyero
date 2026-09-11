@@ -347,13 +347,9 @@ fun BuyeroHostScreen() {
                 message: String?,
                 result: JsResult?
               ): Boolean {
-                AlertDialog.Builder(context)
-                  .setTitle("Buyero")
-                  .setMessage(message)
-                  .setPositiveButton(android.R.string.ok) { _, _ -> result?.confirm() }
-                  .setCancelable(false)
-                  .create()
-                  .show()
+                showBrandedBuyeroDialog(context, message, isConfirm = false) {
+                  result?.confirm()
+                }
                 return true
               }
 
@@ -363,14 +359,9 @@ fun BuyeroHostScreen() {
                 message: String?,
                 result: JsResult?
               ): Boolean {
-                AlertDialog.Builder(context)
-                  .setTitle("Buyero")
-                  .setMessage(message)
-                  .setPositiveButton(android.R.string.ok) { _, _ -> result?.confirm() }
-                  .setNegativeButton(android.R.string.cancel) { _, _ -> result?.cancel() }
-                  .setCancelable(false)
-                  .create()
-                  .show()
+                showBrandedBuyeroDialog(context, message, isConfirm = true) { confirmed ->
+                  if (confirmed) result?.confirm() else result?.cancel()
+                }
                 return true
               }
             }
@@ -479,4 +470,168 @@ fun BuyeroHostScreen() {
     }
   }
 }
+
+fun showBrandedBuyeroDialog(
+  context: android.content.Context,
+  message: String?,
+  isConfirm: Boolean = false,
+  onResult: (Boolean) -> Unit
+) {
+  val dialog = android.app.Dialog(context)
+  dialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE)
+  dialog.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
+  dialog.setCancelable(false)
+
+  val density = context.resources.displayMetrics.density
+
+  val root = android.widget.LinearLayout(context).apply {
+    orientation = android.widget.LinearLayout.VERTICAL
+    setPadding((22 * density).toInt(), (22 * density).toInt(), (22 * density).toInt(), (20 * density).toInt())
+    background = android.graphics.drawable.GradientDrawable().apply {
+      cornerRadius = 24 * density
+      colors = intArrayOf(
+        android.graphics.Color.parseColor("#0F172A"),
+        android.graphics.Color.parseColor("#162033")
+      )
+      setStroke((1.5f * density).toInt(), android.graphics.Color.parseColor("#F77F33"))
+    }
+    elevation = 20 * density
+  }
+
+  // Header Row with App Icon & Title
+  val headerRow = android.widget.LinearLayout(context).apply {
+    orientation = android.widget.LinearLayout.HORIZONTAL
+    gravity = android.view.Gravity.CENTER_VERTICAL
+  }
+
+  // App Logo
+  val iconView = android.widget.ImageView(context).apply {
+    setImageResource(R.drawable.ic_launcher_foreground)
+    val size = (48 * density).toInt()
+    layoutParams = android.widget.LinearLayout.LayoutParams(size, size).apply {
+      rightMargin = (12 * density).toInt()
+    }
+    background = android.graphics.drawable.GradientDrawable().apply {
+      cornerRadius = 16 * density
+      setColor(android.graphics.Color.parseColor("#152458"))
+      setStroke((1.5f * density).toInt(), android.graphics.Color.parseColor("#F77F33"))
+    }
+    setPadding((6 * density).toInt(), (6 * density).toInt(), (6 * density).toInt(), (6 * density).toInt())
+  }
+  headerRow.addView(iconView)
+
+  val titleCol = android.widget.LinearLayout(context).apply {
+    orientation = android.widget.LinearLayout.VERTICAL
+  }
+  val titleText = android.widget.TextView(context).apply {
+    text = "Buyero"
+    textSize = 17f
+    setTextColor(android.graphics.Color.WHITE)
+    typeface = android.graphics.Typeface.DEFAULT_BOLD
+  }
+  val subtitleText = android.widget.TextView(context).apply {
+    text = "Official Store Notification"
+    textSize = 11f
+    setTextColor(android.graphics.Color.parseColor("#F77F33"))
+    typeface = android.graphics.Typeface.DEFAULT_BOLD
+  }
+  titleCol.addView(titleText)
+  titleCol.addView(subtitleText)
+  headerRow.addView(titleCol)
+  root.addView(headerRow)
+
+  // Message Body in tinted container
+  val messageContainer = android.widget.ScrollView(context).apply {
+    val marginV = (14 * density).toInt()
+    layoutParams = android.widget.LinearLayout.LayoutParams(
+      android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+      android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+    ).apply {
+      setMargins(0, marginV, 0, marginV)
+    }
+    background = android.graphics.drawable.GradientDrawable().apply {
+      cornerRadius = 14 * density
+      setColor(android.graphics.Color.parseColor("#090E17"))
+      setStroke(1, android.graphics.Color.parseColor("#334155"))
+    }
+    setPadding((14 * density).toInt(), (12 * density).toInt(), (14 * density).toInt(), (12 * density).toInt())
+  }
+  val messageView = android.widget.TextView(context).apply {
+    text = message ?: ""
+    textSize = 12.5f
+    setTextColor(android.graphics.Color.parseColor("#E2E8F0"))
+    setLineSpacing(4 * density, 1.1f)
+  }
+  messageContainer.addView(messageView)
+  root.addView(messageContainer)
+
+  // Buttons Row
+  val buttonsRow = android.widget.LinearLayout(context).apply {
+    orientation = android.widget.LinearLayout.HORIZONTAL
+    gravity = android.view.Gravity.END
+  }
+
+  if (isConfirm) {
+    val cancelBtn = android.widget.Button(context).apply {
+      text = "Cancel"
+      textSize = 12f
+      setTextColor(android.graphics.Color.parseColor("#94A3B8"))
+      background = android.graphics.drawable.GradientDrawable().apply {
+        cornerRadius = 12 * density
+        setColor(android.graphics.Color.parseColor("#1E293B"))
+        setStroke(1, android.graphics.Color.parseColor("#475569"))
+      }
+      val params = android.widget.LinearLayout.LayoutParams(
+        0,
+        (40 * density).toInt(),
+        1f
+      ).apply {
+        rightMargin = (8 * density).toInt()
+      }
+      layoutParams = params
+      setOnClickListener {
+        dialog.dismiss()
+        onResult(false)
+      }
+    }
+    buttonsRow.addView(cancelBtn)
+  }
+
+  val okBtn = android.widget.Button(context).apply {
+    text = "OK"
+    textSize = 12f
+    setTextColor(android.graphics.Color.WHITE)
+    typeface = android.graphics.Typeface.DEFAULT_BOLD
+    background = android.graphics.drawable.GradientDrawable().apply {
+      cornerRadius = 12 * density
+      colors = intArrayOf(
+        android.graphics.Color.parseColor("#F77F33"),
+        android.graphics.Color.parseColor("#EA580C")
+      )
+    }
+    val params = if (isConfirm) {
+      android.widget.LinearLayout.LayoutParams(
+        0,
+        (40 * density).toInt(),
+        1f
+      )
+    } else {
+      android.widget.LinearLayout.LayoutParams(
+        android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+        (40 * density).toInt()
+      )
+    }
+    layoutParams = params
+    setOnClickListener {
+      dialog.dismiss()
+      onResult(true)
+    }
+  }
+  buttonsRow.addView(okBtn)
+  root.addView(buttonsRow)
+
+  dialog.setContentView(root)
+  dialog.show()
+}
+
 

@@ -290,12 +290,12 @@
           </div>
           <div class="grid grid-cols-2 gap-3 mt-2 pt-2 border-t border-emerald-500/50">
             <div>
-              <span class="text-[10px] uppercase font-bold text-emerald-200 block">Realized Profit (7-Day Done)</span>
+              <span class="text-[10px] uppercase font-bold text-emerald-200 block">Realized Net Profit (7-Day Done)</span>
               <h3 class="font-poppins font-extrabold text-xl text-white" id="stat-realized-profit">₹0</h3>
               <span class="text-[10px] text-emerald-100" id="stat-realized-count">0 Completed Orders</span>
             </div>
             <div class="border-l border-emerald-500/50 pl-3">
-              <span class="text-[10px] uppercase font-bold text-amber-200 block">Potential Profit (Live)</span>
+              <span class="text-[10px] uppercase font-bold text-amber-200 block">Total Final Profit</span>
               <h3 class="font-poppins font-extrabold text-xl text-amber-100" id="stat-net-profit">₹0</h3>
               <span class="text-[10px] text-emerald-100" id="stat-profit-margin-percent">0% Margin</span>
             </div>
@@ -716,53 +716,101 @@
         </button>
       </div>
 
-      <!-- 3 Magic Sub-Tabs: Live & Pending, Sheets View, Completed Orders -->
-      <div class="flex bg-slate-200/80 p-1 rounded-2xl overflow-x-auto hide-scrollbar text-xs font-bold">
+      <!-- 5 Magic Sub-Tabs: Pending, Return, Complete Return, Sheets View, Completed Orders -->
+      <div class="flex bg-slate-200/80 p-1 rounded-2xl overflow-x-auto hide-scrollbar text-xs font-bold gap-1">
         <button 
-          onclick="switchOrderSubTab('live')" 
-          id="subtab-btn-order-live" 
-          class="flex-1 py-2 px-2 text-center rounded-xl bg-white text-slate-900 shadow-sm whitespace-nowrap transition"
+          onclick="switchOrderSubTab('pending')" 
+          id="subtab-btn-order-pending" 
+          class="flex-1 py-2 px-2.5 text-center rounded-xl bg-white text-slate-900 shadow-sm whitespace-nowrap transition"
         >
-          <i class="fa-solid fa-clock-rotate-left mr-1 text-amber-500"></i> Live & Pending (<span id="count-order-live">0</span>)
+          <i class="fa-solid fa-clock mr-1 text-amber-500"></i> Pending (<span id="count-order-pending">0</span>)
+        </button>
+        <button 
+          onclick="switchOrderSubTab('return')" 
+          id="subtab-btn-order-return" 
+          class="flex-1 py-2 px-2.5 text-center rounded-xl text-slate-600 hover:text-slate-900 whitespace-nowrap transition"
+        >
+          <i class="fa-solid fa-arrow-rotate-left mr-1 text-rose-500"></i> Return (<span id="count-order-return">0</span>)
+        </button>
+        <button 
+          onclick="switchOrderSubTab('complete-return')" 
+          id="subtab-btn-order-complete-return" 
+          class="flex-1 py-2 px-2.5 text-center rounded-xl text-slate-600 hover:text-slate-900 whitespace-nowrap transition"
+        >
+          <i class="fa-solid fa-box-open mr-1 text-indigo-600"></i> Complete Return (<span id="count-order-complete-return">0</span>)
         </button>
         <button 
           onclick="switchOrderSubTab('sheets')" 
           id="subtab-btn-order-sheets" 
-          class="flex-1 py-2 px-2 text-center rounded-xl text-slate-600 hover:text-slate-900 whitespace-nowrap transition"
+          class="flex-1 py-2 px-2.5 text-center rounded-xl text-slate-600 hover:text-slate-900 whitespace-nowrap transition"
         >
-          <i class="fa-solid fa-table-list mr-1 text-emerald-600"></i> Sheets View (1-Click)
+          <i class="fa-solid fa-table-list mr-1 text-emerald-600"></i> Sheets View
         </button>
         <button 
           onclick="switchOrderSubTab('completed')" 
           id="subtab-btn-order-completed" 
-          class="flex-1 py-2 px-2 text-center rounded-xl text-slate-600 hover:text-slate-900 whitespace-nowrap transition"
+          class="flex-1 py-2 px-2.5 text-center rounded-xl text-slate-600 hover:text-slate-900 whitespace-nowrap transition"
         >
-          <i class="fa-solid fa-circle-check mr-1 text-blue-600"></i> Completed Orders
+          <i class="fa-solid fa-circle-check mr-1 text-blue-600"></i> Completed (7 Days) (<span id="count-order-completed">0</span>)
         </button>
       </div>
 
-      <!-- Sub-Tab 1: Live & Pending Orders -->
-      <div id="subtab-content-order-live" class="space-y-3">
-        <div id="live-orders-container" class="space-y-3">
+      <!-- Sub-Tab 1: Pending Orders -->
+      <div id="subtab-content-order-pending" class="space-y-3">
+        <div id="pending-orders-container" class="space-y-3">
           <!-- Populated dynamically -->
         </div>
       </div>
 
-      <!-- Sub-Tab 2: Sheets View (1-Click Copy & Deep Customer Profile) -->
-      <div id="subtab-content-order-sheets" class="hidden space-y-3">
-        <div class="p-3 bg-blue-50 border border-blue-200 rounded-2xl flex items-center justify-between text-xs">
-          <span class="text-blue-900 font-semibold">📋 1-Click Copy Data for Easy Supplier Ordering</span>
-          <span class="text-[10px] text-blue-600">Click customer name for deep profile</span>
+      <!-- Sub-Tab 2: Return Orders -->
+      <div id="subtab-content-order-return" class="hidden space-y-3">
+        <div class="p-3 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between text-xs">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-arrow-rotate-left text-amber-600"></i>
+            <span class="text-amber-900 font-semibold">Orders in Return / Pickup Process</span>
+          </div>
+          <span class="text-[10px] text-amber-700 font-bold" id="return-orders-count">0 items</span>
         </div>
-        <div id="sheets-orders-container" class="space-y-3">
-          <!-- Populated dynamically with 1-click copy cards -->
+        <div id="return-orders-container" class="space-y-3">
+          <!-- Populated dynamically -->
         </div>
       </div>
 
-      <!-- Sub-Tab 3: Completed Orders (इतिहास) -->
+      <!-- Sub-Tab 3: Complete Return Orders -->
+      <div id="subtab-content-order-complete-return" class="hidden space-y-3">
+        <div class="p-3 bg-indigo-50 border border-indigo-200 rounded-2xl flex items-center justify-between text-xs">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-box-open text-indigo-600"></i>
+            <span class="text-indigo-900 font-semibold">Completed Returns (Product Returned & Restocked)</span>
+          </div>
+          <span class="text-[10px] text-indigo-700 font-bold" id="complete-return-orders-count">0 items</span>
+        </div>
+        <div id="complete-return-orders-container" class="space-y-3">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Sub-Tab 4: Sheets View (1-Click Copy & Direct Meesho Link) -->
+      <div id="subtab-content-order-sheets" class="hidden space-y-3">
+        <div class="p-3 bg-fuchsia-50 border border-fuchsia-200 rounded-2xl flex items-center justify-between text-xs">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-bag-shopping text-[#f43397]"></i>
+            <span class="text-fuchsia-950 font-semibold">Supplier Order Sheet • 1-Click Copy & Direct Meesho Links</span>
+          </div>
+          <span class="text-[10px] text-[#f43397] font-bold">Fast Supplier Ordering</span>
+        </div>
+        <div id="sheets-orders-container" class="space-y-3">
+          <!-- Populated dynamically with 1-click copy cards & Meesho links -->
+        </div>
+      </div>
+
+      <!-- Sub-Tab 5: Completed Orders (7 Days Passed - Realized Profit) -->
       <div id="subtab-content-order-completed" class="hidden space-y-3">
         <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between text-xs">
-          <span class="text-emerald-900 font-semibold">Permanent History of Successfully Delivered Orders</span>
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-circle-check text-emerald-600"></i>
+            <span class="text-emerald-900 font-semibold">Delivered Orders with 7-Day Window Elapsed (Realized Profit)</span>
+          </div>
           <span class="text-[10px] text-emerald-700 font-bold" id="completed-orders-count">0 items</span>
         </div>
         <div id="completed-orders-container" class="space-y-3">
@@ -801,65 +849,172 @@
       </div>
 
       <!-- Support Sub-Tab 1: WhatsApp-Style Live Chat Engine -->
-      <div id="subtab-content-supp-chat" class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[460px]">
-        <div class="grid grid-cols-1 md:grid-cols-3 h-full divide-y md:divide-y-0 md:divide-x divide-slate-200">
+      <div id="subtab-content-supp-chat" class="bg-white rounded-3xl border border-slate-200 shadow-md overflow-hidden flex flex-col h-[600px] max-h-[85vh]">
+        <div class="flex flex-col md:grid md:grid-cols-3 h-full divide-y md:divide-y-0 md:divide-x divide-slate-200">
           
-          <!-- Left: Customer Conversation Threads List -->
-          <div class="md:col-span-1 flex flex-col h-full bg-slate-50">
-            <div class="p-2.5 border-b border-slate-200 flex items-center justify-between">
-              <span class="text-xs font-bold text-slate-700">Customer Threads</span>
-              <button onclick="loadAdminChatThreads()" class="text-xs text-brand-navy hover:underline">
+          <!-- Left: WhatsApp Chats & Customer Conversation Threads List -->
+          <div id="admin-chat-left-pane" class="md:col-span-1 flex flex-col h-full bg-[#f0f2f5] min-h-0">
+            <!-- Header -->
+            <div class="p-3 bg-[#008069] text-white flex items-center justify-between shadow-xs">
+              <div class="flex items-center gap-2">
+                <i class="fa-brands fa-whatsapp text-xl"></i>
+                <span class="text-sm font-bold font-poppins">Customer Chats</span>
+              </div>
+              <button onclick="loadAdminChatThreads()" class="w-7 h-7 rounded-full hover:bg-white/20 flex items-center justify-center text-xs transition" title="Refresh chats">
                 <i class="fa-solid fa-rotate-right"></i>
               </button>
             </div>
-            <div id="admin-chat-threads-list" class="flex-1 overflow-y-auto divide-y divide-slate-100 text-xs">
-              <!-- Thread items -->
+
+            <!-- WhatsApp Search Bar -->
+            <div class="p-2 bg-white border-b border-slate-200 space-y-1.5">
+              <div class="relative flex items-center">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 text-slate-400 text-xs"></i>
+                <input 
+                  type="text" 
+                  id="admin-chat-search-input" 
+                  oninput="filterAdminChatThreads()" 
+                  placeholder="Search customer by name, phone..." 
+                  class="w-full pl-8 pr-7 py-1.5 text-xs bg-[#f0f2f5] rounded-xl outline-none border border-transparent focus:border-[#00a884] focus:bg-white transition"
+                />
+                <button type="button" id="admin-chat-search-clear" onclick="clearAdminChatSearch()" class="hidden absolute right-2.5 text-slate-400 hover:text-slate-600 text-xs">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+
+              <!-- Filter Pills (All, Active, Unread) -->
+              <div class="flex items-center gap-1.5 text-[10px] font-bold">
+                <button type="button" id="chat-filter-all" onclick="setAdminChatThreadFilter('all')" class="px-2.5 py-0.5 rounded-full bg-[#008069] text-white shadow-xs transition">
+                  All
+                </button>
+                <button type="button" id="chat-filter-active" onclick="setAdminChatThreadFilter('active')" class="px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700 hover:bg-slate-300 transition">
+                  Active
+                </button>
+                <button type="button" id="chat-filter-unread" onclick="setAdminChatThreadFilter('unread')" class="px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700 hover:bg-slate-300 transition">
+                  Unread
+                </button>
+              </div>
+            </div>
+
+            <!-- Thread items list -->
+            <div id="admin-chat-threads-list" class="flex-1 overflow-y-auto divide-y divide-slate-200/60 text-xs bg-white">
+              <!-- Populated dynamically -->
             </div>
           </div>
 
-          <!-- Right: Active Chat View (Seen ✓✓, Date & Time, Customer Profile Link) -->
-          <div class="md:col-span-2 flex flex-col h-full bg-white">
-            <!-- Active Thread Header -->
-            <div class="p-2.5 bg-brand-navy text-white flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-full bg-brand-orange text-white flex items-center justify-center font-bold text-xs overflow-hidden" id="active-chat-avatar">
+          <!-- Right: WhatsApp Active Conversation View -->
+          <div id="admin-chat-right-pane" class="md:col-span-2 hidden md:flex flex-col h-full bg-white min-h-0">
+            <!-- WhatsApp Top Bar with Audio & Video Call Icons -->
+            <div class="p-2.5 bg-[#008069] text-white flex items-center justify-between shadow-sm z-10 flex-shrink-0">
+              <div class="flex items-center gap-2 min-w-0">
+                <!-- Mobile Back to List Button -->
+                <button 
+                  type="button" 
+                  onclick="closeAdminActiveChatMobile()" 
+                  class="md:hidden w-8 h-8 rounded-full hover:bg-white/20 active:scale-95 flex items-center justify-center text-white transition flex-shrink-0"
+                  title="Back to Chats List"
+                >
+                  <i class="fa-solid fa-arrow-left text-sm"></i>
+                </button>
+
+                <div class="relative w-9 h-9 rounded-full bg-[#128C7E] text-white border border-white/20 flex items-center justify-center font-bold text-xs overflow-hidden flex-shrink-0" id="active-chat-avatar">
                   U
                 </div>
-                <div>
-                  <h4 class="font-bold text-xs" id="active-chat-name">Select Customer</h4>
-                  <span class="text-[10px] text-slate-300 font-mono" id="active-chat-id">USR_NONE</span>
+                <div class="min-w-0">
+                  <h4 class="font-bold text-xs leading-tight truncate" id="active-chat-name">Select Customer</h4>
+                  <div class="flex items-center gap-1.5 text-[10px] text-emerald-100">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse"></span>
+                    <span class="truncate" id="active-chat-status-text">online on Buyero</span>
+                  </div>
                 </div>
               </div>
 
-              <!-- Direct Customer Profile Link -->
-              <button 
-                id="btn-chat-view-profile"
-                onclick="viewActiveCustomerProfileFromChat()" 
-                class="hidden px-2.5 py-1 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[10px] font-bold transition flex items-center gap-1"
-              >
-                <i class="fa-solid fa-user"></i> Profile
-              </button>
-            </div>
+              <!-- WhatsApp Action Icons: Video Call, Voice Call, Customer Profile -->
+              <div class="flex items-center gap-1">
+                <!-- Video Call Button (WhatsApp Style - Show only) -->
+                <button 
+                  type="button" 
+                  onclick="showCallNotice('Video')" 
+                  class="w-8 h-8 rounded-full hover:bg-white/15 active:scale-90 flex items-center justify-center text-white transition" 
+                  title="Video Call (Show option)"
+                >
+                  <i class="fa-solid fa-video text-sm"></i>
+                </button>
 
-            <!-- Messages Stream -->
-            <div id="admin-chat-messages-container" class="flex-1 p-3 overflow-y-auto space-y-2.5 bg-slate-50/50 text-xs">
-              <div class="py-12 text-center text-slate-400">
-                <i class="fa-regular fa-comment-dots text-4xl mb-2 text-slate-300"></i>
-                <p>Select a customer from threads to open chat</p>
+                <!-- Voice Audio Call Button (WhatsApp Style - Show only) -->
+                <button 
+                  type="button" 
+                  onclick="showCallNotice('Voice')" 
+                  class="w-8 h-8 rounded-full hover:bg-white/15 active:scale-90 flex items-center justify-center text-white transition" 
+                  title="Audio Call (Show option)"
+                >
+                  <i class="fa-solid fa-phone text-sm"></i>
+                </button>
+
+                <!-- Direct Customer Profile Link -->
+                <button 
+                  id="btn-chat-view-profile"
+                  onclick="viewActiveCustomerProfileFromChat()" 
+                  class="hidden px-2.5 py-1 bg-white/15 hover:bg-white/25 text-white rounded-lg text-[10px] font-bold transition flex items-center gap-1 ml-1"
+                >
+                  <i class="fa-solid fa-user"></i>
+                  <span>Profile</span>
+                </button>
               </div>
             </div>
 
-            <!-- Chat Reply Form -->
-            <form id="admin-chat-reply-form" onsubmit="handleSendAdminReply(event)" class="p-2 border-t border-slate-200 flex items-center gap-2 bg-white">
+            <!-- WhatsApp Chat Area with Authentic Wallpaper & Scrollable Messages Stream -->
+            <div 
+              id="admin-chat-messages-container" 
+              class="flex-1 p-3.5 overflow-y-auto space-y-2 text-xs" 
+              style="background-color: #efeae2; background-image: radial-gradient(#d1c7b7 0.8px, #efeae2 0.8px); background-size: 16px 16px;"
+            >
+              <div class="py-16 text-center text-slate-500">
+                <i class="fa-brands fa-whatsapp text-5xl mb-3 text-[#25D366]/60"></i>
+                <p class="font-medium">Select a customer thread to start chatting</p>
+                <span class="text-[10px] text-slate-400 block mt-1">End-to-end synced with Firebase Realtime</span>
+              </div>
+            </div>
+
+            <!-- WhatsApp Chat Bottom Bar: Attachment, Camera, Input, Mic / Send Button -->
+            <form id="admin-chat-reply-form" onsubmit="handleSendAdminReply(event)" class="p-2 bg-[#f0f2f5] border-t border-slate-200 flex items-center gap-1.5 flex-shrink-0">
+              <!-- Attachment Button -->
+              <button type="button" onclick="showAttachmentNotice()" class="w-9 h-9 text-slate-500 hover:text-slate-700 flex items-center justify-center rounded-full hover:bg-slate-200 transition" title="Attach file">
+                <i class="fa-solid fa-paperclip text-sm"></i>
+              </button>
+
+              <!-- Camera Button -->
+              <button type="button" onclick="showCameraNotice()" class="w-9 h-9 text-slate-500 hover:text-slate-700 flex items-center justify-center rounded-full hover:bg-slate-200 transition" title="Camera">
+                <i class="fa-solid fa-camera text-sm"></i>
+              </button>
+
+              <!-- Message Input -->
               <input 
                 type="text" 
                 id="admin-chat-reply-input" 
-                placeholder="Type response as Buyero Support..." 
-                required 
-                class="flex-1 px-3 py-2 text-xs border border-slate-300 rounded-xl outline-none focus:border-brand-navy"
+                oninput="toggleAdminChatSendMicButton(this.value)"
+                placeholder="Type a message..." 
+                class="flex-1 px-3.5 py-2 text-xs bg-white border border-slate-200 rounded-full outline-none focus:border-[#00a884] focus:ring-1 focus:ring-[#00a884]"
               />
-              <button type="submit" class="w-9 h-9 bg-brand-navy hover:bg-brand-deep text-white rounded-xl flex items-center justify-center text-xs transition shadow flex-shrink-0">
-                <i class="fa-solid fa-paper-plane"></i>
+
+              <!-- Microphone Button (Default when input is empty) -->
+              <button 
+                type="button" 
+                id="admin-chat-mic-btn" 
+                onclick="showMicNotice()" 
+                class="w-9 h-9 bg-[#00a884] hover:bg-[#008f6f] text-white rounded-full flex items-center justify-center text-sm shadow-sm transition active:scale-95 flex-shrink-0"
+                title="Hold for Voice Message"
+              >
+                <i class="fa-solid fa-microphone"></i>
+              </button>
+
+              <!-- Send Button (Dynamically appears when typing) -->
+              <button 
+                type="submit" 
+                id="admin-chat-send-btn" 
+                class="hidden w-9 h-9 bg-[#00a884] hover:bg-[#008f6f] text-white rounded-full flex items-center justify-center text-sm shadow-md transition active:scale-95 flex-shrink-0"
+                title="Send message"
+              >
+                <i class="fa-solid fa-paper-plane text-xs"></i>
               </button>
             </form>
           </div>
@@ -1381,40 +1536,52 @@
   <!-- ========================================================= -->
   <!-- BUYERO UNIVERSAL BRANDED MODAL SYSTEM                     -->
   <!-- ========================================================= -->
-  <div id="buyero-universal-modal" class="hidden fixed inset-0 z-[9999] bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4 select-none">
-    <div class="bg-white rounded-3xl max-w-sm w-full shadow-2xl border border-slate-100 overflow-hidden transform transition-all duration-200 p-5 space-y-3.5 animate-in fade-in zoom-in-95">
-      <!-- Header -->
+  <div id="buyero-universal-modal" class="hidden fixed inset-0 z-[99999] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 select-none">
+    <div class="bg-gradient-to-b from-[#0f172a] via-[#162033] to-[#0b1120] text-white rounded-3xl max-w-sm w-full shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border border-amber-500/30 overflow-hidden transform transition-all duration-200 p-5 space-y-4 animate-in fade-in zoom-in-95">
+      <!-- Header with Official Buyero App Icon & Verified Badge -->
       <div class="flex items-start justify-between gap-3">
-        <div class="flex items-center gap-2.5 min-w-0">
-          <div id="buyero-modal-icon-bg" class="w-10 h-10 rounded-2xl bg-orange-100 text-brand-orange flex items-center justify-center text-lg flex-shrink-0 shadow-xs">
-            <i id="buyero-modal-icon" class="fa-solid fa-bell"></i>
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="relative flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-[#1e293b] to-[#0f172a] p-2 shadow-lg border border-amber-400/30 flex-shrink-0">
+            <!-- Official Buyero Shopping Bag Logo -->
+            <svg class="w-8 h-8" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <g><polygon points="12,46 22,41 22,90 12,88" fill="#13a388" /><polygon points="22,41 56,43 56,92 22,90" fill="#20d5a3" /><path d="M 28,42 C 28,26 48,26 48,42" stroke="#68ffd8" stroke-width="3.5" stroke-linecap="round" fill="none" /></g>
+              <g><path d="M 47,58 C 47,44 65,44 65,58" stroke="#ffaec3" stroke-width="3.5" stroke-linecap="round" fill="none" /><polygon points="38,62 48,58 48,99 38,96" fill="#d84f7b" /><polygon points="48,58 78,57 78,96 48,99" fill="#ff8ba0" /></g>
+            </svg>
+            <span id="buyero-modal-status-badge" class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] shadow-sm border-2 border-[#0f172a]">
+              <i id="buyero-modal-icon" class="fa-solid fa-check"></i>
+            </span>
           </div>
-          <div class="min-w-0">
-            <span class="text-[10px] font-black uppercase tracking-wider text-brand-orange block">BUYERO</span>
-            <h3 id="buyero-modal-title" class="font-poppins font-bold text-sm text-slate-900 leading-snug truncate">Notification</h3>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-1.5">
+              <span class="font-poppins font-black text-base text-white tracking-tight">Buyer<span class="text-brand-orange" style="color:#f77f33;">o</span></span>
+              <span class="px-2 py-0.5 bg-amber-400/20 text-amber-300 border border-amber-400/30 font-extrabold text-[9px] rounded-full uppercase tracking-wider flex items-center gap-1">
+                <i class="fa-solid fa-shield-check text-[9px]"></i> Admin
+              </span>
+            </div>
+            <h3 id="buyero-modal-title" class="font-poppins font-semibold text-xs text-slate-300 truncate mt-0.5">Notification</h3>
           </div>
         </div>
-        <button type="button" id="buyero-modal-close-btn" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-700 flex items-center justify-center transition flex-shrink-0" title="Close">
+        <button type="button" id="buyero-modal-close-btn" class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition flex-shrink-0" title="Close">
           <i class="fa-solid fa-xmark text-xs"></i>
         </button>
       </div>
 
       <!-- Body / Message -->
-      <div id="buyero-modal-body" class="text-xs text-slate-600 leading-relaxed max-h-60 overflow-y-auto whitespace-pre-line break-words">
+      <div id="buyero-modal-body" class="text-xs text-slate-200 leading-relaxed max-h-60 overflow-y-auto whitespace-pre-line break-words bg-slate-900/80 p-3.5 rounded-2xl border border-slate-700/70 shadow-inner">
       </div>
 
       <!-- Optional Input Container for Prompt -->
       <div id="buyero-modal-input-container" class="hidden space-y-1">
-        <label id="buyero-modal-input-label" class="text-[11px] font-semibold text-slate-700 block"></label>
-        <input type="text" id="buyero-modal-input" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 outline-none focus:border-brand-orange focus:bg-white transition" />
+        <label id="buyero-modal-input-label" class="text-[11px] font-semibold text-slate-300 block"></label>
+        <input type="text" id="buyero-modal-input" class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange transition" />
       </div>
 
       <!-- Action Buttons -->
       <div class="flex items-center gap-2 pt-1" id="buyero-modal-actions">
-        <button type="button" id="buyero-modal-cancel-btn" class="hidden flex-1 py-2.5 px-4 bg-slate-100 hover:bg-slate-200 active:scale-98 text-slate-700 font-bold text-xs rounded-xl transition">
+        <button type="button" id="buyero-modal-cancel-btn" class="hidden flex-1 py-2.5 px-4 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 font-bold text-xs rounded-xl border border-slate-700 transition">
           Cancel
         </button>
-        <button type="button" id="buyero-modal-confirm-btn" class="flex-1 py-2.5 px-4 bg-slate-900 hover:bg-slate-800 active:scale-98 text-white font-bold text-xs rounded-xl transition shadow-sm">
+        <button type="button" id="buyero-modal-confirm-btn" class="flex-1 py-2.5 px-4 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 active:scale-95 text-white font-bold text-xs rounded-xl transition shadow-lg shadow-orange-500/30 flex items-center justify-center gap-1.5">
           OK
         </button>
       </div>
@@ -1438,7 +1605,7 @@
         const titleEl = document.getElementById('buyero-modal-title');
         const bodyEl = document.getElementById('buyero-modal-body');
         const iconEl = document.getElementById('buyero-modal-icon');
-        const iconBgEl = document.getElementById('buyero-modal-icon-bg');
+        const statusBadgeEl = document.getElementById('buyero-modal-status-badge');
         const inputCont = document.getElementById('buyero-modal-input-container');
         const inputEl = document.getElementById('buyero-modal-input');
         const inputLabel = document.getElementById('buyero-modal-input-label');
@@ -1455,8 +1622,10 @@
         titleEl.textContent = options.title || 'Buyero Notification';
         bodyEl.textContent = options.message || '';
 
-        iconBgEl.className = 'w-10 h-10 rounded-2xl flex items-center justify-center text-lg flex-shrink-0 shadow-xs';
-        confirmBtn.className = 'flex-1 py-2.5 px-4 active:scale-98 text-white font-bold text-xs rounded-xl transition shadow-sm';
+        if (statusBadgeEl) {
+          statusBadgeEl.className = 'absolute -bottom-1 -right-1 w-5 h-5 rounded-full text-white flex items-center justify-center text-[10px] shadow-sm border-2 border-[#0f172a]';
+        }
+        confirmBtn.className = 'flex-1 py-2.5 px-4 active:scale-95 text-white font-bold text-xs rounded-xl transition shadow-lg flex items-center justify-center gap-1.5';
         confirmBtn.disabled = false;
         confirmBtn.textContent = options.confirmText || 'OK';
         cancelBtn.textContent = options.cancelText || 'Cancel';
@@ -1464,27 +1633,27 @@
         const type = options.type || 'info';
 
         if (type === 'success') {
-          iconBgEl.classList.add('bg-emerald-100', 'text-emerald-600');
-          iconEl.className = 'fa-solid fa-circle-check';
-          confirmBtn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+          if (statusBadgeEl) statusBadgeEl.classList.add('bg-emerald-500');
+          if (iconEl) iconEl.className = 'fa-solid fa-check';
+          confirmBtn.classList.add('bg-gradient-to-r', 'from-emerald-600', 'to-teal-600', 'hover:from-emerald-700', 'hover:to-teal-700');
         } else if (type === 'warning') {
-          iconBgEl.classList.add('bg-amber-100', 'text-amber-600');
-          iconEl.className = 'fa-solid fa-triangle-exclamation';
-          confirmBtn.classList.add('bg-amber-600', 'hover:bg-amber-700');
+          if (statusBadgeEl) statusBadgeEl.classList.add('bg-amber-500');
+          if (iconEl) iconEl.className = 'fa-solid fa-triangle-exclamation';
+          confirmBtn.classList.add('bg-gradient-to-r', 'from-amber-500', 'to-orange-500', 'hover:from-amber-600', 'hover:to-orange-600');
         } else if (type === 'error' || options.isDanger) {
-          iconBgEl.classList.add('bg-rose-100', 'text-rose-600');
-          iconEl.className = options.isDanger ? 'fa-solid fa-triangle-exclamation' : 'fa-solid fa-circle-xmark';
-          confirmBtn.classList.add('bg-rose-600', 'hover:bg-rose-700');
+          if (statusBadgeEl) statusBadgeEl.classList.add('bg-rose-500');
+          if (iconEl) iconEl.className = options.isDanger ? 'fa-solid fa-triangle-exclamation' : 'fa-solid fa-xmark';
+          confirmBtn.classList.add('bg-gradient-to-r', 'from-rose-600', 'to-red-600', 'hover:from-rose-700', 'hover:to-red-700');
         } else if (type === 'loading') {
-          iconBgEl.classList.add('bg-orange-100', 'text-brand-orange');
-          iconEl.className = 'fa-solid fa-spinner fa-spin';
+          if (statusBadgeEl) statusBadgeEl.classList.add('bg-brand-orange');
+          if (iconEl) iconEl.className = 'fa-solid fa-spinner fa-spin';
           confirmBtn.classList.add('hidden');
           cancelBtn.classList.add('hidden');
           closeBtn.classList.add('hidden');
         } else {
-          iconBgEl.classList.add('bg-orange-100', 'text-brand-orange');
-          iconEl.className = 'fa-solid fa-circle-info';
-          confirmBtn.classList.add('bg-slate-900', 'hover:bg-slate-800');
+          if (statusBadgeEl) statusBadgeEl.classList.add('bg-blue-600');
+          if (iconEl) iconEl.className = 'fa-solid fa-info';
+          confirmBtn.classList.add('bg-gradient-to-r', 'from-orange-500', 'via-amber-500', 'to-orange-600', 'hover:from-orange-600', 'hover:to-orange-700');
         }
 
         if (type !== 'loading') {
@@ -2723,12 +2892,18 @@
           let messages = getStoredChatMessages();
           let changed = false;
           snapshot.docChanges().forEach(change => {
+            const m = change.doc.data();
+            if (!m || !m.text) return;
             if (change.type === 'added') {
-              const m = change.doc.data();
-              if (!m || !m.text) return;
               const exists = messages.some(item => item.id === m.id || (item.timestamp === m.timestamp && item.text === m.text && item.clientId === m.clientId));
               if (!exists) {
                 messages.push(m);
+                changed = true;
+              }
+            } else if (change.type === 'modified') {
+              const idx = messages.findIndex(item => item.id === m.id);
+              if (idx >= 0) {
+                messages[idx] = Object.assign({}, messages[idx], m);
                 changed = true;
               }
             }
@@ -3349,8 +3524,8 @@
 
       const realizedProfit = Math.max(0, realizedRevenue - realizedCost);
       const potentialProfit = Math.max(0, potentialRevenue - potentialCost);
-      const netProfit = totalRevenue - totalCost;
-      const marginPercent = totalRevenue > 0 ? Math.round((netProfit / totalRevenue) * 100) : 0;
+      const netProfit = realizedProfit; // Strictly 7-day completed realized profit per requirement
+      const marginPercent = realizedRevenue > 0 ? Math.round((realizedProfit / realizedRevenue) * 100) : 0;
 
       // Update 7 Cards
       const elTotalOrders = document.getElementById('stat-total-orders');
@@ -3366,12 +3541,12 @@
 
       if (elTotalOrders) elTotalOrders.textContent = totalOrders;
       if (elPendingOrders) elPendingOrders.textContent = pendingOrders;
-      if (elRevenue) elRevenue.textContent = '₹' + totalRevenue.toLocaleString('en-IN');
-      if (elCost) elCost.textContent = '₹' + totalCost.toLocaleString('en-IN');
+      if (elRevenue) elRevenue.textContent = '₹' + realizedRevenue.toLocaleString('en-IN');
+      if (elCost) elCost.textContent = '₹' + realizedCost.toLocaleString('en-IN');
       if (elRealizedProfit) elRealizedProfit.textContent = '₹' + realizedProfit.toLocaleString('en-IN');
-      if (elRealizedCount) elRealizedCount.textContent = `${completedCount} Realized Order${completedCount !== 1 ? 's' : ''}`;
-      if (elProfit) elProfit.textContent = '₹' + potentialProfit.toLocaleString('en-IN');
-      if (elProfitMargin) elProfitMargin.textContent = `${marginPercent}% Margin`;
+      if (elRealizedCount) elRealizedCount.textContent = `${completedCount} Completed (7-Day Done)`;
+      if (elProfit) elProfit.textContent = '₹' + realizedProfit.toLocaleString('en-IN');
+      if (elProfitMargin) elProfitMargin.textContent = `${marginPercent}% Realized Margin`;
       if (elUsers) elUsers.textContent = users.length;
       if (elVisits) elVisits.textContent = visits;
 
@@ -4130,26 +4305,28 @@
       }
     }
 
-    /* Orders Management Tabs */
+    /* Orders Management Tabs (Pending, Return, Complete Return, Sheets View, Completed) */
+    let currentOrderSubTab = 'pending';
     function switchOrderSubTab(sub) {
-      const btnLive = document.getElementById('subtab-btn-order-live');
-      const btnSheets = document.getElementById('subtab-btn-order-sheets');
-      const btnCompleted = document.getElementById('subtab-btn-order-completed');
+      if (sub === 'live') sub = 'pending';
+      currentOrderSubTab = sub;
 
-      const contentLive = document.getElementById('subtab-content-order-live');
-      const contentSheets = document.getElementById('subtab-content-order-sheets');
-      const contentCompleted = document.getElementById('subtab-content-order-completed');
+      const tabs = ['pending', 'return', 'complete-return', 'sheets', 'completed'];
 
-      if (contentLive) contentLive.classList.toggle('hidden', sub !== 'live');
-      if (contentSheets) contentSheets.classList.toggle('hidden', sub !== 'sheets');
-      if (contentCompleted) contentCompleted.classList.toggle('hidden', sub !== 'completed');
+      tabs.forEach(t => {
+        const btn = document.getElementById(`subtab-btn-order-${t}`);
+        const content = document.getElementById(`subtab-content-order-${t}`);
+        const isActive = (t === sub);
 
-      const activeClass = "flex-1 py-2 text-xs font-bold rounded-xl bg-white text-slate-900 shadow-sm transition";
-      const inactiveClass = "flex-1 py-2 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-900 transition";
-
-      if (btnLive) btnLive.className = (sub === 'live') ? activeClass : inactiveClass;
-      if (btnSheets) btnSheets.className = (sub === 'sheets') ? activeClass : inactiveClass;
-      if (btnCompleted) btnCompleted.className = (sub === 'completed') ? activeClass : inactiveClass;
+        if (content) {
+          content.classList.toggle('hidden', !isActive);
+        }
+        if (btn) {
+          btn.className = isActive
+            ? "flex-1 py-2 px-2.5 text-center rounded-xl bg-white text-slate-900 shadow-sm whitespace-nowrap transition"
+            : "flex-1 py-2 px-2.5 text-center rounded-xl text-slate-600 hover:text-slate-900 whitespace-nowrap transition";
+        }
+      });
 
       renderFilteredOrders();
     }
@@ -4440,10 +4617,10 @@
       // Background check for 7-day auto-completions
       checkAndProcess7DayCompletions();
 
-      const orders = getStoredOrders();
-      const query = orderSearchQuery;
+      const allOrders = getStoredOrders();
+      const query = (orderSearchQuery || '').toLowerCase().trim();
 
-      const filtered = orders.filter(o => {
+      const filtered = allOrders.filter(o => {
         if (!query) return true;
         return (
           (o.orderId && o.orderId.toLowerCase().includes(query)) ||
@@ -4456,31 +4633,84 @@
         );
       });
 
-      const liveOrders = filtered.filter(o => o.status !== 'Completed');
+      // 1. Completed: 7-day return window passed & settled
       const completedOrders = filtered.filter(o => o.status === 'Completed');
 
-      // Update counters
-      const countLive = document.getElementById('count-order-live');
-      const countCompleted = document.getElementById('completed-orders-count');
-      if (countLive) countLive.textContent = liveOrders.length;
-      if (countCompleted) countCompleted.textContent = `${completedOrders.length} items`;
+      // 2. Complete Return: product received back & restocked
+      const completeReturnOrders = filtered.filter(o => 
+        o.status === 'Returned' || 
+        o.status === 'Complete Return' || 
+        (o.returnDetails && o.returnDetails.status === 'Completed')
+      );
 
-      // 1. Render Live Orders
-      renderLiveOrdersList(liveOrders);
+      // 3. Return: customer return requested or pickup scheduled
+      const returnOrders = filtered.filter(o => 
+        o.status !== 'Completed' && 
+        !completeReturnOrders.includes(o) &&
+        (
+          o.status === 'Return Requested' || 
+          o.status === 'Return In Process' ||
+          o.status === 'Return Pickup Scheduled' || 
+          (o.returnDetails && o.returnDetails.status !== 'Completed' && o.returnDetails.status !== 'Rejected') ||
+          o.returnRequested
+        )
+      );
 
-      // 2. Render Sheets View (1-Click Copy)
-      renderSheetsViewList(filtered);
+      // 4. Pending: active orders that are NOT completed, NOT returned
+      const pendingOrders = filtered.filter(o => 
+        o.status !== 'Completed' && 
+        !completeReturnOrders.includes(o) && 
+        !returnOrders.includes(o)
+      );
 
-      // 3. Render Completed Orders
+      // 5. Sheets View: active pending orders only! (Completed and Returned orders leave Sheets View)
+      const sheetsOrders = pendingOrders;
+
+      // Update Sub-Tab Badges
+      const countPending = document.getElementById('count-order-pending');
+      const countReturn = document.getElementById('count-order-return');
+      const countCompleteReturn = document.getElementById('count-order-complete-return');
+      const countCompleted = document.getElementById('count-order-completed');
+      const countLiveOld = document.getElementById('count-order-live');
+
+      if (countPending) countPending.textContent = pendingOrders.length;
+      if (countLiveOld) countLiveOld.textContent = pendingOrders.length;
+      if (countReturn) countReturn.textContent = returnOrders.length;
+      if (countCompleteReturn) countCompleteReturn.textContent = completeReturnOrders.length;
+      if (countCompleted) countCompleted.textContent = completedOrders.length;
+
+      const subReturnCount = document.getElementById('return-orders-count');
+      const subCompleteReturnCount = document.getElementById('complete-return-orders-count');
+      const subCompletedCount = document.getElementById('completed-orders-count');
+
+      if (subReturnCount) subReturnCount.textContent = `${returnOrders.length} items`;
+      if (subCompleteReturnCount) subCompleteReturnCount.textContent = `${completeReturnOrders.length} items`;
+      if (subCompletedCount) subCompletedCount.textContent = `${completedOrders.length} items`;
+
+      // Render containers
+      renderPendingOrdersList(pendingOrders);
+      renderReturnOrdersList(returnOrders);
+      renderCompleteReturnOrdersList(completeReturnOrders);
+      renderSheetsViewList(sheetsOrders);
       renderCompletedOrdersList(completedOrders);
     }
 
-    function renderLiveOrdersList(orders) {
-      const container = document.getElementById('live-orders-container');
+    /* Helper: Returns direct Meesho / Supplier URL for a product */
+    function getMeeshoSupplierUrl(item) {
+      if (item && item.sourceProductUrl && item.sourceProductUrl.trim().length > 0) {
+        return item.sourceProductUrl.trim();
+      }
+      const title = (item && (item.title || item.name || item.productTitle)) ? (item.title || item.name || item.productTitle) : '';
+      return 'https://www.meesho.com/search?q=' + encodeURIComponent(title);
+    }
+
+    /* Sub-Tab 1: Pending Orders List */
+    function renderPendingOrdersList(orders) {
+      const container = document.getElementById('pending-orders-container') || document.getElementById('live-orders-container');
       if (!container) return;
 
       if (orders.length === 0) {
-        container.innerHTML = '<div class="py-8 text-center text-slate-400">No active pending orders matching search.</div>';
+        container.innerHTML = '<div class="py-12 text-center text-slate-400"><i class="fa-solid fa-clock text-3xl mb-2 text-slate-300"></i><p class="font-bold text-xs">No active pending orders</p><span class="text-[11px]">All orders are either completed or in return.</span></div>';
         return;
       }
 
@@ -4502,7 +4732,7 @@
               o.status === 'Shipped via Courier' ? 'bg-blue-100 text-blue-800' :
               'bg-amber-100 text-amber-800'
             }">
-              ${o.status === 'Delivered' ? 'Delivered (7-Day Return Window Active)' : (o.status || 'Pending')}
+              ${o.status === 'Delivered' ? 'Delivered (7-Day Window Active)' : (o.status || 'Pending')}
             </span>
           </div>
 
@@ -4514,7 +4744,7 @@
               </div>
               <p class="mt-0.5 leading-snug">
                 Delivered on ${new Date(o.deliveredAt).toLocaleDateString()}. 
-                ${daysLeft > 0 ? `<strong>${daysLeft} day(s) remaining</strong> before order moves to Completed and referral reward unlocks.` : '7 days completed. Order will finalize automatically.'}
+                ${daysLeft > 0 ? `<strong>${daysLeft} day(s) remaining</strong> before profit is realized & order moves to Completed.` : '7 days elapsed. Finalizing into Completed history.'}
               </p>
             </div>
           ` : ''}
@@ -4537,19 +4767,21 @@
             <p class="mt-0.5 leading-snug">${o.address || ''}, ${o.city || ''}, ${o.state || ''} - ${o.pincode || ''}</p>
           </div>
 
-          <!-- 🔒 PRIVATE FULFILLMENT & SOURCE DATA (ADMIN-ONLY) -->
-          <div class="bg-indigo-50/70 border border-indigo-200/80 rounded-2xl p-3 space-y-2">
-            <div class="flex items-center justify-between text-[11px] font-bold text-indigo-950 border-b border-indigo-100 pb-1.5">
+          <!-- 🛍️ MEESHO / SUPPLIER ORDERING DATA & DIRECT 1-CLICK LINK -->
+          <div class="bg-fuchsia-50/60 border border-fuchsia-200/90 rounded-2xl p-3 space-y-2">
+            <div class="flex items-center justify-between text-[11px] font-bold text-fuchsia-950 border-b border-fuchsia-100 pb-1.5">
               <span class="flex items-center gap-1.5">
-                <i class="fa-solid fa-lock text-brand-navy"></i>
-                <span>PRIVATE FULFILLMENT / SUPPLIER DATA</span>
+                <i class="fa-solid fa-bag-shopping text-[#f43397]"></i>
+                <span>MEESHO PRIVATE SUPPLIER LINKS</span>
               </span>
               <span class="text-emerald-700 font-poppins">Order Profit: +₹${m.netProfit}</span>
             </div>
 
             <div class="space-y-2">
-              ${m.enrichedItems.map(item => `
-                <div class="p-2.5 bg-white rounded-xl border border-indigo-100 text-xs space-y-1.5">
+              ${m.enrichedItems.map(item => {
+                const meeshoUrl = getMeeshoSupplierUrl(item);
+                return `
+                <div class="p-2.5 bg-white rounded-xl border border-fuchsia-100 text-xs space-y-2 shadow-2xs">
                   <div class="flex items-center gap-2">
                     <img src="${item.image || ''}" class="w-10 h-10 rounded-lg object-cover border border-slate-200 flex-shrink-0" onerror="this.style.display='none'"/>
                     <div class="flex-1 min-w-0">
@@ -4568,29 +4800,23 @@
                     </div>
                   </div>
 
-                  <!-- Source Link row -->
-                  <div class="flex items-center justify-between pt-1 border-t border-slate-100 text-[10px]">
-                    ${item.sourceProductUrl ? `
-                      <span class="text-slate-500 font-mono truncate max-w-[180px]"><i class="fa-solid fa-link text-indigo-500 mr-1"></i>${item.sourceProductUrl}</span>
-                      <div class="flex items-center gap-1.5 flex-shrink-0">
-                        <button type="button" onclick="copyToClipboard('${item.sourceProductUrl}', 'Supplier Link')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-md flex items-center gap-1">
-                          <i class="fa-regular fa-copy text-[8px]"></i>
-                          <span>Copy Link</span>
-                        </button>
-                        <a href="${item.sourceProductUrl}" target="_blank" class="px-2 py-0.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold rounded-md flex items-center gap-1">
-                          <span>Open Link</span>
-                          <i class="fa-solid fa-arrow-up-right-from-square text-[8px]"></i>
-                        </a>
-                      </div>
-                    ` : `
-                      <span class="text-amber-600 font-medium"><i class="fa-solid fa-triangle-exclamation mr-1"></i> No supplier URL in catalog</span>
-                    `}
+                  <!-- 1-Click Meesho Direct Button -->
+                  <div class="flex items-center justify-between pt-1 border-t border-slate-100 text-[10px] gap-2">
+                    <span class="text-slate-500 font-mono truncate max-w-[150px]"><i class="fa-solid fa-link text-[#f43397] mr-1"></i>${meeshoUrl}</span>
+                    <div class="flex items-center gap-1.5 flex-shrink-0">
+                      <button type="button" onclick="copyToClipboard('${meeshoUrl}', 'Meesho Link')" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg flex items-center gap-1">
+                        <i class="fa-regular fa-copy text-[9px]"></i>
+                        <span>Copy</span>
+                      </button>
+                      <a href="${meeshoUrl}" target="_blank" class="px-2.5 py-1 bg-gradient-to-r from-[#f43397] to-[#d61b78] text-white font-bold rounded-lg flex items-center gap-1 hover:opacity-90 transition shadow-2xs">
+                        <i class="fa-solid fa-bag-shopping text-[9px]"></i>
+                        <span>Open Meesho</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-[8px]"></i>
+                      </a>
+                    </div>
                   </div>
-                  ${item.supplierReference ? `
-                    <div class="text-[10px] text-slate-500">Supplier Ref: <code class="font-mono text-slate-800 font-semibold">${item.supplierReference}</code></div>
-                  ` : ''}
                 </div>
-              `).join('')}
+              `}).join('')}
             </div>
           </div>
 
@@ -4602,7 +4828,7 @@
             </span>
           </div>
 
-          <!-- Customer Requests (Cancellation / Return) -->
+          <!-- Cancellation Notice if requested -->
           ${o.cancellationReason ? `
             <div class="p-2.5 bg-rose-50 border border-rose-200 rounded-2xl text-xs space-y-1.5">
               <div class="font-bold text-rose-800 flex items-center gap-1.5">
@@ -4615,38 +4841,6 @@
                   Approve Order Cancellation
                 </button>
               ` : '<span class="text-xs font-bold text-rose-800 block">Order Cancelled</span>'}
-            </div>
-          ` : ''}
-
-          ${o.returnDetails ? `
-            <div class="p-2.5 bg-amber-50 border border-amber-200 rounded-2xl text-xs space-y-1.5">
-              <div class="font-bold text-amber-900 flex items-center justify-between">
-                <div class="flex items-center gap-1.5">
-                  <i class="fa-solid fa-arrow-rotate-left text-amber-600"></i>
-                  <span>Customer Return Request (${o.returnDetails.type || 'RETURN'})</span>
-                </div>
-                <span class="text-[10px] px-2 py-0.5 rounded-full font-bold ${o.returnDetails.status === 'Completed' ? 'bg-slate-200 text-slate-700' : (o.returnDetails.status === 'Rejected' ? 'bg-rose-100 text-rose-700' : 'bg-amber-200 text-amber-900')}">
-                  ${o.returnDetails.status || 'Requested'}
-                </span>
-              </div>
-              <p class="text-amber-800 text-[11px]">Reason: "${o.returnDetails.reason || 'Not specified'}"</p>
-              ${o.returnDetails.replacementSize ? `<p class="text-blue-700 text-[10px] font-semibold">Requested Exchange Size: ${o.returnDetails.replacementSize}</p>` : ''}
-              ${o.returnDetails.status !== 'Completed' && o.returnDetails.status !== 'Rejected' ? `
-                <div class="flex gap-2 pt-1">
-                  ${o.status !== 'Return Pickup Scheduled' && o.status !== 'Returned' ? `
-                    <button onclick="approveOrderReturn('${o.orderId}')" class="flex-1 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs transition">
-                      Approve Pickup
-                    </button>
-                  ` : `
-                    <button onclick="completeOrderReturn('${o.orderId}')" class="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition">
-                      <i class="fa-solid fa-box-check mr-1"></i> Mark Returned (Received)
-                    </button>
-                  `}
-                  <button onclick="rejectOrderReturn('${o.orderId}')" class="py-1.5 px-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs transition">
-                    Reject
-                  </button>
-                </div>
-              ` : ''}
             </div>
           ` : ''}
 
@@ -4722,16 +4916,176 @@
             </button>
           </div>
 
-          <!-- Complete Order (Quick Delivered) Button -->
-          ${o.status !== 'Delivered' ? `
+          <!-- Action Buttons: Mark Delivered & Return Product -->
+          <div class="flex items-center gap-2 pt-1">
+            ${o.status !== 'Delivered' ? `
+              <button 
+                onclick="completeOrderAction('${o.orderId}')" 
+                class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition shadow flex items-center justify-center gap-1.5 active:scale-98"
+              >
+                <i class="fa-solid fa-circle-check"></i>
+                <span>Mark Delivered</span>
+              </button>
+            ` : ''}
+
             <button 
-              onclick="completeOrderAction('${o.orderId}')" 
-              class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition shadow flex items-center justify-center gap-1.5 active:scale-98"
+              onclick="markOrderAsReturn('${o.orderId}')" 
+              class="flex-1 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold rounded-xl text-xs transition shadow-2xs flex items-center justify-center gap-1.5 active:scale-98"
+              title="Move this order to Return Process"
             >
-              <i class="fa-solid fa-circle-check"></i>
-              <span>Quick Mark as Delivered & Cash Collected</span>
+              <i class="fa-solid fa-arrow-rotate-left"></i>
+              <span>Return Product</span>
             </button>
-          ` : ''}
+          </div>
+        </div>
+      `;}).join('');
+    }
+
+    /* Sub-Tab 2: Return Orders List */
+    function renderReturnOrdersList(orders) {
+      const container = document.getElementById('return-orders-container');
+      if (!container) return;
+
+      if (orders.length === 0) {
+        container.innerHTML = '<div class="py-12 text-center text-slate-400"><i class="fa-solid fa-arrow-rotate-left text-3xl mb-2 text-slate-300"></i><p class="font-bold text-xs">No active returns</p><span class="text-[11px]">Any returned products will appear here.</span></div>';
+        return;
+      }
+
+      container.innerHTML = orders.map(o => {
+        const m = getAdminOrderPrivateData(o);
+        const reason = (o.returnDetails && o.returnDetails.reason) ? o.returnDetails.reason : (o.cancellationReason || 'Product return requested');
+
+        return `
+        <div class="bg-white rounded-3xl p-4 border border-amber-200 shadow-sm space-y-3">
+          <div class="flex items-center justify-between border-b border-amber-100 pb-2">
+            <div>
+              <span class="font-mono font-bold text-brand-navy text-xs">#${o.orderId}</span>
+              <span class="text-[10px] text-slate-400 block">${new Date(o.timestamp || Date.now()).toLocaleDateString()}</span>
+            </div>
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
+              <i class="fa-solid fa-arrow-rotate-left text-amber-600"></i>
+              <span>${o.status || 'Return Requested'}</span>
+            </span>
+          </div>
+
+          <div class="p-3 bg-amber-50 rounded-2xl border border-amber-200 text-xs space-y-1">
+            <div class="font-bold text-amber-900 flex items-center gap-1">
+              <i class="fa-solid fa-triangle-exclamation text-amber-600"></i>
+              <span>Return Reason:</span>
+            </div>
+            <p class="text-amber-800 text-[11px] leading-relaxed">${escapeHtml(reason)}</p>
+            ${o.returnDetails && o.returnDetails.replacementSize ? `<span class="inline-block mt-1 bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-[10px] font-bold">Exchange Size: ${o.returnDetails.replacementSize}</span>` : ''}
+          </div>
+
+          <div class="flex items-center justify-between text-xs">
+            <div>
+              <span class="font-bold text-slate-900 block">${o.customerName}</span>
+              <span class="text-[11px] text-slate-500">${o.phone} • ${o.city || ''}</span>
+            </div>
+            <div class="text-right">
+              <span class="font-bold text-slate-900 font-poppins">₹${m.totalRevenue}</span>
+              <span class="text-[10px] text-rose-600 font-bold block">Profit Withheld</span>
+            </div>
+          </div>
+
+          <!-- Product Details with Meesho link -->
+          <div class="space-y-1.5 pt-1">
+            ${m.enrichedItems.map(item => {
+              const meeshoUrl = getMeeshoSupplierUrl(item);
+              return `
+              <div class="flex items-center justify-between p-2 bg-slate-50 rounded-xl text-xs border border-slate-200">
+                <div class="flex items-center gap-2 min-w-0 flex-1">
+                  <img src="${item.image || ''}" class="w-8 h-8 rounded object-cover flex-shrink-0" onerror="this.style.display='none'"/>
+                  <span class="font-semibold text-slate-800 truncate">${item.title}</span>
+                </div>
+                <a href="${meeshoUrl}" target="_blank" class="px-2 py-1 bg-fuchsia-100 hover:bg-fuchsia-200 text-[#f43397] font-bold rounded-lg text-[10px] flex items-center gap-1 flex-shrink-0 ml-2">
+                  <i class="fa-solid fa-bag-shopping text-[9px]"></i>
+                  <span>Meesho</span>
+                </a>
+              </div>
+            `}).join('')}
+          </div>
+
+          <!-- Action Buttons for Return -->
+          <div class="flex items-center gap-2 pt-2">
+            ${o.status !== 'Return Pickup Scheduled' ? `
+              <button 
+                onclick="approveOrderReturn('${o.orderId}')" 
+                class="flex-1 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs transition shadow-2xs flex items-center justify-center gap-1"
+              >
+                <i class="fa-solid fa-truck-ramp-box"></i>
+                <span>Approve Pickup</span>
+              </button>
+            ` : ''}
+
+            <button 
+              onclick="completeOrderReturn('${o.orderId}')" 
+              class="flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition shadow-2xs flex items-center justify-center gap-1"
+              title="Move this order to Complete Return tab"
+            >
+              <i class="fa-solid fa-box-open"></i>
+              <span>Complete Return</span>
+            </button>
+          </div>
+        </div>
+      `;}).join('');
+    }
+
+    /* Sub-Tab 3: Complete Return Orders List */
+    function renderCompleteReturnOrdersList(orders) {
+      const container = document.getElementById('complete-return-orders-container');
+      if (!container) return;
+
+      if (orders.length === 0) {
+        container.innerHTML = '<div class="py-12 text-center text-slate-400"><i class="fa-solid fa-box-open text-3xl mb-2 text-slate-300"></i><p class="font-bold text-xs">No completed returns yet</p><span class="text-[11px]">Orders where products were received back will appear here.</span></div>';
+        return;
+      }
+
+      container.innerHTML = orders.map(o => {
+        const m = getAdminOrderPrivateData(o);
+        const reason = (o.returnDetails && o.returnDetails.reason) ? o.returnDetails.reason : 'Customer return complete';
+        const completedDate = (o.returnDetails && o.returnDetails.completedAt) ? new Date(o.returnDetails.completedAt).toLocaleDateString() : (o.deliveredAt ? new Date(o.deliveredAt).toLocaleDateString() : '');
+
+        return `
+        <div class="bg-white rounded-3xl p-4 border border-indigo-200 shadow-sm space-y-2 text-xs">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-slate-900">#${o.orderId}</span>
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800 flex items-center gap-1">
+              <i class="fa-solid fa-check-double text-indigo-600"></i>
+              <span>Complete Return</span>
+            </span>
+          </div>
+
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="font-bold text-slate-900 block">${o.customerName}</span>
+              <span class="text-[11px] text-slate-500">${o.phone} • ${o.city || ''}</span>
+            </div>
+            <div class="text-right">
+              <span class="font-bold text-slate-700 font-poppins line-through">₹${m.totalRevenue}</span>
+              <span class="text-[10px] text-rose-500 font-bold block">Profit 0 (Returned)</span>
+            </div>
+          </div>
+
+          <div class="p-2.5 bg-indigo-50/70 rounded-xl border border-indigo-100 text-[11px] text-indigo-900 space-y-0.5">
+            <div class="font-bold">Returned & Restocked</div>
+            <p class="text-slate-600">Reason: ${escapeHtml(reason)}</p>
+            ${completedDate ? `<span class="text-[10px] text-slate-400 block font-mono">Date: ${completedDate}</span>` : ''}
+          </div>
+
+          <div class="space-y-1 pt-1">
+            ${m.enrichedItems.map(item => {
+              const meeshoUrl = getMeeshoSupplierUrl(item);
+              return `
+              <div class="flex items-center justify-between text-[11px] text-slate-600">
+                <span class="truncate max-w-[200px]">• ${item.title}</span>
+                <a href="${meeshoUrl}" target="_blank" class="text-[#f43397] font-semibold text-[10px] hover:underline flex items-center gap-1">
+                  <span>Meesho</span>
+                  <i class="fa-solid fa-arrow-up-right-from-square text-[8px]"></i>
+                </a>
+              </div>
+            `}).join('')}
+          </div>
         </div>
       `;}).join('');
     }
@@ -4971,6 +5325,58 @@
       }
     }
 
+    async function markOrderAsReturn(orderId) {
+      const reason = prompt(`Enter reason for initiating return on Order #${orderId}:`, "Customer requested return / exchange");
+      if (reason === null) return;
+
+      let orders = getStoredOrders();
+      const order = orders.find(o => o.orderId === orderId);
+      if (order) {
+        order.status = 'Return Requested';
+        if (!order.returnDetails) order.returnDetails = {};
+        order.returnDetails.type = 'RETURN';
+        order.returnDetails.status = 'Requested';
+        order.returnDetails.reason = (reason && reason.trim()) ? reason.trim() : 'Customer return request';
+        order.returnDetails.requestedAt = new Date().toISOString();
+        order.returnRequested = true;
+
+        if (!order.history) order.history = [];
+        order.history.push({
+          status: `Return Initiated: ${order.returnDetails.reason}`,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          date: new Date().toLocaleDateString()
+        });
+
+        try {
+          await syncOrderUpdateToFirestore(order);
+          if (order.userId) {
+            await createCustomerNotificationInFirestore(order.userId, {
+              title: `🔄 Return Initiated`,
+              message: `Return process for Order #${orderId} has been initiated (${order.returnDetails.reason}).`,
+              icon: '🔄',
+              orderId: orderId,
+              type: 'ORDER_RETURN'
+            });
+          }
+        } catch (e) {
+          console.warn("Return sync error:", e);
+        }
+
+        saveOrders(orders);
+        logActivityEvent('ORDER', `Marked Order #${orderId} as Return Requested`);
+        calculateAnalysisMetrics();
+        renderFilteredOrders();
+
+        // Switch to return subtab automatically to show the user
+        switchOrderSubTab('return');
+        showBuyeroModal({
+          title: 'Order Moved to Return',
+          message: `Order #${orderId} is now under the Return tab. You can approve pickup or complete return when item is received.`,
+          type: 'info'
+        });
+      }
+    }
+
     async function approveOrderReturn(orderId) {
       if (confirm(`Approve doorstep return/exchange pickup for Order #${orderId}?`)) {
         let orders = getStoredOrders();
@@ -5166,13 +5572,13 @@
       }
     }
 
-    /* Sheets View (1-Click Copy Cards) */
+    /* Sheets View (1-Click Copy Cards & Direct Meesho Supplier Order) */
     function renderSheetsViewList(orders) {
       const container = document.getElementById('sheets-orders-container');
       if (!container) return;
 
       if (orders.length === 0) {
-        container.innerHTML = '<div class="py-8 text-center text-slate-400">No orders found for Sheets view.</div>';
+        container.innerHTML = '<div class="py-12 text-center text-slate-400"><i class="fa-solid fa-table-list text-3xl mb-2 text-slate-300"></i><p class="font-bold text-xs">No pending orders for supplier sheets</p><span class="text-[11px]">All active orders have been processed or moved.</span></div>';
         return;
       }
 
@@ -5181,60 +5587,104 @@
         return `
         <div class="bg-white rounded-3xl p-4 border border-slate-200 shadow-sm space-y-3 text-xs">
           <div class="flex items-center justify-between border-b border-slate-100 pb-2">
-            <span class="font-mono font-bold text-brand-navy">Order Sheet: #${o.orderId}</span>
+            <div>
+              <span class="font-mono font-bold text-brand-navy">Order Sheet: #${o.orderId}</span>
+              <span class="text-[10px] text-slate-400 block">${new Date(o.timestamp || Date.now()).toLocaleDateString()}</span>
+            </div>
             <div class="flex items-center gap-1.5">
-              <button onclick="copySourceSupplierOrderSnippet('${o.orderId}')" class="px-2.5 py-1 bg-indigo-600 text-white font-bold rounded-lg text-[10px] hover:bg-indigo-700 transition flex items-center gap-1 shadow-sm" title="Copy formatted supplier order sheet with private links and costs">
-                <i class="fa-solid fa-lock"></i> Source / Supplier Order Details
+              <button onclick="copySourceSupplierOrderSnippet('${o.orderId}')" class="px-2.5 py-1 bg-indigo-600 text-white font-bold rounded-lg text-[10px] hover:bg-indigo-700 transition flex items-center gap-1 shadow-2xs" title="Copy formatted supplier order sheet with private links and costs">
+                <i class="fa-solid fa-lock"></i> Copy Supplier Sheet
               </button>
-              <button onclick="copyFullOrderData('${o.orderId}')" class="px-2 py-1 bg-brand-orange text-white font-bold rounded-lg text-[10px] hover:bg-orange-600 transition flex items-center gap-1">
+              <button onclick="copyFullOrderData('${o.orderId}')" class="px-2 py-1 bg-brand-orange text-white font-bold rounded-lg text-[10px] hover:bg-orange-600 transition flex items-center gap-1 shadow-2xs">
                 <i class="fa-regular fa-copy"></i> Full Row
               </button>
             </div>
           </div>
 
-          <!-- Customer Data with 1-Click Copy Badges -->
-          <div class="space-y-1.5 divide-y divide-slate-100">
+          <!-- Customer Address Row with 1-Click Copy -->
+          <div class="space-y-1.5 divide-y divide-slate-100 bg-slate-50/60 p-2.5 rounded-2xl border border-slate-100">
             <div class="flex items-center justify-between py-1">
-              <span class="text-slate-500">Customer:</span>
+              <span class="text-slate-500 font-medium">Customer:</span>
               <div class="flex items-center gap-2">
                 <span class="font-bold text-slate-900 cursor-pointer hover:underline" onclick="openCustomerProfileModal('${o.phone}', '${o.customerName}', '${o.address}')">${o.customerName}</span>
-                <button onclick="copyToClipboard('${o.customerName}', 'Customer Name')" class="text-slate-400 hover:text-brand-navy p-1"><i class="fa-regular fa-copy"></i></button>
+                <button onclick="copyToClipboard('${o.customerName}', 'Customer Name')" class="text-slate-400 hover:text-brand-navy p-0.5"><i class="fa-regular fa-copy"></i></button>
               </div>
             </div>
 
             <div class="flex items-center justify-between py-1">
-              <span class="text-slate-500">Mobile Phone:</span>
+              <span class="text-slate-500 font-medium">Mobile Phone:</span>
               <div class="flex items-center gap-2">
                 <span class="font-mono font-bold text-slate-800">${o.phone}</span>
-                <button onclick="copyToClipboard('${o.phone}', 'Phone')" class="text-slate-400 hover:text-brand-navy p-1"><i class="fa-regular fa-copy"></i></button>
+                <button onclick="copyToClipboard('${o.phone}', 'Phone')" class="text-slate-400 hover:text-brand-navy p-0.5"><i class="fa-regular fa-copy"></i></button>
               </div>
             </div>
 
             <div class="flex items-center justify-between py-1">
-              <span class="text-slate-500">Address:</span>
-              <div class="flex items-center gap-2 max-w-[220px]">
+              <span class="text-slate-500 font-medium">Address:</span>
+              <div class="flex items-center gap-2 max-w-[240px]">
                 <span class="text-slate-800 truncate" title="${o.address}">${o.address}</span>
-                <button onclick="copyToClipboard('${o.address}', 'Address')" class="text-slate-400 hover:text-brand-navy p-1 flex-shrink-0"><i class="fa-regular fa-copy"></i></button>
+                <button onclick="copyToClipboard('${o.address}', 'Address')" class="text-slate-400 hover:text-brand-navy p-0.5 flex-shrink-0"><i class="fa-regular fa-copy"></i></button>
               </div>
             </div>
 
             <div class="flex items-center justify-between py-1">
-              <span class="text-slate-500">PIN Code:</span>
+              <span class="text-slate-500 font-medium">PIN Code & City:</span>
               <div class="flex items-center gap-2">
-                <span class="font-mono font-bold text-slate-800">${o.pincode}</span>
-                <button onclick="copyToClipboard('${o.pincode}', 'PIN Code')" class="text-slate-400 hover:text-brand-navy p-1"><i class="fa-regular fa-copy"></i></button>
+                <span class="font-mono font-bold text-slate-800">${o.pincode} (${o.city || ''})</span>
+                <button onclick="copyToClipboard('${o.pincode}', 'PIN Code')" class="text-slate-400 hover:text-brand-navy p-0.5"><i class="fa-regular fa-copy"></i></button>
               </div>
-            </div>
-
-            <div class="flex items-center justify-between py-1">
-              <span class="text-slate-500">Items:</span>
-              <span class="text-slate-800 font-medium truncate max-w-[200px]">${(o.items || []).map(i => i.title).join(', ')}</span>
             </div>
 
             <div class="flex items-center justify-between py-1 font-bold">
-              <span class="text-slate-700">COD Total:</span>
-              <span class="font-poppins text-brand-navy">₹${m.totalRevenue}</span>
+              <span class="text-slate-700">Customer COD Amount:</span>
+              <span class="font-poppins text-brand-navy text-sm">₹${m.totalRevenue}</span>
             </div>
+          </div>
+
+          <!-- Items to order from Meesho / Supplier -->
+          <div class="space-y-2">
+            <span class="font-bold text-[11px] text-fuchsia-950 flex items-center gap-1">
+              <i class="fa-solid fa-bag-shopping text-[#f43397]"></i>
+              <span>Meesho Products to Order:</span>
+            </span>
+            ${m.enrichedItems.map(item => {
+              const meeshoUrl = getMeeshoSupplierUrl(item);
+              return `
+              <div class="p-2.5 bg-fuchsia-50/40 rounded-2xl border border-fuchsia-100 space-y-2">
+                <div class="flex items-center gap-2">
+                  <img src="${item.image || ''}" class="w-10 h-10 rounded-lg object-cover border border-slate-200 flex-shrink-0" onerror="this.style.display='none'"/>
+                  <div class="flex-1 min-w-0">
+                    <span class="font-bold text-slate-900 truncate block">${item.title}</span>
+                    <div class="flex items-center gap-2 text-[10px] text-slate-500 mt-0.5">
+                      <span class="bg-indigo-50 border border-indigo-200 px-1.5 py-0.2 rounded font-bold text-indigo-900">Size: ${item.selectedSize || item.size || 'Free'}</span>
+                      <span>Qty: <strong class="text-slate-800">${item.quantity}</strong></span>
+                      <span>•</span>
+                      <span class="text-rose-600 font-semibold">Cost: ₹${item.privateSourceCost}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-1.5 border-t border-fuchsia-100/80 gap-2">
+                  <button type="button" onclick="copyToClipboard('${meeshoUrl}', 'Meesho Link')" class="px-2 py-1 bg-white hover:bg-slate-100 text-slate-700 font-bold rounded-lg border border-slate-200 flex items-center gap-1">
+                    <i class="fa-regular fa-copy text-[9px]"></i>
+                    <span>Copy Link</span>
+                  </button>
+                  <a href="${meeshoUrl}" target="_blank" class="px-3 py-1 bg-gradient-to-r from-[#f43397] to-[#d61b78] text-white font-bold rounded-lg flex items-center gap-1.5 hover:opacity-90 transition shadow-2xs">
+                    <i class="fa-solid fa-bag-shopping text-[10px]"></i>
+                    <span>Open Meesho</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square text-[8px]"></i>
+                  </a>
+                </div>
+              </div>
+            `}).join('')}
+          </div>
+
+          <!-- Quick Return button from Sheets view -->
+          <div class="pt-1 flex justify-end">
+            <button onclick="markOrderAsReturn('${o.orderId}')" class="text-rose-600 hover:text-rose-800 text-[11px] font-bold flex items-center gap-1">
+              <i class="fa-solid fa-arrow-rotate-left"></i>
+              <span>Initiate Return on this order</span>
+            </button>
           </div>
         </div>
       `;}).join('');
@@ -6150,6 +6600,114 @@ FINANCIAL BREAKDOWN:
       localStorage.setItem('buyero_support_chat_messages', JSON.stringify(msgs));
     }
 
+    let adminChatThreadFilter = 'all';
+    let adminChatSearchQuery = '';
+
+    function toggleAdminChatSendMicButton(val) {
+      const micBtn = document.getElementById('admin-chat-mic-btn');
+      const sendBtn = document.getElementById('admin-chat-send-btn');
+      const hasText = Boolean(val && val.trim().length > 0);
+      if (micBtn && sendBtn) {
+        if (hasText) {
+          micBtn.classList.add('hidden');
+          sendBtn.classList.remove('hidden');
+        } else {
+          micBtn.classList.remove('hidden');
+          sendBtn.classList.add('hidden');
+        }
+      }
+    }
+
+    function showCallNotice(type) {
+      showBuyeroModal({
+        title: `WhatsApp ${type} Call`,
+        message: `Direct ${type} Call feature is available via WhatsApp Business (+91 9174573889).\n\nCustomer phone: ${getActiveChatCustomerPhone() || '+91 9174573889'}`,
+        confirmText: 'Open WhatsApp',
+        type: 'info'
+      }).then(confirmed => {
+        if (confirmed) {
+          const phone = (getActiveChatCustomerPhone() || '919174573889').replace(/[^0-9]/g, '');
+          window.open(`https://wa.me/${phone}?text=Hello%20from%20Buyero%20Support`, '_blank');
+        }
+      });
+    }
+
+    function getActiveChatCustomerPhone() {
+      if (!selectedChatClientId) return '';
+      const matched = cachedAdminUsers.find(u => u.uid === selectedChatClientId || u.phone === selectedChatClientId);
+      return matched?.phone || '';
+    }
+
+    function showAttachmentNotice() {
+      const inp = document.createElement('input');
+      inp.type = 'file';
+      inp.accept = 'image/*,application/pdf';
+      inp.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const fakeMsg = `[Shared Attachment: ${file.name}]`;
+          const input = document.getElementById('admin-chat-reply-input');
+          if (input) {
+            input.value = fakeMsg;
+            toggleAdminChatSendMicButton(input.value);
+          }
+        }
+      };
+      inp.click();
+    }
+
+    function showCameraNotice() {
+      showBuyeroModal({
+        title: 'Capture Photo',
+        message: 'Camera capture is ready. You can attach a product inspection or warehouse packaging photo to send to the customer.',
+        confirmText: 'Attach Photo',
+        type: 'info'
+      }).then(c => {
+        if (c) showAttachmentNotice();
+      });
+    }
+
+    function showMicNotice() {
+      showBuyeroModal({
+        title: 'Voice Note',
+        message: 'Hold or click to record a voice message for this customer. (Audio note support ready).',
+        confirmText: 'OK',
+        type: 'info'
+      });
+    }
+
+    function setAdminChatThreadFilter(filter) {
+      adminChatThreadFilter = filter;
+      const btnAll = document.getElementById('chat-filter-all');
+      const btnActive = document.getElementById('chat-filter-active');
+      const btnUnread = document.getElementById('chat-filter-unread');
+
+      const activeClass = "px-2.5 py-0.5 rounded-full bg-[#008069] text-white shadow-xs transition";
+      const inactiveClass = "px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700 hover:bg-slate-300 transition";
+
+      if (btnAll) btnAll.className = (filter === 'all') ? activeClass : inactiveClass;
+      if (btnActive) btnActive.className = (filter === 'active') ? activeClass : inactiveClass;
+      if (btnUnread) btnUnread.className = (filter === 'unread') ? activeClass : inactiveClass;
+
+      loadAdminChatThreads();
+    }
+
+    function filterAdminChatThreads() {
+      const inp = document.getElementById('admin-chat-search-input');
+      const clearBtn = document.getElementById('admin-chat-search-clear');
+      adminChatSearchQuery = (inp ? inp.value : '').toLowerCase().trim();
+      if (clearBtn) {
+        clearBtn.classList.toggle('hidden', !adminChatSearchQuery);
+      }
+      loadAdminChatThreads();
+    }
+
+    function clearAdminChatSearch() {
+      const inp = document.getElementById('admin-chat-search-input');
+      if (inp) inp.value = '';
+      filterAdminChatThreads();
+    }
+
     function loadAdminChatThreads() {
       const listContainer = document.getElementById('admin-chat-threads-list');
       if (!listContainer) return;
@@ -6158,12 +6716,14 @@ FINANCIAL BREAKDOWN:
       // Group by clientId
       const threadMap = {};
       messages.forEach(m => {
-        const id = m.clientId || 'GUEST';
+        const id = m.clientId || m.userId || 'GUEST';
         if (!threadMap[id]) {
           threadMap[id] = {
             clientId: id,
-            clientName: m.clientName || 'Customer',
-            clientPhone: m.clientPhone || '',
+            clientName: m.clientName || m.sender || 'Customer',
+            clientPhone: m.clientPhone || m.userPhone || '',
+            clientEmail: '',
+            photoURL: '',
             lastMessage: m.text,
             lastTime: m.timestamp || '',
             unread: !m.isAdmin && !m.seen
@@ -6171,12 +6731,58 @@ FINANCIAL BREAKDOWN:
         } else {
           threadMap[id].lastMessage = m.text;
           threadMap[id].lastTime = m.timestamp || '';
+          if (m.clientName && m.clientName !== 'Buyero Support') threadMap[id].clientName = m.clientName;
+          if (m.userPhone) threadMap[id].clientPhone = m.userPhone;
           if (!m.isAdmin && !m.seen) threadMap[id].unread = true;
         }
       });
 
-      const threads = Object.values(threadMap);
-      const unreadTotal = threads.filter(t => t.unread).length;
+      // Merge all registered customers from user system so admin can chat with any customer
+      const allAppUsers = (typeof cachedAdminUsers !== 'undefined' && cachedAdminUsers.length > 0) 
+        ? cachedAdminUsers 
+        : getStoredUsers();
+      allAppUsers.forEach(u => {
+        const uid = u.uuid || u.userId || u.uid;
+        if (!uid) return;
+        if (!threadMap[uid]) {
+          threadMap[uid] = {
+            clientId: uid,
+            clientName: u.name || u.email || 'Customer',
+            clientPhone: u.phone || '',
+            clientEmail: u.email || '',
+            photoURL: u.photoURL || '',
+            lastMessage: 'Tap to start conversation',
+            lastTime: '',
+            unread: false
+          };
+        } else {
+          if (!threadMap[uid].clientPhone && u.phone) threadMap[uid].clientPhone = u.phone;
+          if (!threadMap[uid].clientEmail && u.email) threadMap[uid].clientEmail = u.email;
+          if (!threadMap[uid].photoURL && u.photoURL) threadMap[uid].photoURL = u.photoURL;
+        }
+      });
+
+      let threads = Object.values(threadMap);
+
+      // Apply Search filter
+      if (adminChatSearchQuery) {
+        threads = threads.filter(t => 
+          (t.clientName && t.clientName.toLowerCase().includes(adminChatSearchQuery)) ||
+          (t.clientId && t.clientId.toLowerCase().includes(adminChatSearchQuery)) ||
+          (t.clientPhone && t.clientPhone.toLowerCase().includes(adminChatSearchQuery)) ||
+          (t.clientEmail && t.clientEmail.toLowerCase().includes(adminChatSearchQuery)) ||
+          (t.lastMessage && t.lastMessage.toLowerCase().includes(adminChatSearchQuery))
+        );
+      }
+
+      // Apply Status filter (All, Active, Unread)
+      if (adminChatThreadFilter === 'unread') {
+        threads = threads.filter(t => t.unread);
+      } else if (adminChatThreadFilter === 'active') {
+        threads = threads.filter(t => t.unread || (t.lastMessage && t.lastMessage !== 'Tap to start conversation'));
+      }
+
+      const unreadTotal = Object.values(threadMap).filter(t => t.unread).length;
       const unreadBadge = document.getElementById('admin-chat-unread-count');
       const navBadge = document.getElementById('nav-support-badge');
 
@@ -6190,35 +6796,52 @@ FINANCIAL BREAKDOWN:
       }
 
       if (threads.length === 0) {
-        listContainer.innerHTML = '<div class="p-4 text-center text-slate-400">No active customer threads.</div>';
+        listContainer.innerHTML = `
+          <div class="py-12 px-4 text-center text-slate-400">
+            <i class="fa-brands fa-whatsapp text-3xl mb-2 text-slate-300"></i>
+            <p class="text-xs font-medium">No chats found</p>
+            <span class="text-[10px] text-slate-400">Search customer by name or phone above</span>
+          </div>
+        `;
         return;
       }
 
-      listContainer.innerHTML = threads.map(t => `
+      listContainer.innerHTML = threads.map(t => {
+        const isSelected = selectedChatClientId === t.clientId;
+        const initial = (t.clientName || 'C')[0].toUpperCase();
+        const avatarHtml = t.photoURL 
+          ? `<img src="${t.photoURL}" alt="${escapeHtml(t.clientName)}" class="w-10 h-10 rounded-full object-cover flex-shrink-0 shadow-xs" onerror="this.outerHTML='<div class=\\\'w-10 h-10 rounded-full bg-slate-300 text-slate-700 flex items-center justify-center font-bold text-sm flex-shrink-0 shadow-xs\\\'>${initial}</div>'"/>`
+          : `<div class="w-10 h-10 rounded-full bg-slate-300 text-slate-700 flex items-center justify-center font-bold text-sm flex-shrink-0 shadow-xs">${initial}</div>`;
+
+        return `
         <div 
-          onclick="selectChatThread('${t.clientId}', '${t.clientName}')" 
-          class="p-3 hover:bg-slate-100 cursor-pointer transition flex items-center justify-between ${
-            selectedChatClientId === t.clientId ? 'bg-blue-50/80 border-l-4 border-brand-navy' : ''
+          onclick="selectChatThread('${t.clientId}', '${escapeHtml(t.clientName)}')" 
+          class="p-3 hover:bg-[#f5f6f6] cursor-pointer transition flex items-center justify-between gap-2.5 ${
+            isSelected ? 'bg-[#ebebeb] border-l-4 border-[#00a884]' : ''
           }"
         >
-          <div class="flex items-center gap-2 min-w-0">
-            <div class="w-7 h-7 rounded-full bg-brand-navy text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
-              ${(t.clientName || 'C')[0].toUpperCase()}
-            </div>
-            <div class="min-w-0">
-              <h5 class="font-bold text-slate-800 text-xs truncate">${t.clientName}</h5>
-              ${t.clientPhone ? `<span class="text-[9px] text-emerald-700 font-semibold block truncate">📞 ${t.clientPhone}</span>` : ''}
-              <p class="text-[10px] text-slate-500 truncate max-w-[130px]">${t.lastMessage || 'Sent message'}</p>
+          <div class="flex items-center gap-2.5 min-w-0 flex-1">
+            ${avatarHtml}
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center justify-between gap-1 mb-0.5">
+                <h5 class="font-bold text-slate-900 text-xs truncate">${escapeHtml(t.clientName)}</h5>
+                <span class="text-[10px] text-slate-400 flex-shrink-0">${t.lastTime}</span>
+              </div>
+              <p class="text-[11px] text-slate-500 truncate flex items-center gap-1">
+                ${t.unread ? '<i class="fa-solid fa-circle text-[6px] text-[#00a884]"></i>' : (t.lastMessage && t.lastMessage !== 'Tap to start conversation' ? '<i class="fa-solid fa-check-double text-[9px] text-[#53bdeb]"></i>' : '')}
+                <span>${escapeHtml(t.lastMessage || 'Message')}</span>
+              </p>
             </div>
           </div>
-          <div class="text-right flex flex-col items-end flex-shrink-0">
-            <span class="text-[9px] text-slate-400">${t.lastTime}</span>
-            ${t.unread ? '<span class="w-2 h-2 rounded-full bg-blue-600 mt-1"></span>' : ''}
-          </div>
+          ${t.unread ? `
+            <span class="w-4 h-4 rounded-full bg-[#25D366] text-white font-extrabold text-[9px] flex items-center justify-center shadow-xs flex-shrink-0">
+              1
+            </span>
+          ` : ''}
         </div>
-      `).join('');
+      `}).join('');
 
-      if (!selectedChatClientId && threads.length > 0) {
+      if (!selectedChatClientId && threads.length > 0 && window.innerWidth >= 768) {
         selectChatThread(threads[0].clientId, threads[0].clientName);
       }
     }
@@ -6227,8 +6850,17 @@ FINANCIAL BREAKDOWN:
       selectedChatClientId = clientId;
       const avatarEl = document.getElementById('active-chat-avatar');
       const nameEl = document.getElementById('active-chat-name');
-      const idEl = document.getElementById('active-chat-id');
       const profileBtn = document.getElementById('btn-chat-view-profile');
+
+      // Responsive mobile switch: Hide list, show chat conversation pane
+      const leftPane = document.getElementById('admin-chat-left-pane');
+      const rightPane = document.getElementById('admin-chat-right-pane');
+      if (leftPane && rightPane) {
+        leftPane.classList.add('hidden');
+        leftPane.classList.remove('flex');
+        rightPane.classList.remove('hidden');
+        rightPane.classList.add('flex');
+      }
 
       // Find client photo from cached users
       const matchedClient = cachedAdminUsers.find(u => u.uid === clientId || u.phone === clientId || u.name === clientName);
@@ -6242,13 +6874,12 @@ FINANCIAL BREAKDOWN:
         }
       }
       if (nameEl) nameEl.textContent = clientName || 'Customer';
-      if (idEl) idEl.textContent = `ID: ${clientId}`;
       if (profileBtn) profileBtn.classList.remove('hidden');
 
       // Mark thread messages as seen (✓✓)
       let messages = getStoredChatMessages();
       messages.forEach(m => {
-        if (m.clientId === clientId && !m.isAdmin) {
+        if ((m.clientId === clientId || m.userId === clientId) && !m.isAdmin) {
           m.seen = true;
         }
       });
@@ -6258,48 +6889,70 @@ FINANCIAL BREAKDOWN:
       loadAdminChatThreads();
     }
 
+    function closeAdminActiveChatMobile() {
+      selectedChatClientId = null;
+      const leftPane = document.getElementById('admin-chat-left-pane');
+      const rightPane = document.getElementById('admin-chat-right-pane');
+      if (leftPane && rightPane) {
+        leftPane.classList.remove('hidden');
+        leftPane.classList.add('flex');
+        rightPane.classList.add('hidden');
+        rightPane.classList.remove('flex');
+      }
+    }
+
     function renderActiveThreadMessages() {
       const container = document.getElementById('admin-chat-messages-container');
       if (!container || !selectedChatClientId) return;
 
       const messages = getStoredChatMessages().filter(m => 
-        m.clientId === selectedChatClientId || m.clientId === 'ALL'
+        m.clientId === selectedChatClientId || m.userId === selectedChatClientId || m.clientId === 'ALL'
       );
 
       if (messages.length === 0) {
-        container.innerHTML = '<div class="py-12 text-center text-slate-400">No messages in this conversation yet.</div>';
+        container.innerHTML = `
+          <div class="py-16 text-center text-slate-500">
+            <i class="fa-brands fa-whatsapp text-4xl mb-2 text-[#25D366]/70"></i>
+            <p class="font-semibold text-xs text-slate-700">No messages yet with this customer</p>
+            <span class="text-[10px] text-slate-400 block mt-0.5">Send a greeting message below</span>
+          </div>
+        `;
         return;
       }
 
-      container.innerHTML = messages.map(m => `
-        <div class="flex ${m.isAdmin ? 'justify-end' : 'justify-start'}">
-          <div class="max-w-[80%] p-2.5 rounded-2xl shadow-sm text-xs ${
-            m.isAdmin 
-              ? 'bg-brand-navy text-white rounded-tr-none' 
-              : 'bg-white text-slate-800 border border-slate-200 rounded-tl-none'
+      container.innerHTML = messages.map(m => {
+        const isAdminMsg = Boolean(m.isAdmin);
+
+        return `
+        <div class="flex ${isAdminMsg ? 'justify-end' : 'justify-start'} animate-in fade-in duration-150">
+          <div class="relative max-w-[82%] px-3 py-2 text-xs shadow-xs transition ${
+            isAdminMsg 
+              ? 'bg-[#d9fdd3] text-slate-900 rounded-2xl rounded-tr-xs border border-emerald-100' 
+              : 'bg-white text-slate-900 rounded-2xl rounded-tl-xs border border-slate-100'
           }">
-            <div class="flex items-center justify-between gap-3 mb-1">
-              <span class="font-bold text-[10px] ${m.isAdmin ? 'text-amber-300' : 'text-slate-500'}">
-                ${m.isAdmin ? 'Buyero Support' : (m.clientName || 'Customer')}
+            <div class="flex items-center justify-between gap-3 mb-0.5">
+              <span class="font-bold text-[10px] ${isAdminMsg ? 'text-[#008069]' : 'text-slate-500'}">
+                ${isAdminMsg ? 'Buyero Support' : (m.sender || m.clientName || 'Customer')}
               </span>
-              <div class="flex items-center gap-1.5 text-[9px] opacity-75">
-                ${m.isEdited ? '<span class="italic text-amber-300 font-medium">(Edited)</span>' : ''}
-                <span>${m.timestamp || ''}</span>
-              </div>
+              ${m.isEdited ? '<span class="italic text-[9px] text-amber-600 font-medium">(Edited)</span>' : ''}
             </div>
-            <p class="leading-relaxed whitespace-pre-wrap">${m.text}</p>
-            <div class="flex items-center justify-between mt-1 text-[9px] opacity-75">
-              ${m.isAdmin ? `
-                <button type="button" onclick="editAdminChatMessage('${m.id}')" class="text-amber-200 hover:text-white underline font-semibold flex items-center gap-1">
-                  <i class="fa-solid fa-pen text-[8px]"></i> Edit
+
+            <p class="leading-relaxed whitespace-pre-wrap text-[11.5px]">${escapeHtml(m.text)}</p>
+
+            <div class="flex items-center justify-end gap-1 mt-1 text-[9px] text-slate-500 font-mono select-none">
+              <span>${m.timestamp || ''}</span>
+              ${isAdminMsg ? `
+                <i class="fa-solid fa-check-double text-[10px] text-[#53bdeb]"></i>
+                <button type="button" onclick="editAdminChatMessage('${m.id}')" class="ml-1 text-slate-400 hover:text-slate-700" title="Edit message">
+                  <i class="fa-solid fa-pencil text-[8px]"></i>
                 </button>
-                <span>✓✓ Delivered</span>
-              ` : `<span></span>`}
+              ` : ''}
             </div>
           </div>
         </div>
-      `).join('');
+      `}).join('');
 
+      // Auto scroll to bottom
       container.scrollTop = container.scrollHeight;
     }
 
@@ -6352,11 +7005,13 @@ FINANCIAL BREAKDOWN:
       const newMsg = {
         id: 'msg_' + Date.now(),
         clientId: selectedChatClientId,
+        userId: selectedChatClientId,
         sender: 'Buyero Support',
         text: text,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         isAdmin: true,
-        seen: true
+        seen: true,
+        createdAt: new Date().toISOString()
       };
 
       let messages = getStoredChatMessages();
@@ -6371,6 +7026,7 @@ FINANCIAL BREAKDOWN:
       }
 
       input.value = '';
+      toggleAdminChatSendMicButton('');
       renderActiveThreadMessages();
       loadAdminChatThreads();
 
