@@ -848,170 +848,146 @@
         </button>
       </div>
 
-      <!-- Support Sub-Tab 1: WhatsApp-Style Live Chat Engine -->
-      <div id="subtab-content-supp-chat" class="bg-white rounded-3xl border border-slate-200 shadow-md overflow-hidden flex flex-col h-[600px] max-h-[85vh]">
+      <!-- Support Sub-Tab 1: Buyero Live Support Chat Engine -->
+      <div id="subtab-content-supp-chat" class="bg-white rounded-3xl border border-slate-200 shadow-md overflow-hidden flex flex-col h-[620px] max-h-[85vh]">
         <div class="flex flex-col md:grid md:grid-cols-3 h-full divide-y md:divide-y-0 md:divide-x divide-slate-200">
           
-          <!-- Left: WhatsApp Chats & Customer Conversation Threads List -->
-          <div id="admin-chat-left-pane" class="md:col-span-1 flex flex-col h-full bg-[#f0f2f5] min-h-0">
-            <!-- Header -->
-            <div class="p-3 bg-[#008069] text-white flex items-center justify-between shadow-xs">
-              <div class="flex items-center gap-2">
-                <i class="fa-brands fa-whatsapp text-xl"></i>
-                <span class="text-sm font-bold font-poppins">Customer Chats</span>
+          <!-- Left: Customer Conversation Threads List (Matches WhatsApp Chat List Layout) -->
+          <div id="admin-chat-left-pane" class="md:col-span-1 flex flex-col h-full bg-[#f8fafc] min-h-0">
+            <!-- Buyero Branded Chat Header -->
+            <div class="p-3.5 bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white flex items-center justify-between shadow-xs">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-xl bg-white/10 border border-amber-400/30 flex items-center justify-center text-amber-400 flex-shrink-0">
+                  <i class="fa-solid fa-headset text-sm"></i>
+                </div>
+                <div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-poppins font-black text-sm text-white tracking-tight">Buyer<span class="text-brand-orange" style="color:#f77f33;">o</span></span>
+                    <span class="px-1.5 py-0.2 bg-amber-400/20 text-amber-300 text-[8.5px] font-bold rounded-full uppercase tracking-wider">Support</span>
+                  </div>
+                  <p class="text-[9.5px] text-slate-300 font-medium">Customer Conversations</p>
+                </div>
               </div>
-              <button onclick="loadAdminChatThreads()" class="w-7 h-7 rounded-full hover:bg-white/20 flex items-center justify-center text-xs transition" title="Refresh chats">
+              <button onclick="loadAdminChatThreads()" class="w-7 h-7 rounded-full hover:bg-white/20 flex items-center justify-center text-xs text-slate-300 hover:text-white transition active:scale-95" title="Refresh chats">
                 <i class="fa-solid fa-rotate-right"></i>
               </button>
             </div>
 
-            <!-- WhatsApp Search Bar -->
-            <div class="p-2 bg-white border-b border-slate-200 space-y-1.5">
+            <!-- WhatsApp Style Search Bar (As shown in screenshot) -->
+            <div class="p-2.5 bg-white border-b border-slate-200 space-y-2">
               <div class="relative flex items-center">
-                <i class="fa-solid fa-magnifying-glass absolute left-3 text-slate-400 text-xs"></i>
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 text-slate-400 text-xs pointer-events-none"></i>
                 <input 
                   type="text" 
                   id="admin-chat-search-input" 
                   oninput="filterAdminChatThreads()" 
-                  placeholder="Search customer by name, phone..." 
-                  class="w-full pl-8 pr-7 py-1.5 text-xs bg-[#f0f2f5] rounded-xl outline-none border border-transparent focus:border-[#00a884] focus:bg-white transition"
+                  placeholder="Search customer by name, number or message..." 
+                  class="w-full pl-9 pr-8 py-2 text-xs bg-[#f0f2f5] hover:bg-[#e9ecef] focus:bg-white rounded-full outline-none border border-transparent focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] transition shadow-inner"
                 />
-                <button type="button" id="admin-chat-search-clear" onclick="clearAdminChatSearch()" class="hidden absolute right-2.5 text-slate-400 hover:text-slate-600 text-xs">
+                <button type="button" id="admin-chat-search-clear" onclick="clearAdminChatSearch()" class="hidden absolute right-3 text-slate-400 hover:text-slate-600 text-xs">
                   <i class="fa-solid fa-xmark"></i>
                 </button>
               </div>
 
               <!-- Filter Pills (All, Active, Unread) -->
-              <div class="flex items-center gap-1.5 text-[10px] font-bold">
-                <button type="button" id="chat-filter-all" onclick="setAdminChatThreadFilter('all')" class="px-2.5 py-0.5 rounded-full bg-[#008069] text-white shadow-xs transition">
+              <div class="flex items-center gap-1.5 text-[10px] font-bold px-1">
+                <button type="button" id="chat-filter-all" onclick="setAdminChatThreadFilter('all')" class="px-3 py-1 rounded-full bg-slate-900 text-white shadow-xs transition">
                   All
                 </button>
-                <button type="button" id="chat-filter-active" onclick="setAdminChatThreadFilter('active')" class="px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700 hover:bg-slate-300 transition">
-                  Active
-                </button>
-                <button type="button" id="chat-filter-unread" onclick="setAdminChatThreadFilter('unread')" class="px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700 hover:bg-slate-300 transition">
+                <button type="button" id="chat-filter-unread" onclick="setAdminChatThreadFilter('unread')" class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 transition">
                   Unread
+                </button>
+                <button type="button" id="chat-filter-active" onclick="setAdminChatThreadFilter('active')" class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 transition">
+                  Active
                 </button>
               </div>
             </div>
 
-            <!-- Thread items list -->
-            <div id="admin-chat-threads-list" class="flex-1 overflow-y-auto divide-y divide-slate-200/60 text-xs bg-white">
+            <!-- Customer Threads List (Scrollable, sorted by latest message) -->
+            <div id="admin-chat-threads-list" class="flex-1 overflow-y-auto divide-y divide-slate-100 text-xs bg-white">
               <!-- Populated dynamically -->
             </div>
           </div>
 
-          <!-- Right: WhatsApp Active Conversation View -->
+          <!-- Right: Dedicated Full Chat Conversation View -->
           <div id="admin-chat-right-pane" class="md:col-span-2 hidden md:flex flex-col h-full bg-white min-h-0">
-            <!-- WhatsApp Top Bar with Audio & Video Call Icons -->
-            <div class="p-2.5 bg-[#008069] text-white flex items-center justify-between shadow-sm z-10 flex-shrink-0">
+            <!-- Full Chat Top Bar (Back button, Avatar, Name/Phone, Profile button, NO call buttons) -->
+            <div class="p-2.5 bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white flex items-center justify-between shadow-sm z-10 flex-shrink-0">
               <div class="flex items-center gap-2 min-w-0">
-                <!-- Mobile Back to List Button -->
+                <!-- Back to Chats List Button (Always visible on mobile, returns to list) -->
                 <button 
                   type="button" 
                   onclick="closeAdminActiveChatMobile()" 
-                  class="md:hidden w-8 h-8 rounded-full hover:bg-white/20 active:scale-95 flex items-center justify-center text-white transition flex-shrink-0"
-                  title="Back to Chats List"
+                  class="w-8 h-8 rounded-full hover:bg-white/20 active:scale-95 flex items-center justify-center text-white transition flex-shrink-0"
+                  title="Back to All Chats"
                 >
                   <i class="fa-solid fa-arrow-left text-sm"></i>
                 </button>
 
-                <div class="relative w-9 h-9 rounded-full bg-[#128C7E] text-white border border-white/20 flex items-center justify-center font-bold text-xs overflow-hidden flex-shrink-0" id="active-chat-avatar">
+                <div class="relative w-10 h-10 rounded-full bg-slate-700 text-white border-2 border-amber-400/40 flex items-center justify-center font-bold text-xs overflow-hidden flex-shrink-0 shadow-sm" id="active-chat-avatar">
                   U
                 </div>
                 <div class="min-w-0">
-                  <h4 class="font-bold text-xs leading-tight truncate" id="active-chat-name">Select Customer</h4>
-                  <div class="flex items-center gap-1.5 text-[10px] text-emerald-100">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse"></span>
-                    <span class="truncate" id="active-chat-status-text">online on Buyero</span>
+                  <h4 class="font-bold text-xs leading-tight truncate text-white" id="active-chat-name">Select Customer</h4>
+                  <div class="flex items-center gap-1.5 text-[10px] text-emerald-300">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span class="truncate" id="active-chat-status-text">Active on Buyero</span>
                   </div>
                 </div>
               </div>
 
-              <!-- WhatsApp Action Icons: Video Call, Voice Call, Customer Profile -->
-              <div class="flex items-center gap-1">
-                <!-- Video Call Button (WhatsApp Style - Show only) -->
-                <button 
-                  type="button" 
-                  onclick="showCallNotice('Video')" 
-                  class="w-8 h-8 rounded-full hover:bg-white/15 active:scale-90 flex items-center justify-center text-white transition" 
-                  title="Video Call (Show option)"
-                >
-                  <i class="fa-solid fa-video text-sm"></i>
-                </button>
-
-                <!-- Voice Audio Call Button (WhatsApp Style - Show only) -->
-                <button 
-                  type="button" 
-                  onclick="showCallNotice('Voice')" 
-                  class="w-8 h-8 rounded-full hover:bg-white/15 active:scale-90 flex items-center justify-center text-white transition" 
-                  title="Audio Call (Show option)"
-                >
-                  <i class="fa-solid fa-phone text-sm"></i>
-                </button>
-
-                <!-- Direct Customer Profile Link -->
+              <!-- Action Bar (Customer Profile & Refresh, NO CALL BUTTONS) -->
+              <div class="flex items-center gap-1.5">
                 <button 
                   id="btn-chat-view-profile"
                   onclick="viewActiveCustomerProfileFromChat()" 
-                  class="hidden px-2.5 py-1 bg-white/15 hover:bg-white/25 text-white rounded-lg text-[10px] font-bold transition flex items-center gap-1 ml-1"
+                  class="hidden px-2.5 py-1 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[10px] font-bold transition flex items-center gap-1 border border-white/10"
+                  title="View Customer Profile"
                 >
                   <i class="fa-solid fa-user"></i>
                   <span>Profile</span>
                 </button>
+                <button 
+                  type="button"
+                  onclick="renderActiveThreadMessages()" 
+                  class="w-7 h-7 rounded-full hover:bg-white/20 flex items-center justify-center text-xs text-slate-300 hover:text-white transition"
+                  title="Refresh conversation"
+                >
+                  <i class="fa-solid fa-rotate-right"></i>
+                </button>
               </div>
             </div>
 
-            <!-- WhatsApp Chat Area with Authentic Wallpaper & Scrollable Messages Stream -->
+            <!-- Chat Messages Wallpaper & Scroll Stream -->
             <div 
               id="admin-chat-messages-container" 
               class="flex-1 p-3.5 overflow-y-auto space-y-2 text-xs" 
               style="background-color: #efeae2; background-image: radial-gradient(#d1c7b7 0.8px, #efeae2 0.8px); background-size: 16px 16px;"
             >
-              <div class="py-16 text-center text-slate-500">
-                <i class="fa-brands fa-whatsapp text-5xl mb-3 text-[#25D366]/60"></i>
-                <p class="font-medium">Select a customer thread to start chatting</p>
-                <span class="text-[10px] text-slate-400 block mt-1">End-to-end synced with Firebase Realtime</span>
+              <div class="py-20 text-center text-slate-500">
+                <div class="w-14 h-14 rounded-2xl bg-white/80 border border-slate-200 shadow-sm flex items-center justify-center text-slate-400 text-2xl mx-auto mb-3">
+                  <i class="fa-solid fa-comments"></i>
+                </div>
+                <p class="font-semibold text-slate-700">Select a customer to view messages</p>
+                <span class="text-[10px] text-slate-400 block mt-1">Directly synced with Firebase Firestore in real time</span>
               </div>
             </div>
 
-            <!-- WhatsApp Chat Bottom Bar: Attachment, Camera, Input, Mic / Send Button -->
-            <form id="admin-chat-reply-form" onsubmit="handleSendAdminReply(event)" class="p-2 bg-[#f0f2f5] border-t border-slate-200 flex items-center gap-1.5 flex-shrink-0">
-              <!-- Attachment Button -->
-              <button type="button" onclick="showAttachmentNotice()" class="w-9 h-9 text-slate-500 hover:text-slate-700 flex items-center justify-center rounded-full hover:bg-slate-200 transition" title="Attach file">
-                <i class="fa-solid fa-paperclip text-sm"></i>
-              </button>
-
-              <!-- Camera Button -->
-              <button type="button" onclick="showCameraNotice()" class="w-9 h-9 text-slate-500 hover:text-slate-700 flex items-center justify-center rounded-full hover:bg-slate-200 transition" title="Camera">
-                <i class="fa-solid fa-camera text-sm"></i>
-              </button>
-
-              <!-- Message Input -->
+            <!-- Chat Bottom Bar: Clean Text Input & Send Button (NO Attachment, NO Camera, NO Mic) -->
+            <form id="admin-chat-reply-form" onsubmit="handleSendAdminReply(event)" class="p-2.5 bg-[#f0f2f5] border-t border-slate-200 flex items-center gap-2 flex-shrink-0">
               <input 
                 type="text" 
                 id="admin-chat-reply-input" 
-                oninput="toggleAdminChatSendMicButton(this.value)"
-                placeholder="Type a message..." 
-                class="flex-1 px-3.5 py-2 text-xs bg-white border border-slate-200 rounded-full outline-none focus:border-[#00a884] focus:ring-1 focus:ring-[#00a884]"
+                placeholder="Type a message to customer..." 
+                class="flex-1 px-4 py-2.5 text-xs bg-white border border-slate-300 rounded-full outline-none focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] transition shadow-xs"
+                autocomplete="off"
               />
 
-              <!-- Microphone Button (Default when input is empty) -->
-              <button 
-                type="button" 
-                id="admin-chat-mic-btn" 
-                onclick="showMicNotice()" 
-                class="w-9 h-9 bg-[#00a884] hover:bg-[#008f6f] text-white rounded-full flex items-center justify-center text-sm shadow-sm transition active:scale-95 flex-shrink-0"
-                title="Hold for Voice Message"
-              >
-                <i class="fa-solid fa-microphone"></i>
-              </button>
-
-              <!-- Send Button (Dynamically appears when typing) -->
+              <!-- Send Button -->
               <button 
                 type="submit" 
                 id="admin-chat-send-btn" 
-                class="hidden w-9 h-9 bg-[#00a884] hover:bg-[#008f6f] text-white rounded-full flex items-center justify-center text-sm shadow-md transition active:scale-95 flex-shrink-0"
+                class="w-10 h-10 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-full flex items-center justify-center text-sm shadow-md transition active:scale-95 flex-shrink-0"
                 title="Send message"
               >
                 <i class="fa-solid fa-paper-plane text-xs"></i>
@@ -1039,7 +1015,7 @@
         <h4 class="font-bold text-xs uppercase tracking-wider text-slate-800">Support FAQs & Contact Configuration</h4>
         <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-2">
           <div class="flex justify-between items-center">
-            <span class="font-bold text-slate-700">Official Support WhatsApp:</span>
+            <span class="font-bold text-slate-700">Official Support Helpline:</span>
             <span class="font-mono font-bold text-emerald-700">+91 9174573889</span>
           </div>
           <div class="flex justify-between items-center">
@@ -6619,16 +6595,12 @@ FINANCIAL BREAKDOWN:
     }
 
     function showCallNotice(type) {
+      const custPhone = getActiveChatCustomerPhone() || '+91 9174573889';
       showBuyeroModal({
-        title: `WhatsApp ${type} Call`,
-        message: `Direct ${type} Call feature is available via WhatsApp Business (+91 9174573889).\n\nCustomer phone: ${getActiveChatCustomerPhone() || '+91 9174573889'}`,
-        confirmText: 'Open WhatsApp',
+        title: `Buyero Support Desk`,
+        message: `Chat is the primary and direct real-time support channel.\nCustomer contact: ${custPhone}`,
+        confirmText: 'Got it',
         type: 'info'
-      }).then(confirmed => {
-        if (confirmed) {
-          const phone = (getActiveChatCustomerPhone() || '919174573889').replace(/[^0-9]/g, '');
-          window.open(`https://wa.me/${phone}?text=Hello%20from%20Buyero%20Support`, '_blank');
-        }
       });
     }
 
@@ -6708,6 +6680,25 @@ FINANCIAL BREAKDOWN:
       filterAdminChatThreads();
     }
 
+    function getChatAvatarPalette(name) {
+      const palettes = [
+        { bg: '#dbeafe', text: '#1d4ed8' }, // blue
+        { bg: '#fce7f3', text: '#be185d' }, // pink
+        { bg: '#dcfce7', text: '#15803d' }, // green
+        { bg: '#fef3c7', text: '#b45309' }, // amber
+        { bg: '#ede9fe', text: '#6d28d9' }, // purple
+        { bg: '#ffedd5', text: '#c2410c' }, // orange
+        { bg: '#ccfbf1', text: '#0f766e' }, // teal
+        { bg: '#e0e7ff', text: '#4338ca' }  // indigo
+      ];
+      let hash = 0;
+      const str = (name || 'Customer');
+      for (let i = 0; i < str.length; i++) {
+        hash = (hash << 5) - hash + str.charCodeAt(i);
+      }
+      return palettes[Math.abs(hash) % palettes.length];
+    }
+
     function loadAdminChatThreads() {
       const listContainer = document.getElementById('admin-chat-threads-list');
       if (!listContainer) return;
@@ -6720,20 +6711,29 @@ FINANCIAL BREAKDOWN:
         if (!threadMap[id]) {
           threadMap[id] = {
             clientId: id,
-            clientName: m.clientName || m.sender || 'Customer',
+            clientName: (m.clientName && m.clientName !== 'Buyero Support') ? m.clientName : (m.sender !== 'Buyero Support' ? m.sender : 'Customer'),
             clientPhone: m.clientPhone || m.userPhone || '',
-            clientEmail: '',
-            photoURL: '',
+            clientEmail: m.userEmail || '',
+            photoURL: m.userPhoto || '',
             lastMessage: m.text,
             lastTime: m.timestamp || '',
-            unread: !m.isAdmin && !m.seen
+            lastIsoTime: m.createdAt || '',
+            lastIsAdmin: Boolean(m.isAdmin),
+            lastSeen: Boolean(m.seen),
+            unreadCount: (!m.isAdmin && !m.seen) ? 1 : 0
           };
         } else {
           threadMap[id].lastMessage = m.text;
-          threadMap[id].lastTime = m.timestamp || '';
+          threadMap[id].lastTime = m.timestamp || threadMap[id].lastTime;
+          threadMap[id].lastIsoTime = m.createdAt || threadMap[id].lastIsoTime;
+          threadMap[id].lastIsAdmin = Boolean(m.isAdmin);
+          threadMap[id].lastSeen = Boolean(m.seen);
           if (m.clientName && m.clientName !== 'Buyero Support') threadMap[id].clientName = m.clientName;
           if (m.userPhone) threadMap[id].clientPhone = m.userPhone;
-          if (!m.isAdmin && !m.seen) threadMap[id].unread = true;
+          if (m.userPhoto) threadMap[id].photoURL = m.userPhoto;
+          if (!m.isAdmin && !m.seen) {
+            threadMap[id].unreadCount = (threadMap[id].unreadCount || 0) + 1;
+          }
         }
       });
 
@@ -6747,13 +6747,16 @@ FINANCIAL BREAKDOWN:
         if (!threadMap[uid]) {
           threadMap[uid] = {
             clientId: uid,
-            clientName: u.name || u.email || 'Customer',
+            clientName: u.name || u.phone || u.email || 'Customer',
             clientPhone: u.phone || '',
             clientEmail: u.email || '',
             photoURL: u.photoURL || '',
             lastMessage: 'Tap to start conversation',
             lastTime: '',
-            unread: false
+            lastIsoTime: '',
+            lastIsAdmin: false,
+            lastSeen: true,
+            unreadCount: 0
           };
         } else {
           if (!threadMap[uid].clientPhone && u.phone) threadMap[uid].clientPhone = u.phone;
@@ -6763,6 +6766,15 @@ FINANCIAL BREAKDOWN:
       });
 
       let threads = Object.values(threadMap);
+
+      // Sort strictly by latest message timestamp descending (new messages jump to top!)
+      threads.sort((a, b) => {
+        const timeA = a.lastIsoTime ? new Date(a.lastIsoTime).getTime() : 0;
+        const timeB = b.lastIsoTime ? new Date(b.lastIsoTime).getTime() : 0;
+        if (timeA !== timeB) return timeB - timeA;
+        if (a.unreadCount !== b.unreadCount) return b.unreadCount - a.unreadCount;
+        return (a.clientName || '').localeCompare(b.clientName || '');
+      });
 
       // Apply Search filter
       if (adminChatSearchQuery) {
@@ -6777,12 +6789,12 @@ FINANCIAL BREAKDOWN:
 
       // Apply Status filter (All, Active, Unread)
       if (adminChatThreadFilter === 'unread') {
-        threads = threads.filter(t => t.unread);
+        threads = threads.filter(t => t.unreadCount > 0);
       } else if (adminChatThreadFilter === 'active') {
-        threads = threads.filter(t => t.unread || (t.lastMessage && t.lastMessage !== 'Tap to start conversation'));
+        threads = threads.filter(t => t.unreadCount > 0 || (t.lastMessage && t.lastMessage !== 'Tap to start conversation'));
       }
 
-      const unreadTotal = Object.values(threadMap).filter(t => t.unread).length;
+      const unreadTotal = Object.values(threadMap).reduce((sum, t) => sum + (t.unreadCount || 0), 0);
       const unreadBadge = document.getElementById('admin-chat-unread-count');
       const navBadge = document.getElementById('nav-support-badge');
 
@@ -6797,10 +6809,12 @@ FINANCIAL BREAKDOWN:
 
       if (threads.length === 0) {
         listContainer.innerHTML = `
-          <div class="py-12 px-4 text-center text-slate-400">
-            <i class="fa-brands fa-whatsapp text-3xl mb-2 text-slate-300"></i>
-            <p class="text-xs font-medium">No chats found</p>
-            <span class="text-[10px] text-slate-400">Search customer by name or phone above</span>
+          <div class="py-16 px-4 text-center text-slate-400">
+            <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mx-auto mb-2.5">
+              <i class="fa-solid fa-comments text-xl"></i>
+            </div>
+            <p class="text-xs font-semibold text-slate-700">No chats found</p>
+            <span class="text-[11px] text-slate-400 mt-0.5 block">Search customer by name or phone above</span>
           </div>
         `;
         return;
@@ -6809,35 +6823,51 @@ FINANCIAL BREAKDOWN:
       listContainer.innerHTML = threads.map(t => {
         const isSelected = selectedChatClientId === t.clientId;
         const initial = (t.clientName || 'C')[0].toUpperCase();
+        const palette = getChatAvatarPalette(t.clientName);
+
         const avatarHtml = t.photoURL 
-          ? `<img src="${t.photoURL}" alt="${escapeHtml(t.clientName)}" class="w-10 h-10 rounded-full object-cover flex-shrink-0 shadow-xs" onerror="this.outerHTML='<div class=\\\'w-10 h-10 rounded-full bg-slate-300 text-slate-700 flex items-center justify-center font-bold text-sm flex-shrink-0 shadow-xs\\\'>${initial}</div>'"/>`
-          : `<div class="w-10 h-10 rounded-full bg-slate-300 text-slate-700 flex items-center justify-center font-bold text-sm flex-shrink-0 shadow-xs">${initial}</div>`;
+          ? `<img src="${t.photoURL}" alt="${escapeHtml(t.clientName)}" class="w-12 h-12 rounded-full object-cover flex-shrink-0 shadow-xs border border-slate-200/80" onerror="this.outerHTML='<div class=\\\'w-12 h-12 rounded-full flex items-center justify-center font-bold text-base flex-shrink-0 shadow-xs\\\' style=\\\'background-color:${palette.bg}; color:${palette.text};\\\'>${initial}</div>'"/>`
+          : `<div class="w-12 h-12 rounded-full flex items-center justify-center font-bold text-base flex-shrink-0 shadow-xs" style="background-color: ${palette.bg}; color: ${palette.text};">${initial}</div>`;
+
+        // Format tick status for last message
+        let statusIconHtml = '';
+        if (t.lastMessage && t.lastMessage !== 'Tap to start conversation') {
+          if (t.lastIsAdmin) {
+            statusIconHtml = t.lastSeen
+              ? `<i class="fa-solid fa-check-double text-[11px] text-[#10b981] flex-shrink-0" title="Seen by customer"></i>`
+              : `<i class="fa-solid fa-check-double text-[11px] text-slate-400 flex-shrink-0" title="Delivered"></i>`;
+          }
+        }
+
+        const displayName = t.clientName || t.clientPhone || 'Customer';
 
         return `
         <div 
-          onclick="selectChatThread('${t.clientId}', '${escapeHtml(t.clientName)}')" 
-          class="p-3 hover:bg-[#f5f6f6] cursor-pointer transition flex items-center justify-between gap-2.5 ${
-            isSelected ? 'bg-[#ebebeb] border-l-4 border-[#00a884]' : ''
+          onclick="selectChatThread('${t.clientId}', '${escapeHtml(displayName)}')" 
+          class="p-3.5 hover:bg-[#f5f6f6] cursor-pointer transition flex items-center justify-between gap-3 border-b border-slate-100/80 active:bg-slate-100 ${
+            isSelected ? 'bg-[#ebebeb] border-l-4 border-emerald-500' : ''
           }"
         >
-          <div class="flex items-center gap-2.5 min-w-0 flex-1">
+          <div class="flex items-center gap-3 min-w-0 flex-1">
             ${avatarHtml}
             <div class="min-w-0 flex-1">
               <div class="flex items-center justify-between gap-1 mb-0.5">
-                <h5 class="font-bold text-slate-900 text-xs truncate">${escapeHtml(t.clientName)}</h5>
-                <span class="text-[10px] text-slate-400 flex-shrink-0">${t.lastTime}</span>
+                <h5 class="font-semibold text-slate-900 text-sm truncate">${escapeHtml(displayName)}</h5>
+                <span class="text-[11px] text-slate-400 flex-shrink-0 font-medium">${t.lastTime || ''}</span>
               </div>
-              <p class="text-[11px] text-slate-500 truncate flex items-center gap-1">
-                ${t.unread ? '<i class="fa-solid fa-circle text-[6px] text-[#00a884]"></i>' : (t.lastMessage && t.lastMessage !== 'Tap to start conversation' ? '<i class="fa-solid fa-check-double text-[9px] text-[#53bdeb]"></i>' : '')}
-                <span>${escapeHtml(t.lastMessage || 'Message')}</span>
-              </p>
+              <div class="flex items-center justify-between gap-2">
+                <p class="text-[12px] text-slate-500 truncate flex items-center gap-1 min-w-0">
+                  ${statusIconHtml}
+                  <span class="truncate">${escapeHtml(t.lastMessage || 'Tap to start conversation')}</span>
+                </p>
+                ${t.unreadCount > 0 ? `
+                  <span class="w-5 h-5 rounded-full bg-[#25D366] text-white font-extrabold text-[10px] flex items-center justify-center shadow-xs flex-shrink-0">
+                    ${t.unreadCount}
+                  </span>
+                ` : ''}
+              </div>
             </div>
           </div>
-          ${t.unread ? `
-            <span class="w-4 h-4 rounded-full bg-[#25D366] text-white font-extrabold text-[9px] flex items-center justify-center shadow-xs flex-shrink-0">
-              1
-            </span>
-          ` : ''}
         </div>
       `}).join('');
 
@@ -6852,7 +6882,7 @@ FINANCIAL BREAKDOWN:
       const nameEl = document.getElementById('active-chat-name');
       const profileBtn = document.getElementById('btn-chat-view-profile');
 
-      // Responsive mobile switch: Hide list, show chat conversation pane
+      // Responsive mobile switch: Hide list, show full chat conversation pane
       const leftPane = document.getElementById('admin-chat-left-pane');
       const rightPane = document.getElementById('admin-chat-right-pane');
       if (leftPane && rightPane) {
@@ -6862,28 +6892,41 @@ FINANCIAL BREAKDOWN:
         rightPane.classList.add('flex');
       }
 
-      // Find client photo from cached users
-      const matchedClient = cachedAdminUsers.find(u => u.uid === clientId || u.phone === clientId || u.name === clientName);
+      // Find client photo from cached users or chat messages
+      const matchedClient = (typeof cachedAdminUsers !== 'undefined' && cachedAdminUsers.length > 0)
+        ? cachedAdminUsers.find(u => u.uid === clientId || u.phone === clientId || u.name === clientName)
+        : null;
       const clientPhoto = matchedClient?.photoURL || '';
+      const initial = (clientName || 'C')[0].toUpperCase();
 
       if (avatarEl) {
         if (clientPhoto) {
-          avatarEl.innerHTML = `<img src="${clientPhoto}" alt="${clientName || 'C'}" class="w-full h-full object-cover" onerror="this.outerHTML='<span>${(clientName || 'C')[0].toUpperCase()}</span>'"/>`;
+          avatarEl.innerHTML = `<img src="${clientPhoto}" alt="${clientName || 'C'}" class="w-full h-full object-cover" onerror="this.outerHTML='<span>${initial}</span>'"/>`;
         } else {
-          avatarEl.innerHTML = `<span>${(clientName || 'C')[0].toUpperCase()}</span>`;
+          avatarEl.innerHTML = `<span>${initial}</span>`;
         }
       }
       if (nameEl) nameEl.textContent = clientName || 'Customer';
       if (profileBtn) profileBtn.classList.remove('hidden');
 
-      // Mark thread messages as seen (✓✓)
+      // Mark thread messages as seen (✓✓ in Firestore and locally)
       let messages = getStoredChatMessages();
+      let hasUnseen = false;
       messages.forEach(m => {
-        if ((m.clientId === clientId || m.userId === clientId) && !m.isAdmin) {
+        if ((m.clientId === clientId || m.userId === clientId) && !m.isAdmin && !m.seen) {
           m.seen = true;
+          hasUnseen = true;
+          // Update in Firestore in real time
+          if (fbFirestore && m.id) {
+            fbFirestore.collection('support_chats').where('id', '==', m.id).get().then(snap => {
+              snap.forEach(doc => doc.ref.update({ seen: true }).catch(() => {}));
+            }).catch(() => {});
+          }
         }
       });
-      saveChatMessages(messages);
+      if (hasUnseen) {
+        saveChatMessages(messages);
+      }
 
       renderActiveThreadMessages();
       loadAdminChatThreads();
@@ -6899,6 +6942,22 @@ FINANCIAL BREAKDOWN:
         rightPane.classList.add('hidden');
         rightPane.classList.remove('flex');
       }
+      loadAdminChatThreads();
+    }
+
+    // Long press handler for message edit
+    let msgTouchTimer = null;
+    function handleMsgTouchStart(msgId) {
+      if (msgTouchTimer) clearTimeout(msgTouchTimer);
+      msgTouchTimer = setTimeout(() => {
+        editAdminChatMessage(msgId);
+      }, 500);
+    }
+    function handleMsgTouchEnd() {
+      if (msgTouchTimer) {
+        clearTimeout(msgTouchTimer);
+        msgTouchTimer = null;
+      }
     }
 
     function renderActiveThreadMessages() {
@@ -6911,10 +6970,12 @@ FINANCIAL BREAKDOWN:
 
       if (messages.length === 0) {
         container.innerHTML = `
-          <div class="py-16 text-center text-slate-500">
-            <i class="fa-brands fa-whatsapp text-4xl mb-2 text-[#25D366]/70"></i>
+          <div class="py-20 text-center text-slate-500">
+            <div class="w-14 h-14 rounded-2xl bg-white/80 border border-slate-200 shadow-sm flex items-center justify-center text-slate-400 text-2xl mx-auto mb-3">
+              <i class="fa-solid fa-headset text-brand-orange"></i>
+            </div>
             <p class="font-semibold text-xs text-slate-700">No messages yet with this customer</p>
-            <span class="text-[10px] text-slate-400 block mt-0.5">Send a greeting message below</span>
+            <span class="text-[10px] text-slate-400 block mt-0.5">Send a message below to start assisting</span>
           </div>
         `;
         return;
@@ -6925,27 +6986,41 @@ FINANCIAL BREAKDOWN:
 
         return `
         <div class="flex ${isAdminMsg ? 'justify-end' : 'justify-start'} animate-in fade-in duration-150">
-          <div class="relative max-w-[82%] px-3 py-2 text-xs shadow-xs transition ${
-            isAdminMsg 
-              ? 'bg-[#d9fdd3] text-slate-900 rounded-2xl rounded-tr-xs border border-emerald-100' 
-              : 'bg-white text-slate-900 rounded-2xl rounded-tl-xs border border-slate-100'
-          }">
-            <div class="flex items-center justify-between gap-3 mb-0.5">
+          <div 
+            ontouchstart="handleMsgTouchStart('${m.id}')"
+            ontouchend="handleMsgTouchEnd()"
+            ontouchcancel="handleMsgTouchEnd()"
+            class="group relative max-w-[82%] px-3.5 py-2.5 text-xs shadow-xs transition select-none ${
+              isAdminMsg 
+                ? 'bg-[#d9fdd3] text-slate-900 rounded-2xl rounded-tr-xs border border-emerald-100' 
+                : 'bg-white text-slate-900 rounded-2xl rounded-tl-xs border border-slate-100'
+            }"
+            title="Long-press or click edit icon to edit message"
+          >
+            <div class="flex items-center justify-between gap-3 mb-1">
               <span class="font-bold text-[10px] ${isAdminMsg ? 'text-[#008069]' : 'text-slate-500'}">
                 ${isAdminMsg ? 'Buyero Support' : (m.sender || m.clientName || 'Customer')}
               </span>
-              ${m.isEdited ? '<span class="italic text-[9px] text-amber-600 font-medium">(Edited)</span>' : ''}
+              <div class="flex items-center gap-1.5">
+                ${m.isEdited ? '<span class="italic text-[9px] text-amber-600 font-semibold">(Edited)</span>' : ''}
+                <!-- Edit button for message (NO delete button ever) -->
+                <button 
+                  type="button" 
+                  onclick="editAdminChatMessage('${m.id}')" 
+                  class="text-slate-400 hover:text-slate-700 p-0.5 rounded transition" 
+                  title="Edit message"
+                >
+                  <i class="fa-solid fa-pencil text-[9px]"></i>
+                </button>
+              </div>
             </div>
 
-            <p class="leading-relaxed whitespace-pre-wrap text-[11.5px]">${escapeHtml(m.text)}</p>
+            <p class="leading-relaxed whitespace-pre-wrap text-[12px] text-slate-800">${escapeHtml(m.text)}</p>
 
-            <div class="flex items-center justify-end gap-1 mt-1 text-[9px] text-slate-500 font-mono select-none">
+            <div class="flex items-center justify-end gap-1 mt-1 text-[9.5px] text-slate-500 font-mono select-none">
               <span>${m.timestamp || ''}</span>
               ${isAdminMsg ? `
-                <i class="fa-solid fa-check-double text-[10px] text-[#53bdeb]"></i>
-                <button type="button" onclick="editAdminChatMessage('${m.id}')" class="ml-1 text-slate-400 hover:text-slate-700" title="Edit message">
-                  <i class="fa-solid fa-pencil text-[8px]"></i>
-                </button>
+                <i class="fa-solid fa-check-double text-[10px] ${m.seen ? 'text-[#10b981]' : 'text-slate-400'}" title="${m.seen ? 'Seen by customer' : 'Delivered'}"></i>
               ` : ''}
             </div>
           </div>
@@ -6959,9 +7034,9 @@ FINANCIAL BREAKDOWN:
     function editAdminChatMessage(msgId) {
       let messages = getStoredChatMessages();
       const msg = messages.find(m => m.id === msgId);
-      if (!msg || !msg.isAdmin) return;
+      if (!msg) return;
 
-      const newText = prompt("Edit support reply message:", msg.text);
+      const newText = prompt("Edit message (Note: Messages cannot be deleted, only edited):", msg.text);
       if (newText === null) return;
       const trimmed = newText.trim();
       if (!trimmed) {
@@ -6974,7 +7049,7 @@ FINANCIAL BREAKDOWN:
       msg.editedAt = new Date().toISOString();
       saveChatMessages(messages);
 
-      // Persist to Firestore if available
+      // Persist to Firestore support_chats
       if (fbFirestore) {
         fbFirestore.collection('support_chats').where('id', '==', msgId).get().then(snap => {
           snap.forEach(doc => {
@@ -7010,7 +7085,8 @@ FINANCIAL BREAKDOWN:
         text: text,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         isAdmin: true,
-        seen: true,
+        seen: false, // will turn green when customer opens/views support
+        isEdited: false,
         createdAt: new Date().toISOString()
       };
 
@@ -7026,7 +7102,6 @@ FINANCIAL BREAKDOWN:
       }
 
       input.value = '';
-      toggleAdminChatSendMicButton('');
       renderActiveThreadMessages();
       loadAdminChatThreads();
 

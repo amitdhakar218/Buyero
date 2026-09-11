@@ -562,7 +562,7 @@
             </div>
             <div>
               <h5 class="font-bold text-xs text-slate-900">Buyero Care</h5>
-              <p class="text-[10px] text-slate-500">Live chat & WhatsApp</p>
+              <p class="text-[10px] text-slate-500">Live chat & Helpdesk</p>
             </div>
           </button>
 
@@ -604,116 +604,71 @@
         </span>
       </div>
 
-      <!-- 2. BIG BOX: Live Chat with Support Team (WhatsApp-style with Audio/Video Call, Wallpaper & Mic/Send Button) -->
-      <div class="bg-white rounded-3xl border border-slate-200 shadow-md flex flex-col overflow-hidden h-[480px] max-h-[80vh]">
-        <!-- WhatsApp Header -->
-        <div class="p-3 bg-[#008069] text-white flex items-center justify-between shadow-xs">
-          <div class="flex items-center gap-2.5 min-w-0">
-            <div class="w-9 h-9 rounded-full bg-[#128C7E] text-white border border-white/20 flex items-center justify-center text-sm font-bold shadow-xs flex-shrink-0">
-              <i class="fa-solid fa-headset"></i>
+      <!-- 2. BIG BOX: Buyero Live Support Chat -->
+      <div class="bg-white rounded-3xl border border-slate-200 shadow-md flex flex-col overflow-hidden h-[490px] max-h-[80vh]">
+        <!-- Buyero Support Header -->
+        <div class="p-3.5 bg-brand-navy text-white flex items-center justify-between shadow-xs">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-brand-orange text-base font-bold shadow-xs flex-shrink-0">
+              <img src="assets/logo.png" alt="Buyero" class="w-6 h-6 object-contain" onerror="this.outerHTML='<i class=\\\'fa-solid fa-headset text-brand-orange\\\'></i>'"/>
             </div>
             <div class="min-w-0">
-              <div class="flex items-center gap-1.5">
-                <h4 class="font-bold text-xs font-poppins truncate">Buyero Support</h4>
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-ping"></span>
+              <div class="flex items-center gap-2">
+                <h4 class="font-bold text-sm font-poppins truncate text-white">Buyero Support</h4>
+                <span class="inline-flex items-center gap-1 text-[9.5px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Online
+                </span>
               </div>
-              <p class="text-[10px] text-emerald-100 truncate">
-                online • <span id="chat-identity-display">Client ID: USR_Loading</span>
+              <p class="text-[10.5px] text-slate-300 truncate">
+                Official Help Desk • <span id="chat-identity-display">Client ID: USR_Loading</span>
               </p>
             </div>
           </div>
 
-          <!-- WhatsApp Call Icons: Video, Voice & Refresh -->
-          <div class="flex items-center gap-1 flex-shrink-0">
-            <!-- Video Call (Show option) -->
-            <button 
-              type="button" 
-              onclick="showClientCallNotice('Video')" 
-              class="w-8 h-8 rounded-full hover:bg-white/15 active:scale-90 flex items-center justify-center text-white transition" 
-              title="WhatsApp Video Call"
-            >
-              <i class="fa-solid fa-video text-sm"></i>
-            </button>
-
-            <!-- Audio Call (Show option) -->
-            <button 
-              type="button" 
-              onclick="showClientCallNotice('Voice')" 
-              class="w-8 h-8 rounded-full hover:bg-white/15 active:scale-90 flex items-center justify-center text-white transition" 
-              title="WhatsApp Voice Call"
-            >
-              <i class="fa-solid fa-phone text-sm"></i>
-            </button>
-
-            <!-- Refresh messages -->
+          <!-- Actions: Refresh messages only (No calling features) -->
+          <div class="flex items-center gap-1.5 flex-shrink-0">
             <button 
               onclick="refreshClientChatMessages(this)" 
-              class="w-8 h-8 rounded-full hover:bg-white/15 flex items-center justify-center text-emerald-100 hover:text-white transition" 
-              title="Refresh messages"
+              class="w-8 h-8 rounded-full hover:bg-white/10 active:scale-95 flex items-center justify-center text-slate-300 hover:text-white transition" 
+              title="Refresh chat messages"
             >
               <i class="fa-solid fa-rotate-right text-xs"></i>
             </button>
           </div>
         </div>
 
-        <!-- WhatsApp Chat Messages Wallpaper & Scroll Stream -->
+        <!-- Buyero Chat Messages Stream -->
         <div 
           id="client-chat-messages" 
-          class="flex-1 p-3.5 overflow-y-auto space-y-2 text-xs" 
-          style="background-color: #efeae2; background-image: radial-gradient(#d1c7b7 0.8px, #efeae2 0.8px); background-size: 16px 16px;"
+          class="flex-1 p-3.5 overflow-y-auto space-y-2.5 text-xs bg-[#f8fafc]" 
+          style="background-image: radial-gradient(#e2e8f0 1px, transparent 1px); background-size: 16px 16px;"
         >
           <!-- Populated by JS -->
         </div>
 
-        <!-- WhatsApp Chat Bottom Bar: Attachment, Camera, Input, Mic / Send Button -->
-        <form onsubmit="handleSendClientChatMessage(event)" class="p-2 bg-[#f0f2f5] border-t border-slate-200 flex items-center gap-1.5 flex-shrink-0">
-          <!-- Attachment Button -->
-          <button type="button" onclick="showClientAttachmentNotice()" class="w-9 h-9 text-slate-500 hover:text-slate-700 flex items-center justify-center rounded-full hover:bg-slate-200 transition" title="Attach file">
-            <i class="fa-solid fa-paperclip text-sm"></i>
-          </button>
-
-          <!-- Camera Button -->
-          <button type="button" onclick="showClientCameraNotice()" class="w-9 h-9 text-slate-500 hover:text-slate-700 flex items-center justify-center rounded-full hover:bg-slate-200 transition" title="Camera">
-            <i class="fa-solid fa-camera text-sm"></i>
-          </button>
-
-          <!-- Input Field -->
+        <!-- Buyero Chat Bottom Bar: Text-Only Message Composer -->
+        <form onsubmit="handleSendClientChatMessage(event)" class="p-2.5 bg-white border-t border-slate-200 flex items-center gap-2 flex-shrink-0">
+          <!-- Text Input Field -->
           <input 
             type="text" 
             id="client-chat-input" 
-            oninput="toggleClientChatSendMicButton(this.value)"
-            placeholder="Type a message..." 
-            class="flex-1 px-3.5 py-2 text-xs bg-white border border-slate-200 rounded-full outline-none focus:border-[#00a884] focus:ring-1 focus:ring-[#00a884]"
+            placeholder="Write your message here..." 
+            class="flex-1 px-4 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-full outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange text-slate-800"
+            autocomplete="off"
           />
 
-          <!-- Microphone Button (Default when empty) -->
-          <button 
-            type="button" 
-            id="client-chat-mic-btn" 
-            onclick="showClientMicNotice()" 
-            class="w-9 h-9 bg-[#00a884] hover:bg-[#008f6f] text-white rounded-full flex items-center justify-center text-sm shadow-sm transition active:scale-95 flex-shrink-0"
-            title="Hold for Voice Message"
-          >
-            <i class="fa-solid fa-microphone"></i>
-          </button>
-
-          <!-- Send Button (Dynamically appears when typing) -->
+          <!-- Send Message Button -->
           <button 
             type="submit" 
             id="client-chat-send-btn" 
-            class="hidden w-9 h-9 bg-[#00a884] hover:bg-[#008f6f] text-white rounded-full flex items-center justify-center text-sm shadow-md transition active:scale-95 flex-shrink-0"
+            class="px-4 py-2.5 bg-brand-orange hover:bg-brand-deep text-white font-bold rounded-full flex items-center justify-center gap-1.5 text-xs shadow-sm transition active:scale-95 flex-shrink-0"
             title="Send message"
           >
-            <i class="fa-solid fa-paper-plane text-xs"></i>
+            <span>Send</span>
+            <i class="fa-solid fa-paper-plane text-[11px]"></i>
           </button>
         </form>
       </div>
-
-      <!-- 3. Big Bright Green WhatsApp Button (Click-to-WhatsApp) -->
-      <a href="https://wa.me/919174573889?text=Hello%20Buyero%20Support,%20I%20need%20help%20with%20my%20order" target="_blank" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl text-xs flex items-center justify-center gap-2 shadow-md transition active:scale-98">
-        <i class="fa-brands fa-whatsapp text-xl"></i>
-        <span>Chat with Us on WhatsApp (Instant Support)</span>
-      </a>
 
       <!-- 4. Direct Executive Call Button -->
       <a href="tel:9174573889" class="w-full py-3 bg-brand-navy hover:bg-brand-deep text-white font-bold rounded-2xl text-xs flex items-center justify-center gap-2 shadow transition active:scale-98">
@@ -10425,58 +10380,62 @@
       }
     }
 
-    function showClientCallNotice(type) {
-      showBuyeroModal({
-        title: `WhatsApp ${type} Call`,
-        message: `Connect directly with our support executive via WhatsApp ${type} Call (+91 9174573889).`,
-        confirmText: 'Call via WhatsApp',
-        type: 'info'
-      }).then(confirmed => {
-        if (confirmed) {
-          window.open('https://wa.me/919174573889?text=Hello%20Buyero%20Support,%20I%20need%20assistance', '_blank');
-        }
-      });
-    }
-
-    function showClientAttachmentNotice() {
-      const inp = document.createElement('input');
-      inp.type = 'file';
-      inp.accept = 'image/*,application/pdf';
-      inp.onchange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-          const input = document.getElementById('client-chat-input');
-          if (input) {
-            input.value = `[Sent Attachment: ${file.name}]`;
-            toggleClientChatSendMicButton(input.value);
-          }
-        }
-      };
-      inp.click();
-    }
-
-    function showClientCameraNotice() {
-      showBuyeroModal({
-        title: 'Upload Photo',
-        message: 'Take or choose a photo of the product issue or packaging to share with Buyero Support.',
-        confirmText: 'Choose Photo',
-        type: 'info'
-      }).then(c => {
-        if (c) showClientAttachmentNotice();
-      });
-    }
-
-    function showClientMicNotice() {
-      showBuyeroModal({
-        title: 'Voice Message',
-        message: 'Hold to record your voice message for Buyero Support. (Voice recording ready).',
-        confirmText: 'OK',
-        type: 'info'
-      });
-    }
-
     function saveSupportMessages(messages) {
       localStorage.setItem('buyero_support_chat_messages', JSON.stringify(messages));
+    }
+
+    // Long press handler for customer message edit
+    let clientMsgTouchTimer = null;
+    function handleClientMsgTouchStart(msgId) {
+      if (clientMsgTouchTimer) clearTimeout(clientMsgTouchTimer);
+      clientMsgTouchTimer = setTimeout(() => {
+        editClientChatMessage(msgId);
+      }, 500);
+    }
+    function handleClientMsgTouchEnd() {
+      if (clientMsgTouchTimer) {
+        clearTimeout(clientMsgTouchTimer);
+        clientMsgTouchTimer = null;
+      }
+    }
+
+    function editClientChatMessage(msgId) {
+      let messages = getStoredSupportMessages();
+      const msg = messages.find(m => m.id === msgId);
+      if (!msg) return;
+
+      const newText = prompt("Edit message (Note: Messages cannot be deleted, only edited):", msg.text);
+      if (newText === null) return;
+      const trimmed = newText.trim();
+      if (!trimmed) {
+        alert("Message cannot be empty.");
+        return;
+      }
+
+      msg.text = trimmed;
+      msg.isEdited = true;
+      msg.editedAt = new Date().toISOString();
+      saveSupportMessages(messages);
+
+      // Persist to Firestore support_chats
+      if (fbFirestore) {
+        fbFirestore.collection('support_chats').where('id', '==', msgId).get().then(snap => {
+          snap.forEach(doc => {
+            doc.ref.update({ text: trimmed, isEdited: true, editedAt: msg.editedAt }).catch(() => {});
+          });
+        }).catch(() => {});
+      }
+
+      loadClientChatMessages();
+
+      // Broadcast to Admin Studio
+      try {
+        syncChannel.postMessage({
+          type: 'SUPPORT_MESSAGE_EDITED',
+          msgId: msgId,
+          text: trimmed
+        });
+      } catch (e) {}
     }
 
     function loadClientChatMessages() {
@@ -10484,7 +10443,7 @@
       if (!container) return;
 
       const identity = getClientChatIdentity();
-      const allMessages = getStoredSupportMessages();
+      let allMessages = getStoredSupportMessages();
       
       // Filter for this specific customer
       const myMessages = allMessages.filter(msg => 
@@ -10494,12 +10453,31 @@
         (!msg.clientId && msg.isAdmin)
       );
 
+      // Mark admin messages as seen (✓✓ in Firestore and locally)
+      let hasUnseenAdmin = false;
+      myMessages.forEach(m => {
+        if (m.isAdmin && !m.seen) {
+          m.seen = true;
+          hasUnseenAdmin = true;
+          if (fbFirestore && m.id) {
+            fbFirestore.collection('support_chats').where('id', '==', m.id).get().then(snap => {
+              snap.forEach(doc => doc.ref.update({ seen: true }).catch(() => {}));
+            }).catch(() => {});
+          }
+        }
+      });
+      if (hasUnseenAdmin) {
+        saveSupportMessages(allMessages);
+      }
+
       if (myMessages.length === 0) {
         container.innerHTML = `
           <div class="py-16 text-center text-slate-500">
-            <i class="fa-brands fa-whatsapp text-4xl mb-2 text-[#25D366]/70"></i>
+            <div class="w-14 h-14 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center text-brand-orange text-2xl mx-auto mb-3">
+              <i class="fa-solid fa-headset"></i>
+            </div>
             <p class="font-semibold text-xs text-slate-700">Say hello to Buyero Support!</p>
-            <span class="text-[10px] text-slate-400 block mt-0.5">We reply within minutes 24/7</span>
+            <span class="text-[11px] text-slate-400 block mt-0.5">We are online to assist with orders and inquiries</span>
           </div>
         `;
         return;
@@ -10510,23 +10488,44 @@
 
         return `
         <div class="flex ${isUserMsg ? 'justify-end' : 'justify-start'} animate-in fade-in duration-150">
-          <div class="relative max-w-[82%] px-3 py-2 text-xs shadow-xs transition ${
-            isUserMsg 
-              ? 'bg-[#d9fdd3] text-slate-900 rounded-2xl rounded-tr-xs border border-emerald-100' 
-              : 'bg-white text-slate-900 rounded-2xl rounded-tl-xs border border-slate-100'
-          }">
-            <div class="flex items-center justify-between gap-3 mb-0.5">
-              <span class="font-bold text-[10px] ${isUserMsg ? 'text-[#008069]' : 'text-slate-500'}">
+          <div 
+            ontouchstart="handleClientMsgTouchStart('${msg.id}')"
+            ontouchend="handleClientMsgTouchEnd()"
+            ontouchcancel="handleClientMsgTouchEnd()"
+            class="group relative max-w-[84%] px-3.5 py-2.5 text-xs shadow-xs transition select-none ${
+              isUserMsg 
+                ? 'bg-brand-navy text-white rounded-2xl rounded-tr-xs border border-brand-navy/80' 
+                : 'bg-white text-slate-900 rounded-2xl rounded-tl-xs border border-slate-200'
+            }"
+            title="Long-press or click pencil to edit message"
+          >
+            <div class="flex items-center justify-between gap-3 mb-1">
+              <span class="font-bold text-[10px] ${isUserMsg ? 'text-amber-300' : 'text-brand-orange'}">
                 ${isUserMsg ? 'You' : 'Buyero Support'}
               </span>
-              ${msg.isEdited ? '<span class="italic text-[9px] text-amber-600 font-medium">(Edited)</span>' : ''}
+              <div class="flex items-center gap-1.5">
+                ${msg.isEdited ? `<span class="italic text-[9px] ${isUserMsg ? 'text-emerald-200' : 'text-amber-600'} font-semibold">(Edited)</span>` : ''}
+                <!-- Edit button for customer message (No delete button) -->
+                ${isUserMsg ? `
+                  <button 
+                    type="button" 
+                    onclick="editClientChatMessage('${msg.id}')" 
+                    class="text-white/70 hover:text-white p-0.5 rounded transition" 
+                    title="Edit message"
+                  >
+                    <i class="fa-solid fa-pencil text-[9px]"></i>
+                  </button>
+                ` : ''}
+              </div>
             </div>
 
-            <p class="leading-relaxed whitespace-pre-wrap text-[11.5px]">${escapeHtml(msg.text)}</p>
+            <p class="leading-relaxed whitespace-pre-wrap text-[12px] ${isUserMsg ? 'text-white' : 'text-slate-800'}">${escapeHtml(msg.text)}</p>
 
-            <div class="flex items-center justify-end gap-1 mt-1 text-[9px] text-slate-500 font-mono select-none">
+            <div class="flex items-center justify-end gap-1.5 mt-1 text-[9.5px] ${isUserMsg ? 'text-slate-300' : 'text-slate-400'} font-mono select-none">
               <span>${msg.timestamp || ''}</span>
-              ${isUserMsg ? '<i class="fa-solid fa-check-double text-[10px] text-[#53bdeb]"></i>' : ''}
+              ${isUserMsg ? `
+                <i class="fa-solid fa-check-double text-[10.5px] ${msg.seen ? 'text-emerald-400' : 'text-slate-400'}" title="${msg.seen ? 'Seen by Support' : 'Delivered'}"></i>
+              ` : ''}
             </div>
           </div>
         </div>
@@ -10542,7 +10541,7 @@
       if (!text) return;
 
       if (!currentUser) {
-        openAuthModal('support');
+        openAuthModal('support_gate');
         showBuyeroModal({
           title: 'Sign In Required',
           message: 'Please sign in to send messages to customer support.',
@@ -10559,11 +10558,14 @@
         userId: identity.userId,
         sender: identity.clientName,
         clientName: identity.clientName,
-        userPhone: identity.clientPhone,
+        userPhone: identity.clientPhone || (currentUser ? currentUser.phone : ''),
         userEmail: currentUser ? currentUser.email : '',
+        userPhoto: currentUser ? (currentUser.photoURL || '') : '',
         text: text,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         isAdmin: false,
+        seen: false, // will turn green when admin views it
+        isEdited: false,
         createdAt: new Date().toISOString()
       };
 
@@ -10572,7 +10574,6 @@
       saveSupportMessages(messages);
       loadClientChatMessages();
       input.value = '';
-      toggleClientChatSendMicButton('');
 
       // Broadcast to Admin Studio
       try {
@@ -10585,7 +10586,9 @@
       // Push to Firestore if online
       if (fbFirestore) {
         try {
-          fbFirestore.collection('support_chats').add(newMsg).catch(() => {});
+          fbFirestore.collection('support_chats').add(newMsg).catch(err => {
+            console.warn("[Client Send Message Firestore Error]", err);
+          });
         } catch (err) {}
       }
     }
@@ -10721,29 +10724,58 @@
       }
     }
 
-    // Listen for admin chat messages on sync channel
+    // Listen for admin chat messages and edits on sync channel
     syncChannel.addEventListener('message', (event) => {
-      if (event.data && event.data.type === 'ADMIN_CHAT_REPLY') {
-        const identity = getClientChatIdentity();
-        const incomingMsg = event.data.message;
-        
+      if (!event.data) return;
+      const identity = getClientChatIdentity();
+
+      if (event.data.type === 'ADMIN_CHAT_REPLY' || event.data.type === 'NEW_SUPPORT_MESSAGE') {
+        const incomingClientId = event.data.clientId || (event.data.message && event.data.message.clientId);
+        const incomingText = event.data.text || (event.data.message && event.data.message.text);
+
         // Only accept message if it's for this client or broadcast
-        if (incomingMsg.clientId === identity.clientId || incomingMsg.clientId === 'ALL' || !incomingMsg.clientId) {
+        if (incomingClientId === identity.clientId || incomingClientId === identity.userId || incomingClientId === 'ALL' || !incomingClientId) {
+          const newAdminMsg = event.data.message || {
+            id: 'msg_' + Date.now(),
+            clientId: incomingClientId,
+            userId: identity.userId,
+            sender: 'Buyero Support',
+            text: incomingText,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            isAdmin: true,
+            seen: currentActiveView === 'support',
+            createdAt: new Date().toISOString()
+          };
+
           const messages = getStoredSupportMessages();
-          messages.push(incomingMsg);
-          saveSupportMessages(messages);
+          if (!messages.some(m => m.id === newAdminMsg.id)) {
+            messages.push(newAdminMsg);
+            saveSupportMessages(messages);
+          }
           loadClientChatMessages();
 
           const supportDot = document.getElementById('support-nav-dot');
-          if (supportDot) supportDot.classList.remove('hidden');
+          if (supportDot && currentActiveView !== 'support') {
+            supportDot.classList.remove('hidden');
+          }
 
           addNotification({
             id: 'notif_' + Date.now(),
-            title: 'New Support Message',
-            message: incomingMsg.text,
+            title: 'Buyero Support Message',
+            message: incomingText || 'You received a new message from support.',
             time: 'Just now',
             read: false
           });
+        }
+      } else if (event.data.type === 'SUPPORT_MESSAGE_EDITED') {
+        const messages = getStoredSupportMessages();
+        const msg = messages.find(m => m.id === event.data.msgId);
+        if (msg) {
+          msg.text = event.data.text;
+          msg.isEdited = true;
+          msg.editedAt = new Date().toISOString();
+          saveSupportMessages(messages);
+          loadClientChatMessages();
         }
       }
     });
@@ -10903,7 +10935,7 @@
         langTitle: "Language / भाषा",
         langSub: "Switch system language (English / हिंदी)",
         supportTitle: "Buyero Care",
-        supportSub: "Live chat & WhatsApp",
+        supportSub: "Live chat & Helpdesk",
         returnTitle: "Return Policy",
         returnSub: "7-Day doorstep pickup",
         loginBtn: "Login / Register Account",
@@ -10930,7 +10962,7 @@
         langTitle: "भाषा / Language",
         langSub: "सिस्टम की भाषा बदलें (हिंदी / English)",
         supportTitle: "बायरो सहायता",
-        supportSub: "लाइव चैट और व्हाट्सएप",
+        supportSub: "लाइव चैट और सहायता केंद्र",
         returnTitle: "वापसी नीति",
         returnSub: "7-दिवसीय दरवाज़े से पिकअप",
         loginBtn: "लॉगिन / नया खाता बनाएं",
