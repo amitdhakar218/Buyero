@@ -120,6 +120,105 @@
       cursor: not-allowed;
       opacity: 0.65;
     }
+
+    /* --- PREMIUM PLAY BUTTON STYLES (User Specification) --- */
+    .play-btn-container {
+      position: relative;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    /* Outer Glowing Pulse Effect */
+    .play-btn-container::before {
+      content: '';
+      position: absolute;
+      width: 90px;
+      height: 90px;
+      background: rgba(239, 0, 85, 0.4);
+      border-radius: 50%;
+      animation: playBtnPulse 2s infinite ease-out;
+      z-index: 0;
+    }
+
+    /* The Main Glassmorphism Button */
+    .play-button {
+      position: relative;
+      width: 76px;
+      height: 76px;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1.5px solid rgba(255, 255, 255, 0.35);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 1;
+    }
+
+    /* Triangle Play Icon */
+    .play-button::after {
+      content: '';
+      width: 0;
+      height: 0;
+      border-top: 13px solid transparent;
+      border-bottom: 13px solid transparent;
+      border-left: 20px solid #ffffff;
+      margin-left: 4px; /* Center-align optical correction */
+      transition: transform 0.3s ease;
+    }
+
+    /* Hover Effects */
+    .play-btn-container:hover .play-button {
+      transform: scale(1.12);
+      background: rgba(236, 0, 0, 0.85);
+      border-color: rgba(255, 255, 255, 0.5);
+      box-shadow: 0 0 30px rgba(214, 33, 75, 0.8);
+    }
+
+    .play-btn-container:hover .play-button::after {
+      transform: scale(1.1);
+    }
+
+    /* Click/Active Effect */
+    .play-btn-container:active .play-button {
+      transform: scale(0.95);
+      background: rgba(200, 0, 0, 0.95);
+      box-shadow: 0 0 15px rgba(214, 33, 75, 0.9);
+      transition: transform 0.1s ease;
+    }
+
+    /* Pulse Animation Keyframes */
+    @keyframes playBtnPulse {
+      0% {
+        transform: scale(1);
+        opacity: 0.8;
+      }
+      100% {
+        transform: scale(1.8);
+        opacity: 0;
+      }
+    }
+
+    /* Mini Play Button for Video Thumbnail in gallery strip */
+    .play-btn-thumb-container {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .play-btn-thumb-container .play-btn-container {
+      transform: scale(0.38);
+      transform-origin: center center;
+    }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-900 pb-20 antialiased">
@@ -797,12 +896,12 @@
       <div class="bg-white border-b border-slate-200">
         <!-- Media Switcher Pill (Only visible when product has video) -->
         <div id="pdetail-media-switcher" class="hidden flex items-center justify-between px-3 py-2 bg-slate-50 border-b border-slate-100">
-          <div class="flex items-center gap-1.5">
+          <div class="flex items-center gap-2">
             <button 
               type="button" 
               id="pdetail-tab-btn-photos" 
               onclick="switchProductDetailMedia('photo')" 
-              class="px-3 py-1 rounded-full text-xs font-bold transition flex items-center gap-1.5 bg-brand-navy text-white shadow-xs"
+              class="px-3.5 py-1 rounded-full text-xs font-bold transition flex items-center gap-1.5 bg-brand-navy text-white shadow-xs"
             >
               <i class="fa-solid fa-images text-[11px]"></i>
               <span>Photos (<span id="pdetail-photo-count-badge">1</span>)</span>
@@ -811,38 +910,48 @@
               type="button" 
               id="pdetail-tab-btn-video" 
               onclick="switchProductDetailMedia('video')" 
-              class="px-3 py-1 rounded-full text-xs font-bold transition flex items-center gap-1.5 bg-white text-rose-600 border border-rose-200 hover:bg-rose-50 shadow-xs"
+              class="px-3.5 py-1 rounded-full text-xs font-bold transition flex items-center gap-1.5 bg-white text-rose-600 border border-rose-200 hover:bg-rose-50 shadow-xs"
             >
               <i class="fa-solid fa-circle-play text-[11px] text-rose-600"></i>
-              <span>Video (वीडियो ▶️)</span>
+              <span>Watch Video</span>
             </button>
           </div>
-          <span class="text-[10px] text-slate-400 font-semibold">In-App Player</span>
+          <span class="text-[10px] text-slate-400 font-semibold flex items-center gap-1"><i class="fa-solid fa-shield-halved text-emerald-500"></i> HD Player</span>
         </div>
 
         <!-- Media Display Area -->
-        <div class="relative w-full aspect-square bg-slate-100 overflow-hidden">
+        <div id="pdetail-media-container" class="relative w-full aspect-square bg-slate-100 overflow-hidden transition-all duration-300">
           <!-- PHOTO SLIDER VIEW -->
           <div id="pdetail-photo-view" class="w-full h-full relative cursor-zoom-in group" onclick="openImageLightbox()">
             <img id="pdetail-main-img" src="" alt="Product Image" class="w-full h-full object-cover transition duration-300">
             
             <!-- Top badges on image -->
-            <div class="absolute top-3 left-3 flex flex-col gap-1 z-10">
+            <div class="absolute top-3 left-3 flex flex-col gap-1 z-10 pointer-events-none">
               <span id="pdetail-badge" class="bg-brand-orange text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow">Best Seller</span>
               <span id="pdetail-discount-tag" class="bg-emerald-600 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow">50% OFF</span>
             </div>
 
-            <!-- Floating Video Play Button (If video available) -->
-            <button 
-              type="button" 
-              id="pdetail-floating-play-btn" 
-              onclick="event.stopPropagation(); switchProductDetailMedia('video')" 
-              class="hidden absolute top-3 right-3 px-3 py-1.5 rounded-full bg-red-600/95 hover:bg-red-700 text-white font-bold text-xs shadow-lg backdrop-blur-sm flex items-center gap-1.5 transition active:scale-95 z-10 animate-pulse"
-              title="Watch Product Video"
+            <!-- Premium Glassmorphism Center Play Button (Shown when video available) -->
+            <div 
+              id="pdetail-hero-play-container" 
+              class="hidden absolute inset-0 z-20 flex flex-col items-center justify-center pointer-events-none"
             >
-              <i class="fa-solid fa-play text-[10px]"></i>
-              <span>Play Video ▶️</span>
-            </button>
+              <div 
+                class="play-btn-container pointer-events-auto" 
+                onclick="event.stopPropagation(); switchProductDetailMedia('video')" 
+                title="Play Product Video"
+              >
+                <div class="play-button"></div>
+              </div>
+              <button 
+                type="button" 
+                onclick="event.stopPropagation(); switchProductDetailMedia('video')"
+                class="pointer-events-auto mt-3 px-3.5 py-1 bg-black/60 hover:bg-black/85 backdrop-blur-md text-white text-[11px] font-bold rounded-full border border-white/20 shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
+              >
+                <i class="fa-solid fa-play text-[9px] text-rose-400"></i>
+                <span>Watch Video</span>
+              </button>
+            </div>
 
             <!-- Zoom overlay button -->
             <button type="button" onclick="event.stopPropagation(); openImageLightbox()" class="absolute bottom-3 left-3 w-8 h-8 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center text-xs transition z-10" title="Click to zoom image">
@@ -861,18 +970,47 @@
             <span id="pdetail-img-counter" class="absolute bottom-3 right-3 bg-black/60 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full z-10">1/3</span>
           </div>
 
-          <!-- VIDEO PLAYER VIEW (In-App Player for YouTube / Imgur / MP4) -->
-          <div id="pdetail-video-view" class="hidden w-full h-full bg-black relative flex flex-col items-center justify-center">
-            <div id="pdetail-video-embed-container" class="w-full h-full"></div>
-            <!-- Switch back to Photos button floating on video -->
-            <button 
-              type="button" 
-              onclick="switchProductDetailMedia('photo')" 
-              class="absolute top-2.5 right-2.5 px-3 py-1 bg-black/70 hover:bg-black/90 text-white text-xs font-bold rounded-full backdrop-blur-md z-20 flex items-center gap-1.5 transition active:scale-95 shadow"
-            >
-              <i class="fa-solid fa-images text-[10px]"></i>
-              <span>Back to Photos</span>
-            </button>
+          <!-- VIDEO PLAYER VIEW (Dynamic Aspect Ratio for 16:9 Landscape and 9:16 Shorts) -->
+          <div id="pdetail-video-view" class="hidden w-full h-full bg-slate-950 relative flex flex-col items-center justify-center overflow-hidden">
+            <!-- Top Controls Bar -->
+            <div class="absolute top-2.5 inset-x-3 z-30 flex items-center justify-between pointer-events-none">
+              <!-- Aspect Ratio Toggle Pills (16:9 Landscape vs 9:16 Shorts) -->
+              <div class="flex items-center gap-1 bg-black/60 backdrop-blur-md p-1 rounded-full border border-white/15 pointer-events-auto shadow-sm">
+                <button 
+                  type="button" 
+                  id="btn-aspect-16-9" 
+                  onclick="setVideoAspectRatio('16:9')" 
+                  class="px-2.5 py-0.5 rounded-full text-[10px] font-bold transition bg-rose-600 text-white shadow-xs"
+                  title="16:9 Landscape Mode"
+                >
+                  16:9 Fit
+                </button>
+                <button 
+                  type="button" 
+                  id="btn-aspect-9-16" 
+                  onclick="setVideoAspectRatio('9:16')" 
+                  class="px-2.5 py-0.5 rounded-full text-[10px] font-bold transition text-slate-300 hover:text-white"
+                  title="9:16 Portrait / Shorts Mode"
+                >
+                  9:16 Shorts
+                </button>
+              </div>
+
+              <!-- Switch back to Photos button -->
+              <button 
+                type="button" 
+                onclick="switchProductDetailMedia('photo')" 
+                class="px-3 py-1 bg-black/75 hover:bg-black/95 text-white text-xs font-bold rounded-full backdrop-blur-md pointer-events-auto flex items-center gap-1.5 transition active:scale-95 shadow border border-white/15 cursor-pointer"
+              >
+                <i class="fa-solid fa-images text-[10px]"></i>
+                <span>Back to Photos</span>
+              </button>
+            </div>
+
+            <!-- Video Embed Frame Container -->
+            <div id="pdetail-video-embed-wrapper" class="w-full h-full flex items-center justify-center p-2 transition-all duration-300">
+              <div id="pdetail-video-embed-container" class="w-full h-full max-h-full rounded-2xl overflow-hidden shadow-2xl bg-black flex items-center justify-center"></div>
+            </div>
           </div>
         </div>
 
@@ -5235,7 +5373,7 @@
       switchProductDetailMedia('photo');
       const hasVideo = Boolean(product.videoUrl && product.videoUrl.trim());
       const mediaSwitcher = document.getElementById('pdetail-media-switcher');
-      const floatingPlayBtn = document.getElementById('pdetail-floating-play-btn');
+      const heroPlayContainer = document.getElementById('pdetail-hero-play-container');
       const photoBadge = document.getElementById('pdetail-photo-count-badge');
 
       if (photoBadge) {
@@ -5244,8 +5382,8 @@
       if (mediaSwitcher) {
         mediaSwitcher.classList.toggle('hidden', !hasVideo);
       }
-      if (floatingPlayBtn) {
-        floatingPlayBtn.classList.toggle('hidden', !hasVideo);
+      if (heroPlayContainer) {
+        heroPlayContainer.classList.toggle('hidden', !hasVideo);
       }
 
       // Switch to product-detail view
@@ -5271,10 +5409,13 @@
       const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/))([a-zA-Z0-9_-]{11})/i);
       if (ytMatch && ytMatch[1]) {
         const ytId = ytMatch[1];
+        const isShorts = /shorts/i.test(url);
         return {
           type: 'youtube',
           id: ytId,
-          embedUrl: `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&playsinline=1&modestbranding=1&rel=0`,
+          isShorts: isShorts,
+          embedUrl: `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&playsinline=1&modestbranding=1&rel=0&iv_load_policy=3&controls=1&showinfo=0&fs=1`,
+          thumbUrl: `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`,
           rawUrl: url
         };
       }
@@ -5291,7 +5432,9 @@
         return {
           type: 'html5',
           id: 'imgur',
+          isShorts: false,
           embedUrl: cleanUrl,
+          thumbUrl: cleanUrl.replace(/\.mp4$/i, '.jpg'),
           rawUrl: url
         };
       }
@@ -5301,7 +5444,9 @@
         return {
           type: 'html5',
           id: 'html5',
+          isShorts: false,
           embedUrl: url,
+          thumbUrl: '',
           rawUrl: url
         };
       }
@@ -5309,15 +5454,56 @@
       return {
         type: 'web',
         id: 'web',
+        isShorts: false,
         embedUrl: url,
+        thumbUrl: '',
         rawUrl: url
       };
+    }
+
+    let currentVideoAspectRatio = '16:9';
+
+    function setVideoAspectRatio(ratio) {
+      currentVideoAspectRatio = ratio;
+      const mediaContainer = document.getElementById('pdetail-media-container');
+      const embedWrapper = document.getElementById('pdetail-video-embed-wrapper');
+      const btn169 = document.getElementById('btn-aspect-16-9');
+      const btn916 = document.getElementById('btn-aspect-9-16');
+
+      if (btn169 && btn916) {
+        if (ratio === '9:16') {
+          btn916.className = "px-2.5 py-0.5 rounded-full text-[10px] font-bold transition bg-rose-600 text-white shadow-xs";
+          btn169.className = "px-2.5 py-0.5 rounded-full text-[10px] font-bold transition text-slate-300 hover:text-white";
+        } else {
+          btn169.className = "px-2.5 py-0.5 rounded-full text-[10px] font-bold transition bg-rose-600 text-white shadow-xs";
+          btn916.className = "px-2.5 py-0.5 rounded-full text-[10px] font-bold transition text-slate-300 hover:text-white";
+        }
+      }
+
+      if (mediaContainer) {
+        if (ratio === '9:16') {
+          mediaContainer.style.aspectRatio = '9/16';
+          mediaContainer.style.maxHeight = '560px';
+        } else {
+          mediaContainer.style.aspectRatio = '16/9';
+          mediaContainer.style.maxHeight = 'none';
+        }
+      }
+
+      if (embedWrapper) {
+        if (ratio === '9:16') {
+          embedWrapper.className = "w-full h-full max-w-[340px] aspect-[9/16] mx-auto flex items-center justify-center p-1.5 transition-all duration-300";
+        } else {
+          embedWrapper.className = "w-full h-full aspect-video mx-auto flex items-center justify-center p-1.5 transition-all duration-300";
+        }
+      }
     }
 
     function switchProductDetailMedia(mode) {
       const photoView = document.getElementById('pdetail-photo-view');
       const videoView = document.getElementById('pdetail-video-view');
       const embedContainer = document.getElementById('pdetail-video-embed-container');
+      const mediaContainer = document.getElementById('pdetail-media-container');
       const tabPhotos = document.getElementById('pdetail-tab-btn-photos');
       const tabVideo = document.getElementById('pdetail-tab-btn-video');
 
@@ -5331,20 +5517,27 @@
         if (videoView) videoView.classList.remove('hidden');
 
         if (tabPhotos) {
-          tabPhotos.className = "px-3 py-1 rounded-full text-xs font-bold transition flex items-center gap-1.5 bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-xs";
+          tabPhotos.className = "px-3.5 py-1 rounded-full text-xs font-bold transition flex items-center gap-1.5 bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-xs";
         }
         if (tabVideo) {
-          tabVideo.className = "px-3 py-1 rounded-full text-xs font-bold transition flex items-center gap-1.5 bg-rose-600 text-white shadow-xs";
+          tabVideo.className = "px-3.5 py-1 rounded-full text-xs font-bold transition flex items-center gap-1.5 bg-rose-600 text-white shadow-xs";
+        }
+
+        const parsed = parseClientVideoSource(activeDetailProduct.videoUrl);
+        // Automatically adapt aspect ratio: if shorts or vertical, use 9:16; otherwise 16:9 fit
+        if (parsed && parsed.isShorts) {
+          setVideoAspectRatio('9:16');
+        } else {
+          setVideoAspectRatio('16:9');
         }
 
         if (embedContainer) {
-          const parsed = parseClientVideoSource(activeDetailProduct.videoUrl);
           if (parsed && parsed.type === 'youtube') {
             embedContainer.innerHTML = `
               <iframe 
                 src="${parsed.embedUrl}" 
                 title="${activeDetailProduct.title}" 
-                class="w-full h-full border-0" 
+                class="w-full h-full border-0 rounded-xl" 
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
                 allowfullscreen
               ></iframe>
@@ -5357,7 +5550,7 @@
                 autoplay 
                 loop 
                 playsinline 
-                class="w-full h-full object-contain bg-black"
+                class="w-full h-full object-contain bg-black rounded-xl"
               ></video>
             `;
           } else {
@@ -5380,11 +5573,17 @@
         if (embedContainer) embedContainer.innerHTML = ''; // Immediately halt video/audio playback
         if (photoView) photoView.classList.remove('hidden');
 
+        // Reset media container aspect ratio back to standard square for photos
+        if (mediaContainer) {
+          mediaContainer.style.aspectRatio = '1/1';
+          mediaContainer.style.maxHeight = 'none';
+        }
+
         if (tabPhotos) {
-          tabPhotos.className = "px-3 py-1 rounded-full text-xs font-bold transition flex items-center gap-1.5 bg-brand-navy text-white shadow-xs";
+          tabPhotos.className = "px-3.5 py-1 rounded-full text-xs font-bold transition flex items-center gap-1.5 bg-brand-navy text-white shadow-xs";
         }
         if (tabVideo) {
-          tabVideo.className = "px-3 py-1 rounded-full text-xs font-bold transition flex items-center gap-1.5 bg-white text-rose-600 border border-rose-200 hover:bg-rose-50 shadow-xs";
+          tabVideo.className = "px-3.5 py-1 rounded-full text-xs font-bold transition flex items-center gap-1.5 bg-white text-rose-600 border border-rose-200 hover:bg-rose-50 shadow-xs";
         }
       }
     }
@@ -5418,15 +5617,25 @@
           `).join('');
 
           if (hasVideo) {
+            const parsedVid = parseClientVideoSource(activeDetailProduct.videoUrl);
+            const videoThumb = (parsedVid && parsedVid.thumbUrl) 
+              ? parsedVid.thumbUrl 
+              : (activeDetailImages[0] || (activeDetailProduct && activeDetailProduct.image) || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100');
+
             html += `
               <button 
                 type="button" 
                 onclick="switchProductDetailMedia('video')" 
-                class="w-14 h-14 rounded-xl border-2 border-rose-400 bg-rose-50 overflow-hidden flex-shrink-0 flex flex-col items-center justify-center text-rose-600 transition hover:border-rose-600 shadow-sm active:scale-95"
+                class="relative w-14 h-14 rounded-xl border-2 border-rose-500 overflow-hidden flex-shrink-0 group shadow-sm transition hover:scale-105 active:scale-95 bg-black"
                 title="Watch Product Video"
               >
-                <i class="fa-solid fa-circle-play text-xl text-rose-600"></i>
-                <span class="text-[9px] font-bold text-rose-700 mt-0.5">Video ▶️</span>
+                <img src="${videoThumb}" alt="Video Thumbnail" class="w-full h-full object-cover opacity-85 group-hover:opacity-100 transition" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100';">
+                <div class="play-btn-thumb-container">
+                  <div class="play-btn-container">
+                    <div class="play-button"></div>
+                  </div>
+                </div>
+                <span class="absolute bottom-0 inset-x-0 bg-red-600/95 text-white text-[7.5px] font-extrabold py-0.5 text-center tracking-wider uppercase">Video</span>
               </button>
             `;
           }

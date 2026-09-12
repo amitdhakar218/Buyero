@@ -62,6 +62,67 @@
       30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
       40%, 60% { transform: translate3d(4px, 0, 0); }
     }
+
+    /* --- PREMIUM PLAY BUTTON STYLES (User Specification) --- */
+    .play-btn-container {
+      position: relative;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .play-btn-container::before {
+      content: '';
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      background: rgba(239, 0, 85, 0.4);
+      border-radius: 50%;
+      animation: playPulse 2s infinite ease-out;
+      z-index: 0;
+    }
+    .play-button {
+      position: relative;
+      width: 68px;
+      height: 68px;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1.5px solid rgba(255, 255, 255, 0.35);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 1;
+    }
+    .play-button::after {
+      content: '';
+      width: 0;
+      height: 0;
+      border-top: 11px solid transparent;
+      border-bottom: 11px solid transparent;
+      border-left: 17px solid #ffffff;
+      margin-left: 3px;
+      transition: transform 0.3s ease;
+    }
+    .play-btn-container:hover .play-button {
+      transform: scale(1.12);
+      background: rgba(236, 0, 0, 0.85);
+      border-color: rgba(255, 255, 255, 0.5);
+      box-shadow: 0 0 25px rgba(214, 33, 75, 0.8);
+    }
+    .play-btn-container:active .play-button {
+      transform: scale(0.95);
+      background: rgba(200, 0, 0, 0.95);
+      box-shadow: 0 0 15px rgba(214, 33, 75, 0.9);
+    }
+    @keyframes playPulse {
+      0% { transform: scale(1); opacity: 0.8; }
+      100% { transform: scale(1.7); opacity: 0; }
+    }
   </style>
 </head>
 <body class="min-h-screen text-slate-800">
@@ -1590,30 +1651,94 @@
           </div>
         </div>
 
-        <div>
-          <label class="block font-bold text-slate-700 mb-0.5">Image URL *</label>
-          <input 
-            type="url" 
-            id="edit-prod-image" 
-            required 
-            oninput="updateAdminImagePreview('edit-prod-image', 'edit-prod-image-preview')"
-            class="w-full px-3 py-1.5 border border-slate-300 rounded-xl outline-none focus:border-brand-navy" 
-          />
-          <div id="edit-prod-image-preview" class="hidden"></div>
-        </div>
+        <!-- Product Media Section (Multi-Image & Video Support) -->
+        <div class="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+          <div class="flex items-center justify-between">
+            <label class="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+              <i class="fa-solid fa-photo-film text-brand-orange"></i>
+              <span>Product Media (Images & Video)</span>
+            </label>
+            <span class="text-[10px] font-bold text-slate-500">Live Preview & Delete</span>
+          </div>
 
-        <div>
-          <label class="block font-bold text-rose-700 mb-0.5 flex items-center gap-1">
-            <i class="fa-solid fa-circle-play text-rose-500"></i> Video Link (YouTube, Imgur, or MP4)
-          </label>
-          <input 
-            type="url" 
-            id="edit-prod-video" 
-            oninput="updateAdminVideoPreview('edit-prod-video', 'edit-prod-video-preview')"
-            placeholder="https://www.youtube.com/watch?v=... ya https://youtu.be/... ya Imgur" 
-            class="w-full px-3 py-1.5 border border-pink-300 rounded-xl outline-none focus:border-rose-500" 
-          />
-          <div id="edit-prod-video-preview" class="hidden"></div>
+          <!-- Main / Primary Image URL -->
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="block font-bold text-slate-700 text-[11px]">Primary Image (Main Cover) *</label>
+              <span class="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-md">Main</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <input 
+                type="url" 
+                id="edit-prod-image" 
+                required 
+                placeholder="https://... main image URL"
+                oninput="onEditPrimaryImageChange()"
+                class="flex-1 px-3 py-1.5 border border-slate-300 rounded-xl outline-none focus:border-brand-navy bg-white text-xs" 
+              />
+              <div id="edit-prod-primary-thumb-preview" class="w-9 h-9 rounded-lg border border-slate-300 overflow-hidden bg-slate-100 flex-shrink-0 flex items-center justify-center">
+                <i class="fa-solid fa-image text-slate-400 text-xs"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Extra Images (Dynamic Multi-Image List with Delete) -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="block font-bold text-slate-700 text-[11px]">Additional Product Images (Gallery)</label>
+              <button 
+                type="button" 
+                onclick="addEditExtraImageInput()" 
+                class="px-2.5 py-1 bg-orange-100 hover:bg-orange-200 text-brand-orange font-bold text-[10px] rounded-lg transition flex items-center gap-1 active:scale-95 shadow-2xs"
+              >
+                <i class="fa-solid fa-plus text-[9px]"></i> Add Image Link
+              </button>
+            </div>
+
+            <!-- Dynamic extra image rows go here -->
+            <div id="edit-extra-images-container" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+          </div>
+
+          <!-- Live Media Strip (All Loaded Images & Video) -->
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[10px] font-bold text-slate-600">All Images Preview Strip:</span>
+              <span id="edit-media-count-badge" class="text-[9px] font-bold text-slate-500">0 images</span>
+            </div>
+            <div id="edit-media-gallery-strip" class="flex items-center gap-2 overflow-x-auto py-1.5 px-2 bg-white rounded-xl border border-slate-200 min-h-[58px]">
+              <span class="text-slate-400 text-[11px] italic">No images loaded yet</span>
+            </div>
+          </div>
+
+          <!-- Video Link (YouTube, Imgur, MP4) with Live Preview -->
+          <div class="pt-1 border-t border-slate-200/80">
+            <div class="flex items-center justify-between mb-1">
+              <label class="block font-bold text-rose-700 text-[11px] flex items-center gap-1.5">
+                <i class="fa-solid fa-circle-play text-rose-500"></i> Product Video Link (YouTube / Shorts / MP4)
+              </label>
+              <span class="text-[9px] font-bold text-rose-700 bg-rose-100 px-1.5 py-0.5 rounded-md">Optional</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <input 
+                type="url" 
+                id="edit-prod-video" 
+                oninput="onEditVideoUrlChange()"
+                placeholder="https://www.youtube.com/watch?v=... ya shorts ya mp4" 
+                class="flex-1 px-3 py-1.5 border border-pink-300 rounded-xl outline-none focus:border-rose-500 bg-white text-xs" 
+              />
+              <button 
+                type="button" 
+                onclick="clearEditProductVideo()" 
+                id="btn-clear-edit-video"
+                class="hidden w-8 h-8 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 flex items-center justify-center transition active:scale-95" 
+                title="Remove Video"
+              >
+                <i class="fa-solid fa-trash text-xs"></i>
+              </button>
+            </div>
+            <!-- Video Live Preview Container -->
+            <div id="edit-prod-video-preview" class="hidden mt-2 rounded-xl overflow-hidden border border-rose-200 bg-black"></div>
+          </div>
         </div>
 
         <div>
@@ -1630,54 +1755,54 @@
   </div>
 
   <!-- ========================================================= -->
-  <!-- BUYERO UNIVERSAL BRANDED MODAL SYSTEM                     -->
+  <!-- BUYERO UNIVERSAL BRANDED MODAL SYSTEM (CLEAN WHITE THEME) -->
   <!-- ========================================================= -->
-  <div id="buyero-universal-modal" class="hidden fixed inset-0 z-[99999] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 select-none">
-    <div class="bg-gradient-to-b from-[#0f172a] via-[#162033] to-[#0b1120] text-white rounded-3xl max-w-sm w-full shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border border-amber-500/30 overflow-hidden transform transition-all duration-200 p-5 space-y-4 animate-in fade-in zoom-in-95">
+  <div id="buyero-universal-modal" class="hidden fixed inset-0 z-[99999] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 select-none">
+    <div class="bg-white text-slate-900 rounded-3xl max-w-sm w-full shadow-2xl border border-slate-100 overflow-hidden transform transition-all duration-200 p-5 space-y-4 animate-in fade-in zoom-in-95">
       <!-- Header with Official Buyero App Icon & Verified Badge -->
       <div class="flex items-start justify-between gap-3">
         <div class="flex items-center gap-3 min-w-0">
-          <div class="relative flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-[#1e293b] to-[#0f172a] p-2 shadow-lg border border-amber-400/30 flex-shrink-0">
+          <div class="relative flex items-center justify-center w-12 h-12 rounded-2xl bg-orange-50 p-2 shadow-xs border border-orange-200/70 flex-shrink-0">
             <!-- Official Buyero Shopping Bag Logo -->
             <svg class="w-8 h-8" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
               <g><polygon points="12,46 22,41 22,90 12,88" fill="#13a388" /><polygon points="22,41 56,43 56,92 22,90" fill="#20d5a3" /><path d="M 28,42 C 28,26 48,26 48,42" stroke="#68ffd8" stroke-width="3.5" stroke-linecap="round" fill="none" /></g>
               <g><path d="M 47,58 C 47,44 65,44 65,58" stroke="#ffaec3" stroke-width="3.5" stroke-linecap="round" fill="none" /><polygon points="38,62 48,58 48,99 38,96" fill="#d84f7b" /><polygon points="48,58 78,57 78,96 48,99" fill="#ff8ba0" /></g>
             </svg>
-            <span id="buyero-modal-status-badge" class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] shadow-sm border-2 border-[#0f172a]">
+            <span id="buyero-modal-status-badge" class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] shadow-sm border-2 border-white">
               <i id="buyero-modal-icon" class="fa-solid fa-check"></i>
             </span>
           </div>
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-1.5">
-              <span class="font-poppins font-black text-base text-white tracking-tight">Buyer<span class="text-brand-orange" style="color:#f77f33;">o</span></span>
-              <span class="px-2 py-0.5 bg-amber-400/20 text-amber-300 border border-amber-400/30 font-extrabold text-[9px] rounded-full uppercase tracking-wider flex items-center gap-1">
+              <span class="font-poppins font-black text-base text-slate-900 tracking-tight">Buyer<span class="text-brand-orange" style="color:#f77f33;">o</span></span>
+              <span class="px-2 py-0.5 bg-orange-50 text-orange-700 border border-orange-200 font-extrabold text-[9px] rounded-full uppercase tracking-wider flex items-center gap-1">
                 <i class="fa-solid fa-shield-check text-[9px]"></i> Admin
               </span>
             </div>
-            <h3 id="buyero-modal-title" class="font-poppins font-semibold text-xs text-slate-300 truncate mt-0.5">Notification</h3>
+            <h3 id="buyero-modal-title" class="font-poppins font-semibold text-xs text-slate-600 truncate mt-0.5">Notification</h3>
           </div>
         </div>
-        <button type="button" id="buyero-modal-close-btn" class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition flex-shrink-0" title="Close">
+        <button type="button" id="buyero-modal-close-btn" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition flex-shrink-0" title="Close">
           <i class="fa-solid fa-xmark text-xs"></i>
         </button>
       </div>
 
       <!-- Body / Message -->
-      <div id="buyero-modal-body" class="text-xs text-slate-200 leading-relaxed max-h-60 overflow-y-auto whitespace-pre-line break-words bg-slate-900/80 p-3.5 rounded-2xl border border-slate-700/70 shadow-inner">
+      <div id="buyero-modal-body" class="text-xs text-slate-700 leading-relaxed max-h-60 overflow-y-auto whitespace-pre-line break-words bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 shadow-inner">
       </div>
 
       <!-- Optional Input Container for Prompt -->
       <div id="buyero-modal-input-container" class="hidden space-y-1">
-        <label id="buyero-modal-input-label" class="text-[11px] font-semibold text-slate-300 block"></label>
-        <input type="text" id="buyero-modal-input" class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange transition" />
+        <label id="buyero-modal-input-label" class="text-[11px] font-semibold text-slate-700 block"></label>
+        <input type="text" id="buyero-modal-input" class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange transition" />
       </div>
 
       <!-- Action Buttons -->
       <div class="flex items-center gap-2 pt-1" id="buyero-modal-actions">
-        <button type="button" id="buyero-modal-cancel-btn" class="hidden flex-1 py-2.5 px-4 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 font-bold text-xs rounded-xl border border-slate-700 transition">
+        <button type="button" id="buyero-modal-cancel-btn" class="hidden flex-1 py-2.5 px-4 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 transition">
           Cancel
         </button>
-        <button type="button" id="buyero-modal-confirm-btn" class="flex-1 py-2.5 px-4 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 active:scale-95 text-white font-bold text-xs rounded-xl transition shadow-lg shadow-orange-500/30 flex items-center justify-center gap-1.5">
+        <button type="button" id="buyero-modal-confirm-btn" class="flex-1 py-2.5 px-4 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 active:scale-95 text-white font-bold text-xs rounded-xl transition shadow-lg shadow-orange-500/25 flex items-center justify-center gap-1.5">
           OK
         </button>
       </div>
@@ -1688,6 +1813,33 @@
   <!-- JAVASCRIPT LOGIC ENGINE                                   -->
   <!-- ========================================================= -->
   <script>
+    /* =========================================================
+       EARLY GLOBAL CATALOG HELPERS (Guarantees functions exist)
+       ========================================================= */
+    window.getStoredCatalog = function() {
+      try {
+        const raw = localStorage.getItem('buyero_catalog');
+        return raw ? JSON.parse(raw) : [];
+      } catch(e) {
+        return [];
+      }
+    };
+    window.saveCatalog = function(catalog) {
+      const deletedIds = (typeof getDeletedProductIds === 'function') ? getDeletedProductIds() : [];
+      const filtered = Array.isArray(catalog) 
+        ? catalog.filter(item => item && item.id && !deletedIds.includes(item.id) && !item.deleted && item.status !== 'DELETED')
+        : [];
+      localStorage.setItem('buyero_catalog', JSON.stringify(filtered));
+      try {
+        if (typeof syncChannel !== 'undefined' && syncChannel) {
+          syncChannel.postMessage({ type: 'CATALOG_UPDATED', catalog: filtered });
+        }
+      } catch(e) {}
+    };
+    window.saveStoredCatalog = function(catalog) {
+      return window.saveCatalog(catalog);
+    };
+
     /* =========================================================
        BUYERO UNIVERSAL BRANDED MODAL CONTROLLER
        Replaces native browser alert(), confirm(), and prompt()
@@ -1719,7 +1871,7 @@
         bodyEl.textContent = options.message || '';
 
         if (statusBadgeEl) {
-          statusBadgeEl.className = 'absolute -bottom-1 -right-1 w-5 h-5 rounded-full text-white flex items-center justify-center text-[10px] shadow-sm border-2 border-[#0f172a]';
+          statusBadgeEl.className = 'absolute -bottom-1 -right-1 w-5 h-5 rounded-full text-white flex items-center justify-center text-[10px] shadow-sm border-2 border-white';
         }
         confirmBtn.className = 'flex-1 py-2.5 px-4 active:scale-95 text-white font-bold text-xs rounded-xl transition shadow-lg flex items-center justify-center gap-1.5';
         confirmBtn.disabled = false;
@@ -2935,6 +3087,147 @@
       const container = document.getElementById('admin-video-tester-container');
       if (container) container.innerHTML = '';
       if (modal) modal.classList.add('hidden');
+    }
+
+    /* =========================================================
+       PRODUCT EDIT MODAL - MULTI-IMAGE & VIDEO GALLERY CONTROLLER
+       ========================================================= */
+    function onEditPrimaryImageChange() {
+      const inp = document.getElementById('edit-prod-image');
+      const thumb = document.getElementById('edit-prod-primary-thumb-preview');
+      const val = (inp ? inp.value : '').trim();
+      if (thumb) {
+        if (val && (val.startsWith('http://') || val.startsWith('https://'))) {
+          thumb.innerHTML = `<img src="${val}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100';">`;
+        } else {
+          thumb.innerHTML = `<i class="fa-solid fa-image text-slate-400 text-xs"></i>`;
+        }
+      }
+      renderEditProductGalleryLive();
+    }
+
+    function addEditExtraImageInput(initialUrl = '') {
+      const container = document.getElementById('edit-extra-images-container');
+      if (!container) return;
+      const rowId = 'extra-img-row-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7);
+      const div = document.createElement('div');
+      div.id = rowId;
+      div.className = "flex items-center gap-2 bg-white p-1.5 rounded-xl border border-slate-200 transition hover:border-slate-300";
+      div.innerHTML = `
+        <div class="w-9 h-9 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 flex-shrink-0 flex items-center justify-center extra-img-thumb">
+          ${initialUrl ? `<img src="${initialUrl}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100';">` : `<i class="fa-solid fa-image text-slate-300 text-xs"></i>`}
+        </div>
+        <input 
+          type="url" 
+          placeholder="https://... extra image URL" 
+          value="${initialUrl ? initialUrl.replace(/"/g, '&quot;') : ''}"
+          oninput="updateEditExtraImageThumbnail(this)"
+          class="edit-extra-img-input flex-1 px-2.5 py-1 text-xs border border-slate-200 rounded-lg outline-none focus:border-brand-navy bg-slate-50/50"
+        />
+        <button 
+          type="button" 
+          onclick="removeEditExtraImage('${rowId}')" 
+          class="w-7 h-7 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 flex items-center justify-center transition active:scale-90 flex-shrink-0"
+          title="Delete this image"
+        >
+          <i class="fa-solid fa-trash text-[10px]"></i>
+        </button>
+      `;
+      container.appendChild(div);
+      renderEditProductGalleryLive();
+    }
+
+    function removeEditExtraImage(rowId) {
+      const el = document.getElementById(rowId);
+      if (el) {
+        el.remove();
+        renderEditProductGalleryLive();
+      }
+    }
+
+    function updateEditExtraImageThumbnail(inputEl) {
+      const val = (inputEl.value || '').trim();
+      const row = inputEl.closest('.flex');
+      if (row) {
+        const thumb = row.querySelector('.extra-img-thumb');
+        if (thumb) {
+          if (val && (val.startsWith('http://') || val.startsWith('https://'))) {
+            thumb.innerHTML = `<img src="${val}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100';">`;
+          } else {
+            thumb.innerHTML = `<i class="fa-solid fa-image text-slate-300 text-xs"></i>`;
+          }
+        }
+      }
+      renderEditProductGalleryLive();
+    }
+
+    function onEditVideoUrlChange() {
+      const inp = document.getElementById('edit-prod-video');
+      const val = (inp ? inp.value : '').trim();
+      const clearBtn = document.getElementById('btn-clear-edit-video');
+      if (clearBtn) clearBtn.classList.toggle('hidden', !val);
+      updateAdminVideoPreview('edit-prod-video', 'edit-prod-video-preview');
+      renderEditProductGalleryLive();
+    }
+
+    function clearEditProductVideo() {
+      const inp = document.getElementById('edit-prod-video');
+      if (inp) inp.value = '';
+      onEditVideoUrlChange();
+    }
+
+    function renderEditProductGalleryLive() {
+      const strip = document.getElementById('edit-media-gallery-strip');
+      const countBadge = document.getElementById('edit-media-count-badge');
+      if (!strip) return;
+
+      const mainImg = (document.getElementById('edit-prod-image')?.value || '').trim();
+      const extraInputs = Array.from(document.querySelectorAll('#edit-extra-images-container .edit-extra-img-input'));
+      const extraImgs = extraInputs.map(i => (i.value || '').trim()).filter(Boolean);
+      const videoUrl = (document.getElementById('edit-prod-video')?.value || '').trim();
+
+      const allImages = [];
+      if (mainImg) allImages.push({ url: mainImg, isMain: true });
+      extraImgs.forEach((u, i) => {
+        if (u !== mainImg) allImages.push({ url: u, isMain: false, index: i });
+      });
+
+      if (countBadge) {
+        countBadge.textContent = `${allImages.length} photo${allImages.length === 1 ? '' : 's'}${videoUrl ? ' + 1 video' : ''}`;
+      }
+
+      if (allImages.length === 0 && !videoUrl) {
+        strip.innerHTML = `<span class="text-slate-400 text-[11px] italic px-1">No images or video loaded yet</span>`;
+        return;
+      }
+
+      let html = '';
+      allImages.forEach((item, idx) => {
+        html += `
+          <div class="relative w-11 h-11 rounded-lg border-2 ${item.isMain ? 'border-brand-orange shadow-xs' : 'border-slate-200'} overflow-hidden flex-shrink-0 group">
+            <img src="${item.url}" alt="Preview" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100';">
+            ${item.isMain ? `<span class="absolute top-0 left-0 bg-brand-orange text-white text-[7px] font-extrabold px-1 rounded-br">MAIN</span>` : `<span class="absolute bottom-0 right-0 bg-slate-800/80 text-white text-[7px] font-bold px-1 rounded-tl">#${idx+1}</span>`}
+          </div>
+        `;
+      });
+
+      if (videoUrl) {
+        const vid = parseVideoSource(videoUrl);
+        const thumb = (vid && vid.thumbUrl) ? vid.thumbUrl : (allImages[0]?.url || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100');
+        html += `
+          <div class="relative w-11 h-11 rounded-lg border-2 border-rose-500 overflow-hidden flex-shrink-0 group shadow-xs bg-black flex items-center justify-center cursor-pointer" onclick="testAdminPlayVideo('edit-prod-video')" title="Preview Product Video">
+            <img src="${thumb}" alt="Video" class="w-full h-full object-cover opacity-75">
+            <div class="absolute inset-0 flex items-center justify-center">
+              <div class="w-5 h-5 rounded-full bg-rose-600 text-white flex items-center justify-center text-[8px] shadow">
+                <i class="fa-solid fa-play"></i>
+              </div>
+            </div>
+            <span class="absolute bottom-0 inset-x-0 bg-rose-600 text-white text-[6.5px] font-extrabold text-center uppercase tracking-wider">Video</span>
+          </div>
+        `;
+      }
+
+      strip.innerHTML = html;
     }
 
     function ensureCatalogSeeded() {
@@ -4396,12 +4689,33 @@
 
       document.getElementById('edit-prod-variants').value = p.variants || '';
       document.getElementById('edit-prod-image').value = p.image || '';
+      onEditPrimaryImageChange();
+
+      // Populate Extra Images dynamically
+      const extraContainer = document.getElementById('edit-extra-images-container');
+      if (extraContainer) {
+        extraContainer.innerHTML = '';
+        let extraList = [];
+        if (Array.isArray(p.images) && p.images.length > 0) {
+          extraList = p.images.filter(x => x && x !== p.image);
+        } else if (Array.isArray(p.extraImages)) {
+          extraList = p.extraImages.filter(x => x && x !== p.image);
+        }
+        if (extraList.length > 0) {
+          extraList.forEach(url => addEditExtraImageInput(url));
+        } else {
+          // Add 1 empty row for convenience
+          addEditExtraImageInput('');
+        }
+      }
+
       document.getElementById('edit-prod-video').value = p.videoUrl || '';
+      onEditVideoUrlChange();
+
       document.getElementById('edit-prod-desc').value = p.description || '';
 
       calculateEditProductMarginLive();
-      updateAdminImagePreview('edit-prod-image', 'edit-prod-image-preview');
-      updateAdminVideoPreview('edit-prod-video', 'edit-prod-video-preview');
+      renderEditProductGalleryLive();
 
       const modal = document.getElementById('modal-edit-product');
       if (modal) modal.classList.remove('hidden');
@@ -4412,8 +4726,10 @@
       if (modal) modal.classList.add('hidden');
       const form = document.getElementById('form-edit-product');
       if (form) form.reset();
-      const imgPrev = document.getElementById('edit-prod-image-preview');
-      if (imgPrev) { imgPrev.innerHTML = ''; imgPrev.classList.add('hidden'); }
+      const extraContainer = document.getElementById('edit-extra-images-container');
+      if (extraContainer) extraContainer.innerHTML = '';
+      const strip = document.getElementById('edit-media-gallery-strip');
+      if (strip) strip.innerHTML = '<span class="text-slate-400 text-[11px] italic">No images loaded yet</span>';
       const vidPrev = document.getElementById('edit-prod-video-preview');
       if (vidPrev) { vidPrev.innerHTML = ''; vidPrev.classList.add('hidden'); }
       const submitBtn = document.getElementById('btn-edit-prod-submit');
@@ -4450,6 +4766,11 @@
       const mainImage = (document.getElementById('edit-prod-image').value || '').trim();
       const videoUrl = (document.getElementById('edit-prod-video').value || '').trim();
       const desc = (document.getElementById('edit-prod-desc').value || '').trim();
+
+      // Collect all dynamic extra images
+      const extraInputs = Array.from(document.querySelectorAll('#edit-extra-images-container .edit-extra-img-input'));
+      const extraImages = extraInputs.map(i => (i.value || '').trim()).filter(Boolean);
+      const allImages = [mainImage, ...extraImages.filter(x => x !== mainImage)];
 
       // Validations
       if (!title || !mainImage || !desc) {
@@ -4499,6 +4820,8 @@
         discountPercent: discountPct,
         discountAmount: discountAmt,
         image: mainImage,
+        images: allImages,
+        extraImages: extraImages,
         videoUrl: videoUrl || '',
         description: desc,
         variants: variants,
@@ -4545,8 +4868,8 @@
         closeEditProductModal();
         loadAdminCatalogList();
         calculateAnalysisMetrics();
-        recordActivityLog('PRODUCT_EDITED', `Updated product "${title}" (#${prodId}) - MRP ₹${mrp}, Sell ₹${price}`);
-        alert(`✅ Product "${title}" updated successfully!`);
+        recordActivityLog('PRODUCT_EDITED', `Updated product "${title}" (#${prodId}) with ${allImages.length} images - MRP ₹${mrp}, Sell ₹${price}`);
+        alert(`✅ Product "${title}" updated successfully with ${allImages.length} images!`);
       } catch (err) {
         console.error("[Edit Product Error]", err);
         alert(`Failed to update product: ${err.message || err}`);
