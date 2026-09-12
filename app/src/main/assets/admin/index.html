@@ -680,55 +680,97 @@
             </div>
           </div>
 
-          <!-- Image Management (Home Image Link + Add More Image) -->
-          <div class="space-y-2">
+          <!-- Product Media Section (Multi-Image & Video Support) -->
+          <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
             <div class="flex items-center justify-between">
-              <label class="block text-xs font-bold text-slate-700">Home Image Link *</label>
-              <button 
-                type="button" 
-                onclick="addExtraImageInput()" 
-                class="text-[11px] text-brand-orange font-bold hover:underline flex items-center gap-1"
-              >
-                <i class="fa-solid fa-plus"></i> Add More Image
-              </button>
-            </div>
-            <input 
-              type="url" 
-              id="inp-prod-image" 
-              required 
-              oninput="updateAdminImagePreview('inp-prod-image', 'inp-prod-image-preview')"
-              placeholder="https://images.unsplash.com/... ya Imgur/web image link" 
-              class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl outline-none focus:border-brand-navy"
-            />
-            <!-- Live Image Preview Box -->
-            <div id="inp-prod-image-preview" class="hidden"></div>
-
-            <div id="extra-images-container" class="space-y-1.5">
-              <!-- Extra dynamic image inputs added here -->
-            </div>
-          </div>
-
-          <!-- Product Video Link (YouTube, Imgur, Direct Video) -->
-          <div class="space-y-1.5 p-3 bg-pink-50/70 border border-pink-200 rounded-2xl">
-            <div class="flex items-center justify-between">
-              <label class="block text-xs font-bold text-pink-900 flex items-center gap-1.5">
-                <i class="fa-solid fa-circle-play text-rose-600"></i>
-                <span>Product Video Link (YouTube, Imgur, or MP4)</span>
+              <label class="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                <i class="fa-solid fa-photo-film text-brand-orange"></i>
+                <span>Product Media (Images & Video)</span>
               </label>
-              <span class="text-[10px] text-rose-600 font-semibold">Optional</span>
+              <span class="text-[10px] font-bold text-slate-500">Live Preview & Safe Delete</span>
             </div>
-            <p class="text-[10px] text-pink-700 leading-relaxed">
-              यहाँ YouTube (Normal, Shorts, youtu.be), Imgur वीडियो, या कोई भी MP4 वीडियो लिंक डालें। कस्टमर ऐप में फ़ोटो के साथ वीडियो भी देख सकेंगे!
-            </p>
-            <input 
-              type="url" 
-              id="inp-prod-video" 
-              oninput="updateAdminVideoPreview('inp-prod-video', 'inp-prod-video-preview')"
-              placeholder="e.g. https://www.youtube.com/watch?v=... ya https://youtu.be/... ya https://imgur.com/..." 
-              class="w-full px-3 py-2 text-xs border border-pink-300 rounded-xl outline-none focus:border-rose-500 bg-white"
-            />
-            <!-- Live Video Preview Box -->
-            <div id="inp-prod-video-preview" class="hidden"></div>
+
+            <!-- Main / Primary Image URL -->
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block font-bold text-slate-700 text-[11px]">Primary Image (Main Cover) *</label>
+                <span class="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-md">Main</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <input 
+                  type="url" 
+                  id="inp-prod-image" 
+                  required 
+                  placeholder="https://... main image URL"
+                  oninput="onAddPrimaryImageChange()"
+                  class="flex-1 px-3 py-1.5 border border-slate-300 rounded-xl outline-none focus:border-brand-navy bg-white text-xs" 
+                />
+                <div id="inp-prod-primary-thumb-preview" class="w-9 h-9 rounded-lg border border-slate-300 overflow-hidden bg-slate-100 flex-shrink-0 flex items-center justify-center">
+                  <i class="fa-solid fa-image text-slate-400 text-xs"></i>
+                </div>
+              </div>
+            </div>
+
+            <!-- Extra Images (Dynamic Multi-Image List with Confirmation Delete) -->
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <div>
+                  <label class="block font-bold text-slate-700 text-[11px]">Additional Product Images (Gallery)</label>
+                  <p class="text-[10px] text-slate-500">जितनी चाहें उतनी फोटो जोड़ें (Add as many images as you need)</p>
+                </div>
+                <button 
+                  type="button" 
+                  onclick="addExtraImageInput()" 
+                  class="px-2.5 py-1 bg-orange-100 hover:bg-orange-200 text-brand-orange font-bold text-[10px] rounded-lg transition flex items-center gap-1 active:scale-95 shadow-2xs"
+                >
+                  <i class="fa-solid fa-plus text-[9px]"></i> Add Image Link
+                </button>
+              </div>
+
+              <!-- Dynamic extra image rows go here -->
+              <div id="extra-images-container" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+            </div>
+
+            <!-- Live Media Strip (All Loaded Images & Video) -->
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[10px] font-bold text-slate-600">All Images Preview Strip:</span>
+                <span id="add-media-count-badge" class="text-[9px] font-bold text-slate-500">0 images</span>
+              </div>
+              <div id="add-media-gallery-strip" class="flex items-center gap-2 overflow-x-auto py-1.5 px-2 bg-white rounded-xl border border-slate-200 min-h-[58px]">
+                <span class="text-slate-400 text-[11px] italic">No images loaded yet</span>
+              </div>
+            </div>
+
+            <!-- Product Video Link (YouTube, Imgur, Direct Video) -->
+            <div class="pt-2 border-t border-slate-200/80">
+              <div class="flex items-center justify-between mb-1">
+                <label class="block font-bold text-rose-700 text-[11px] flex items-center gap-1.5">
+                  <i class="fa-solid fa-circle-play text-rose-500"></i> Product Video Link (YouTube / Shorts / MP4)
+                </label>
+                <span class="text-[9px] font-bold text-rose-700 bg-rose-100 px-1.5 py-0.5 rounded-md">Optional</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <input 
+                  type="url" 
+                  id="inp-prod-video" 
+                  oninput="onAddVideoUrlChange()"
+                  placeholder="https://www.youtube.com/watch?v=... ya shorts ya mp4" 
+                  class="flex-1 px-3 py-1.5 border border-pink-300 rounded-xl outline-none focus:border-rose-500 bg-white text-xs" 
+                />
+                <button 
+                  type="button" 
+                  onclick="clearAddProductVideo()" 
+                  id="btn-clear-add-video"
+                  class="hidden w-8 h-8 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 flex items-center justify-center transition active:scale-95" 
+                  title="Remove Video"
+                >
+                  <i class="fa-solid fa-trash text-xs"></i>
+                </button>
+              </div>
+              <!-- Live Video Preview Box -->
+              <div id="inp-prod-video-preview" class="hidden mt-2 rounded-xl overflow-hidden border border-rose-200 bg-black"></div>
+            </div>
           </div>
 
           <!-- Full Specifications / Description -->
@@ -3090,6 +3132,171 @@
     }
 
     /* =========================================================
+       PROMPT BEFORE REMOVAL CONFIRMATION HELPER
+       "or jab bhi kuch hata hu to ek bar parmition mage tab confirm ho"
+       ========================================================= */
+    async function confirmAdminAction(message, title = 'Confirmation Required') {
+      if (typeof showBuyeroConfirm === 'function') {
+        try {
+          const res = await showBuyeroConfirm(message, title, {
+            isDanger: true,
+            confirmText: 'हाँ, हटाएँ (Delete)',
+            cancelText: 'रद्द करें (Cancel)'
+          });
+          return Boolean(res);
+        } catch(e) {
+          return window.confirm(message);
+        }
+      }
+      return window.confirm(message);
+    }
+
+    /* =========================================================
+       ADD PRODUCT FORM - MULTI-IMAGE & VIDEO GALLERY CONTROLLER
+       ========================================================= */
+    function onAddPrimaryImageChange() {
+      const inp = document.getElementById('inp-prod-image');
+      const thumb = document.getElementById('inp-prod-primary-thumb-preview');
+      const val = (inp ? inp.value : '').trim();
+      if (thumb) {
+        if (val && (val.startsWith('http://') || val.startsWith('https://'))) {
+          thumb.innerHTML = `<img src="${val}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100';">`;
+        } else {
+          thumb.innerHTML = `<i class="fa-solid fa-image text-slate-400 text-xs"></i>`;
+        }
+      }
+      renderAddProductGalleryLive();
+    }
+
+    function addExtraImageInput(initialUrl = '') {
+      const container = document.getElementById('extra-images-container');
+      if (!container) return;
+      const rowId = 'add-extra-img-row-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7);
+      const div = document.createElement('div');
+      div.id = rowId;
+      div.className = "flex items-center gap-2 bg-white p-1.5 rounded-xl border border-slate-200 transition hover:border-slate-300";
+      div.innerHTML = `
+        <div class="w-9 h-9 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 flex-shrink-0 flex items-center justify-center extra-img-thumb">
+          ${initialUrl ? `<img src="${initialUrl}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100';">` : `<i class="fa-solid fa-image text-slate-300 text-xs"></i>`}
+        </div>
+        <input 
+          type="url" 
+          placeholder="https://... extra image URL" 
+          value="${initialUrl ? initialUrl.replace(/"/g, '&quot;') : ''}"
+          oninput="updateAddExtraImageThumbnail(this)"
+          class="add-extra-img-input flex-1 px-2.5 py-1 text-xs border border-slate-200 rounded-lg outline-none focus:border-brand-navy bg-slate-50/50"
+        />
+        <button 
+          type="button" 
+          onclick="removeAddExtraImage('${rowId}')" 
+          class="w-7 h-7 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 flex items-center justify-center transition active:scale-90 flex-shrink-0"
+          title="Delete this image"
+        >
+          <i class="fa-solid fa-trash text-[10px]"></i>
+        </button>
+      `;
+      container.appendChild(div);
+      renderAddProductGalleryLive();
+    }
+
+    async function removeAddExtraImage(rowId) {
+      const ok = await confirmAdminAction("क्या आप इस फोटो लिंक को हटाना चाहते हैं?\nAre you sure you want to remove this image?", "Confirm Remove Image");
+      if (!ok) return;
+      const el = document.getElementById(rowId);
+      if (el) {
+        el.remove();
+        renderAddProductGalleryLive();
+      }
+    }
+
+    function updateAddExtraImageThumbnail(inputEl) {
+      const val = (inputEl.value || '').trim();
+      const row = inputEl.closest('.flex');
+      if (row) {
+        const thumb = row.querySelector('.extra-img-thumb');
+        if (thumb) {
+          if (val && (val.startsWith('http://') || val.startsWith('https://'))) {
+            thumb.innerHTML = `<img src="${val}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100';">`;
+          } else {
+            thumb.innerHTML = `<i class="fa-solid fa-image text-slate-300 text-xs"></i>`;
+          }
+        }
+      }
+      renderAddProductGalleryLive();
+    }
+
+    function onAddVideoUrlChange() {
+      const inp = document.getElementById('inp-prod-video');
+      const val = (inp ? inp.value : '').trim();
+      const clearBtn = document.getElementById('btn-clear-add-video');
+      if (clearBtn) clearBtn.classList.toggle('hidden', !val);
+      updateAdminVideoPreview('inp-prod-video', 'inp-prod-video-preview');
+      renderAddProductGalleryLive();
+    }
+
+    async function clearAddProductVideo() {
+      const ok = await confirmAdminAction("क्या आप इस प्रोडक्ट वीडियो को हटाना चाहते हैं?\nAre you sure you want to remove this video?", "Confirm Remove Video");
+      if (!ok) return;
+      const inp = document.getElementById('inp-prod-video');
+      if (inp) inp.value = '';
+      onAddVideoUrlChange();
+    }
+
+    function renderAddProductGalleryLive() {
+      const strip = document.getElementById('add-media-gallery-strip');
+      const countBadge = document.getElementById('add-media-count-badge');
+      if (!strip) return;
+
+      const mainImg = (document.getElementById('inp-prod-image')?.value || '').trim();
+      const extraInputs = Array.from(document.querySelectorAll('#extra-images-container .add-extra-img-input, #extra-images-container .inp-prod-extra-img'));
+      const extraImgs = extraInputs.map(i => (i.value || '').trim()).filter(Boolean);
+      const videoUrl = (document.getElementById('inp-prod-video')?.value || '').trim();
+
+      const allImages = [];
+      if (mainImg) allImages.push({ url: mainImg, isMain: true });
+      extraImgs.forEach((u, i) => {
+        if (u !== mainImg) allImages.push({ url: u, isMain: false, index: i });
+      });
+
+      if (countBadge) {
+        countBadge.textContent = `${allImages.length} photo${allImages.length === 1 ? '' : 's'}${videoUrl ? ' + 1 video' : ''}`;
+      }
+
+      if (allImages.length === 0 && !videoUrl) {
+        strip.innerHTML = `<span class="text-slate-400 text-[11px] italic px-1">No images or video loaded yet</span>`;
+        return;
+      }
+
+      let html = '';
+      allImages.forEach((item, idx) => {
+        html += `
+          <div class="relative w-11 h-11 rounded-lg border-2 ${item.isMain ? 'border-brand-orange shadow-xs' : 'border-slate-200'} overflow-hidden flex-shrink-0 group">
+            <img src="${item.url}" alt="Preview" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100';">
+            ${item.isMain ? `<span class="absolute top-0 left-0 bg-brand-orange text-white text-[7px] font-extrabold px-1 rounded-br">MAIN</span>` : `<span class="absolute bottom-0 right-0 bg-slate-800/80 text-white text-[7px] font-bold px-1 rounded-tl">#${idx+1}</span>`}
+          </div>
+        `;
+      });
+
+      if (videoUrl) {
+        const vid = parseVideoSource(videoUrl);
+        const thumb = (vid && vid.thumbUrl) ? vid.thumbUrl : (allImages[0]?.url || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100');
+        html += `
+          <div class="relative w-11 h-11 rounded-lg border-2 border-rose-500 overflow-hidden flex-shrink-0 group shadow-xs bg-black flex items-center justify-center cursor-pointer" onclick="testAdminPlayVideo('inp-prod-video')" title="Preview Product Video">
+            <img src="${thumb}" alt="Video" class="w-full h-full object-cover opacity-75">
+            <div class="absolute inset-0 flex items-center justify-center">
+              <div class="w-5 h-5 rounded-full bg-rose-600 text-white flex items-center justify-center text-[8px] shadow">
+                <i class="fa-solid fa-play"></i>
+              </div>
+            </div>
+            <span class="absolute bottom-0 inset-x-0 bg-rose-600 text-white text-[6.5px] font-extrabold text-center uppercase tracking-wider">Video</span>
+          </div>
+        `;
+      }
+
+      strip.innerHTML = html;
+    }
+
+    /* =========================================================
        PRODUCT EDIT MODAL - MULTI-IMAGE & VIDEO GALLERY CONTROLLER
        ========================================================= */
     function onEditPrimaryImageChange() {
@@ -3137,7 +3344,9 @@
       renderEditProductGalleryLive();
     }
 
-    function removeEditExtraImage(rowId) {
+    async function removeEditExtraImage(rowId) {
+      const ok = await confirmAdminAction("क्या आप इस फोटो लिंक को हटाना चाहते हैं?\nAre you sure you want to remove this image?", "Confirm Remove Image");
+      if (!ok) return;
       const el = document.getElementById(rowId);
       if (el) {
         el.remove();
@@ -3170,7 +3379,9 @@
       renderEditProductGalleryLive();
     }
 
-    function clearEditProductVideo() {
+    async function clearEditProductVideo() {
+      const ok = await confirmAdminAction("क्या आप इस प्रोडक्ट वीडियो को हटाना चाहते हैं?\nAre you sure you want to remove this video?", "Confirm Remove Video");
+      if (!ok) return;
       const inp = document.getElementById('edit-prod-video');
       if (inp) inp.value = '';
       onEditVideoUrlChange();
@@ -4329,20 +4540,6 @@
       }
     }
 
-    function addExtraImageInput() {
-      const container = document.getElementById('extra-images-container');
-      if (!container) return;
-      const div = document.createElement('div');
-      div.className = "flex items-center gap-2";
-      div.innerHTML = `
-        <input type="url" placeholder="Extra image URL..." class="inp-prod-extra-img flex-1 px-3 py-1.5 text-xs border border-slate-300 rounded-xl outline-none focus:border-brand-navy" />
-        <button type="button" onclick="this.parentElement.remove()" class="p-2 text-rose-500 hover:bg-rose-50 rounded-xl text-xs">
-          <i class="fa-solid fa-trash-can"></i>
-        </button>
-      `;
-      container.appendChild(div);
-    }
-
     async function handleAdminAddProduct(event) {
       if (event && event.preventDefault) event.preventDefault();
 
@@ -4365,14 +4562,16 @@
       const videoUrl = (document.getElementById('inp-prod-video') ? document.getElementById('inp-prod-video').value : '').trim();
       const desc = (document.getElementById('inp-prod-desc') ? document.getElementById('inp-prod-desc').value : '').trim();
 
-      // Collect extra images
-      const extraImageInputs = document.querySelectorAll('.inp-prod-extra-img');
+      // Collect all extra images
+      const extraImageInputs = Array.from(document.querySelectorAll('#extra-images-container .add-extra-img-input, #extra-images-container .inp-prod-extra-img'));
       const extraImages = [];
       extraImageInputs.forEach(inp => {
-        if (inp.value && inp.value.trim().startsWith('http')) {
-          extraImages.push(inp.value.trim());
+        const val = (inp.value || '').trim();
+        if (val && (val.startsWith('http://') || val.startsWith('https://'))) {
+          extraImages.push(val);
         }
       });
+      const allImages = [mainImage, ...extraImages.filter(x => x !== mainImage)];
 
       // Validations
       if (!title || !mainImage || !desc) {
@@ -4468,19 +4667,25 @@
         }
         saveStoredCatalog(catalog);
 
-        // Broadcast to customer store
+        // Broadcast to customer store with full live catalog
         try {
           syncChannel.postMessage({
             type: 'CATALOG_UPDATED',
-            productId: prodId
+            productId: prodId,
+            catalog: catalog
           });
         } catch(e) {}
 
-        // Reset form
+        // Reset form & media state
         const form = document.getElementById('form-add-product');
         if (form) form.reset();
         const extraContainer = document.getElementById('extra-images-container');
         if (extraContainer) extraContainer.innerHTML = '';
+        renderAddProductGalleryLive();
+        const thumbPrev = document.getElementById('inp-prod-primary-thumb-preview');
+        if (thumbPrev) thumbPrev.innerHTML = `<i class="fa-solid fa-image text-slate-400 text-xs"></i>`;
+        const vidPrev = document.getElementById('inp-prod-video-preview');
+        if (vidPrev) { vidPrev.innerHTML = ''; vidPrev.classList.add('hidden'); }
         const idField = document.getElementById('inp-prod-id');
         if (idField) idField.value = '';
 
@@ -4861,7 +5066,8 @@
         try {
           syncChannel.postMessage({
             type: 'CATALOG_UPDATED',
-            productId: prodId
+            productId: prodId,
+            catalog: catalog
           });
         } catch(e) {}
 

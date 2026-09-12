@@ -931,28 +931,6 @@
               <span id="pdetail-discount-tag" class="bg-emerald-600 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow">50% OFF</span>
             </div>
 
-            <!-- Premium Glassmorphism Center Play Button (Shown when video available) -->
-            <div 
-              id="pdetail-hero-play-container" 
-              class="hidden absolute inset-0 z-20 flex flex-col items-center justify-center pointer-events-none"
-            >
-              <div 
-                class="play-btn-container pointer-events-auto" 
-                onclick="event.stopPropagation(); switchProductDetailMedia('video')" 
-                title="Play Product Video"
-              >
-                <div class="play-button"></div>
-              </div>
-              <button 
-                type="button" 
-                onclick="event.stopPropagation(); switchProductDetailMedia('video')"
-                class="pointer-events-auto mt-3 px-3.5 py-1 bg-black/60 hover:bg-black/85 backdrop-blur-md text-white text-[11px] font-bold rounded-full border border-white/20 shadow-lg flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
-              >
-                <i class="fa-solid fa-play text-[9px] text-rose-400"></i>
-                <span>Watch Video</span>
-              </button>
-            </div>
-
             <!-- Zoom overlay button -->
             <button type="button" onclick="event.stopPropagation(); openImageLightbox()" class="absolute bottom-3 left-3 w-8 h-8 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center text-xs transition z-10" title="Click to zoom image">
               <i class="fa-solid fa-magnifying-glass-plus"></i>
@@ -3308,6 +3286,12 @@
     syncChannel.onmessage = (event) => {
       console.log("[Buyero Client Bus] Received sync event:", event.data);
       if (event.data && event.data.type === 'CATALOG_UPDATED') {
+        if (event.data.catalog && Array.isArray(event.data.catalog)) {
+          const safeCat = event.data.catalog
+            .map(sanitizeCustomerProduct)
+            .filter(Boolean);
+          localStorage.setItem('buyero_catalog', JSON.stringify(safeCat));
+        }
         if (event.data.deletedProductId) {
           markProductAsDeleted(event.data.deletedProductId);
           try {
@@ -3318,6 +3302,13 @@
         }
         setupCategoryPills();
         loadCatalog();
+        if (activeDetailProduct && (!event.data.productId || activeDetailProduct.id === event.data.productId)) {
+          const freshCatalog = getStoredCatalog();
+          const refreshed = freshCatalog.find(p => p.id === activeDetailProduct.id);
+          if (refreshed) {
+            openProductPage(refreshed.id);
+          }
+        }
       } else if (event.data && event.data.type === 'ORDER_STATUS_UPDATED') {
         let orders = getStoredOrders();
         const target = orders.find(o => o.orderId === event.data.orderId);
@@ -3778,6 +3769,41 @@
       const discountAmount = Math.max(0, mrp - sellingPrice);
       const discountPercent = mrp > 0 ? Math.round((discountAmount / mrp) * 100) : 0;
 
+      // Extract all valid image URLs cleanly (no fake query params, no duplicates)
+      let cleanImages = [];
+      if (Array.isArray(p.images)) {
+        p.images.forEach(u => {
+          if (u && typeof u === 'string' && u.trim() && !cleanImages.includes(u.trim())) {
+            cleanImages.push(u.trim());
+          }
+        });
+      } else if (typeof p.images === 'string' && p.images.trim()) {
+        try {
+          const parsed = JSON.parse(p.images);
+          if (Array.isArray(parsed)) {
+            parsed.forEach(u => {
+              if (u && typeof u === 'string' && u.trim() && !cleanImages.includes(u.trim())) {
+                cleanImages.push(u.trim());
+              }
+            });
+          }
+        } catch(e) {}
+      }
+      if (Array.isArray(p.extraImages)) {
+        p.extraImages.forEach(u => {
+          if (u && typeof u === 'string' && u.trim() && !cleanImages.includes(u.trim())) {
+            cleanImages.push(u.trim());
+          }
+        });
+      }
+      const mainImg = (typeof p.image === 'string' ? p.image.trim() : '');
+      if (mainImg && !cleanImages.includes(mainImg)) {
+        cleanImages.unshift(mainImg);
+      }
+      if (cleanImages.length === 0 && mainImg) {
+        cleanImages.push(mainImg);
+      }
+
       return {
         id: String(p.id || ''),
         title: String(p.title || ''),
@@ -3788,8 +3814,9 @@
         sellingPrice: sellingPrice,
         discountAmount: discountAmount,
         discountPercent: discountPercent,
-        image: p.image || '',
-        images: Array.isArray(p.images) && p.images.length > 0 ? p.images : (p.image ? [p.image] : []),
+        image: mainImg || (cleanImages[0] || ''),
+        images: cleanImages,
+        extraImages: cleanImages.filter(x => x !== (mainImg || cleanImages[0])),
         videoUrl: p.videoUrl || '',
         reelUrl: p.reelUrl || '',
         description: p.description || '',
@@ -5296,14 +5323,14 @@
       selectedDetailSize = 'M';
       selectedProductSize = 'M';
 
-      // Setup gallery images
-      activeDetailImages = product.images && product.images.length > 0
-        ? product.images
-        : [
-            product.image,
-            product.image + (product.image.includes('?') ? '&view=angle2' : '?view=angle2'),
-            product.image + (product.image.includes('?') ? '&view=closeup' : '?view=closeup')
-          ];
+      // Setup gallery images (Only real images added by admin, no dummy query params)
+      if (Array.isArray(product.images) && product.images.length > 0) {
+        activeDetailImages = product.images.filter(x => x && typeof x === 'string' && x.trim());
+      } else if (product.image && typeof product.image === 'string' && product.image.trim()) {
+        activeDetailImages = [product.image.trim()];
+      } else {
+        activeDetailImages = [];
+      }
       currentDetailImageIndex = 0;
       updateProductDetailImageDisplay();
 
@@ -5373,7 +5400,6 @@
       switchProductDetailMedia('photo');
       const hasVideo = Boolean(product.videoUrl && product.videoUrl.trim());
       const mediaSwitcher = document.getElementById('pdetail-media-switcher');
-      const heroPlayContainer = document.getElementById('pdetail-hero-play-container');
       const photoBadge = document.getElementById('pdetail-photo-count-badge');
 
       if (photoBadge) {
@@ -5381,9 +5407,6 @@
       }
       if (mediaSwitcher) {
         mediaSwitcher.classList.toggle('hidden', !hasVideo);
-      }
-      if (heroPlayContainer) {
-        heroPlayContainer.classList.toggle('hidden', !hasVideo);
       }
 
       // Switch to product-detail view
