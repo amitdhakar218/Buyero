@@ -3151,15 +3151,51 @@
       return window.confirm(message);
     }
 
+    /* Helper: normalize and clean pasted image URLs safely */
+    function cleanImageUrl(raw) {
+      if (!raw || typeof raw !== 'string') return '';
+      let url = raw.trim();
+      url = url.replace(/^["']|["']$/g, '').trim();
+      if (!url) return '';
+      if (url.startsWith('//')) {
+        url = 'https:' + url;
+      } else if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('data:image/')) {
+        url = 'https://' + url;
+      }
+      return url;
+    }
+
+    /* Helper: paste clipboard into adjacent input */
+    async function pasteFromClipboardToInput(btnEl) {
+      let pastedText = '';
+      try {
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          pastedText = await navigator.clipboard.readText();
+        }
+      } catch (e) {}
+      if (!pastedText) {
+        pastedText = window.prompt("Paste Image Link / फोटो लिंक पेस्ट करें:");
+      }
+      if (pastedText && pastedText.trim()) {
+        const row = btnEl.closest('.flex');
+        const input = row ? row.querySelector('input') : null;
+        if (input) {
+          input.value = pastedText.trim();
+          input.dispatchEvent(new Event('input'));
+          input.dispatchEvent(new Event('change'));
+        }
+      }
+    }
+
     /* =========================================================
        ADD PRODUCT FORM - MULTI-IMAGE & VIDEO GALLERY CONTROLLER
        ========================================================= */
     function onAddPrimaryImageChange() {
       const inp = document.getElementById('inp-prod-image');
       const thumb = document.getElementById('inp-prod-primary-thumb-preview');
-      const val = (inp ? inp.value : '').trim();
+      const val = cleanImageUrl(inp ? inp.value : '');
       if (thumb) {
-        if (val && (val.startsWith('http://') || val.startsWith('https://'))) {
+        if (val) {
           thumb.innerHTML = `<img src="${val}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100';">`;
         } else {
           thumb.innerHTML = `<i class="fa-solid fa-image text-slate-400 text-xs"></i>`;
@@ -3172,27 +3208,39 @@
       const container = document.getElementById('extra-images-container');
       if (!container) return;
       const rowId = 'add-extra-img-row-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7);
+      const cleanInit = cleanImageUrl(initialUrl);
       const div = document.createElement('div');
       div.id = rowId;
-      div.className = "flex items-center gap-2 bg-white p-1.5 rounded-xl border border-slate-200 transition hover:border-slate-300";
+      div.className = "flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200 transition hover:border-slate-300 shadow-2xs";
       div.innerHTML = `
-        <div class="w-9 h-9 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 flex-shrink-0 flex items-center justify-center extra-img-thumb">
-          ${initialUrl ? `<img src="${initialUrl}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100';">` : `<i class="fa-solid fa-image text-slate-300 text-xs"></i>`}
+        <div class="w-10 h-10 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 flex-shrink-0 flex items-center justify-center extra-img-thumb shadow-2xs">
+          ${cleanInit ? `<img src="${cleanInit}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100';">` : `<i class="fa-solid fa-image text-slate-300 text-xs"></i>`}
         </div>
         <input 
-          type="url" 
-          placeholder="https://... extra image URL" 
-          value="${initialUrl ? initialUrl.replace(/"/g, '&quot;') : ''}"
+          type="text" 
+          inputmode="url"
+          placeholder="Paste extra image link (e.g. https://...)" 
+          value="${cleanInit ? cleanInit.replace(/"/g, '&quot;') : ''}"
           oninput="updateAddExtraImageThumbnail(this)"
-          class="add-extra-img-input flex-1 px-2.5 py-1 text-xs border border-slate-200 rounded-lg outline-none focus:border-brand-navy bg-slate-50/50"
+          onchange="updateAddExtraImageThumbnail(this)"
+          class="add-extra-img-input flex-1 px-3 py-1.5 text-xs border border-slate-200 rounded-lg outline-none focus:border-brand-navy bg-slate-50/50"
         />
         <button 
           type="button" 
+          onclick="pasteFromClipboardToInput(this)" 
+          class="px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold flex items-center gap-1 transition active:scale-95 flex-shrink-0"
+          title="Paste from clipboard"
+        >
+          <i class="fa-regular fa-clipboard"></i>
+          <span class="hidden sm:inline">Paste</span>
+        </button>
+        <button 
+          type="button" 
           onclick="removeAddExtraImage('${rowId}')" 
-          class="w-7 h-7 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 flex items-center justify-center transition active:scale-90 flex-shrink-0"
+          class="w-8 h-8 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 flex items-center justify-center transition active:scale-90 flex-shrink-0"
           title="Delete this image"
         >
-          <i class="fa-solid fa-trash text-[10px]"></i>
+          <i class="fa-solid fa-trash text-xs"></i>
         </button>
       `;
       container.appendChild(div);
@@ -3210,13 +3258,13 @@
     }
 
     function updateAddExtraImageThumbnail(inputEl) {
-      const val = (inputEl.value || '').trim();
+      const cleaned = cleanImageUrl(inputEl.value);
       const row = inputEl.closest('.flex');
       if (row) {
         const thumb = row.querySelector('.extra-img-thumb');
         if (thumb) {
-          if (val && (val.startsWith('http://') || val.startsWith('https://'))) {
-            thumb.innerHTML = `<img src="${val}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100';">`;
+          if (cleaned) {
+            thumb.innerHTML = `<img src="${cleaned}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100';">`;
           } else {
             thumb.innerHTML = `<i class="fa-solid fa-image text-slate-300 text-xs"></i>`;
           }
@@ -3247,15 +3295,19 @@
       const countBadge = document.getElementById('add-media-count-badge');
       if (!strip) return;
 
-      const mainImg = (document.getElementById('inp-prod-image')?.value || '').trim();
+      const mainImg = cleanImageUrl(document.getElementById('inp-prod-image')?.value || '');
       const extraInputs = Array.from(document.querySelectorAll('#extra-images-container .add-extra-img-input, #extra-images-container .inp-prod-extra-img'));
-      const extraImgs = extraInputs.map(i => (i.value || '').trim()).filter(Boolean);
+      const extraImgs = [];
+      extraInputs.forEach(i => {
+        const c = cleanImageUrl(i.value);
+        if (c && !extraImgs.includes(c) && c !== mainImg) extraImgs.push(c);
+      });
       const videoUrl = (document.getElementById('inp-prod-video')?.value || '').trim();
 
       const allImages = [];
       if (mainImg) allImages.push({ url: mainImg, isMain: true });
       extraImgs.forEach((u, i) => {
-        if (u !== mainImg) allImages.push({ url: u, isMain: false, index: i });
+        allImages.push({ url: u, isMain: false, index: i });
       });
 
       if (countBadge) {
@@ -3270,7 +3322,7 @@
       let html = '';
       allImages.forEach((item, idx) => {
         html += `
-          <div class="relative w-11 h-11 rounded-lg border-2 ${item.isMain ? 'border-brand-orange shadow-xs' : 'border-slate-200'} overflow-hidden flex-shrink-0 group">
+          <div class="relative w-12 h-12 rounded-lg border-2 ${item.isMain ? 'border-brand-orange shadow-xs' : 'border-slate-200'} overflow-hidden flex-shrink-0 group">
             <img src="${item.url}" alt="Preview" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100';">
             ${item.isMain ? `<span class="absolute top-0 left-0 bg-brand-orange text-white text-[7px] font-extrabold px-1 rounded-br">MAIN</span>` : `<span class="absolute bottom-0 right-0 bg-slate-800/80 text-white text-[7px] font-bold px-1 rounded-tl">#${idx+1}</span>`}
           </div>
@@ -3281,7 +3333,7 @@
         const vid = parseVideoSource(videoUrl);
         const thumb = (vid && vid.thumbUrl) ? vid.thumbUrl : (allImages[0]?.url || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100');
         html += `
-          <div class="relative w-11 h-11 rounded-lg border-2 border-rose-500 overflow-hidden flex-shrink-0 group shadow-xs bg-black flex items-center justify-center cursor-pointer" onclick="testAdminPlayVideo('inp-prod-video')" title="Preview Product Video">
+          <div class="relative w-12 h-12 rounded-lg border-2 border-rose-500 overflow-hidden flex-shrink-0 group shadow-xs bg-black flex items-center justify-center cursor-pointer" onclick="testAdminPlayVideo('inp-prod-video')" title="Preview Product Video">
             <img src="${thumb}" alt="Video" class="w-full h-full object-cover opacity-75">
             <div class="absolute inset-0 flex items-center justify-center">
               <div class="w-5 h-5 rounded-full bg-rose-600 text-white flex items-center justify-center text-[8px] shadow">
@@ -3302,9 +3354,9 @@
     function onEditPrimaryImageChange() {
       const inp = document.getElementById('edit-prod-image');
       const thumb = document.getElementById('edit-prod-primary-thumb-preview');
-      const val = (inp ? inp.value : '').trim();
+      const val = cleanImageUrl(inp ? inp.value : '');
       if (thumb) {
-        if (val && (val.startsWith('http://') || val.startsWith('https://'))) {
+        if (val) {
           thumb.innerHTML = `<img src="${val}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100';">`;
         } else {
           thumb.innerHTML = `<i class="fa-solid fa-image text-slate-400 text-xs"></i>`;
@@ -3317,27 +3369,39 @@
       const container = document.getElementById('edit-extra-images-container');
       if (!container) return;
       const rowId = 'extra-img-row-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7);
+      const cleanInit = cleanImageUrl(initialUrl);
       const div = document.createElement('div');
       div.id = rowId;
-      div.className = "flex items-center gap-2 bg-white p-1.5 rounded-xl border border-slate-200 transition hover:border-slate-300";
+      div.className = "flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200 transition hover:border-slate-300 shadow-2xs";
       div.innerHTML = `
-        <div class="w-9 h-9 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 flex-shrink-0 flex items-center justify-center extra-img-thumb">
-          ${initialUrl ? `<img src="${initialUrl}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100';">` : `<i class="fa-solid fa-image text-slate-300 text-xs"></i>`}
+        <div class="w-10 h-10 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 flex-shrink-0 flex items-center justify-center extra-img-thumb shadow-2xs">
+          ${cleanInit ? `<img src="${cleanInit}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100';">` : `<i class="fa-solid fa-image text-slate-300 text-xs"></i>`}
         </div>
         <input 
-          type="url" 
-          placeholder="https://... extra image URL" 
-          value="${initialUrl ? initialUrl.replace(/"/g, '&quot;') : ''}"
+          type="text" 
+          inputmode="url"
+          placeholder="Paste extra image link (e.g. https://...)" 
+          value="${cleanInit ? cleanInit.replace(/"/g, '&quot;') : ''}"
           oninput="updateEditExtraImageThumbnail(this)"
-          class="edit-extra-img-input flex-1 px-2.5 py-1 text-xs border border-slate-200 rounded-lg outline-none focus:border-brand-navy bg-slate-50/50"
+          onchange="updateEditExtraImageThumbnail(this)"
+          class="edit-extra-img-input flex-1 px-3 py-1.5 text-xs border border-slate-200 rounded-lg outline-none focus:border-brand-navy bg-slate-50/50"
         />
         <button 
           type="button" 
+          onclick="pasteFromClipboardToInput(this)" 
+          class="px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold flex items-center gap-1 transition active:scale-95 flex-shrink-0"
+          title="Paste from clipboard"
+        >
+          <i class="fa-regular fa-clipboard"></i>
+          <span class="hidden sm:inline">Paste</span>
+        </button>
+        <button 
+          type="button" 
           onclick="removeEditExtraImage('${rowId}')" 
-          class="w-7 h-7 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 flex items-center justify-center transition active:scale-90 flex-shrink-0"
+          class="w-8 h-8 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 flex items-center justify-center transition active:scale-90 flex-shrink-0"
           title="Delete this image"
         >
-          <i class="fa-solid fa-trash text-[10px]"></i>
+          <i class="fa-solid fa-trash text-xs"></i>
         </button>
       `;
       container.appendChild(div);
@@ -3355,13 +3419,13 @@
     }
 
     function updateEditExtraImageThumbnail(inputEl) {
-      const val = (inputEl.value || '').trim();
+      const cleaned = cleanImageUrl(inputEl.value);
       const row = inputEl.closest('.flex');
       if (row) {
         const thumb = row.querySelector('.extra-img-thumb');
         if (thumb) {
-          if (val && (val.startsWith('http://') || val.startsWith('https://'))) {
-            thumb.innerHTML = `<img src="${val}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100';">`;
+          if (cleaned) {
+            thumb.innerHTML = `<img src="${cleaned}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100';">`;
           } else {
             thumb.innerHTML = `<i class="fa-solid fa-image text-slate-300 text-xs"></i>`;
           }
@@ -3392,15 +3456,19 @@
       const countBadge = document.getElementById('edit-media-count-badge');
       if (!strip) return;
 
-      const mainImg = (document.getElementById('edit-prod-image')?.value || '').trim();
+      const mainImg = cleanImageUrl(document.getElementById('edit-prod-image')?.value || '');
       const extraInputs = Array.from(document.querySelectorAll('#edit-extra-images-container .edit-extra-img-input'));
-      const extraImgs = extraInputs.map(i => (i.value || '').trim()).filter(Boolean);
+      const extraImgs = [];
+      extraInputs.forEach(i => {
+        const c = cleanImageUrl(i.value);
+        if (c && !extraImgs.includes(c) && c !== mainImg) extraImgs.push(c);
+      });
       const videoUrl = (document.getElementById('edit-prod-video')?.value || '').trim();
 
       const allImages = [];
       if (mainImg) allImages.push({ url: mainImg, isMain: true });
       extraImgs.forEach((u, i) => {
-        if (u !== mainImg) allImages.push({ url: u, isMain: false, index: i });
+        allImages.push({ url: u, isMain: false, index: i });
       });
 
       if (countBadge) {
@@ -3415,7 +3483,7 @@
       let html = '';
       allImages.forEach((item, idx) => {
         html += `
-          <div class="relative w-11 h-11 rounded-lg border-2 ${item.isMain ? 'border-brand-orange shadow-xs' : 'border-slate-200'} overflow-hidden flex-shrink-0 group">
+          <div class="relative w-12 h-12 rounded-lg border-2 ${item.isMain ? 'border-brand-orange shadow-xs' : 'border-slate-200'} overflow-hidden flex-shrink-0 group">
             <img src="${item.url}" alt="Preview" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100';">
             ${item.isMain ? `<span class="absolute top-0 left-0 bg-brand-orange text-white text-[7px] font-extrabold px-1 rounded-br">MAIN</span>` : `<span class="absolute bottom-0 right-0 bg-slate-800/80 text-white text-[7px] font-bold px-1 rounded-tl">#${idx+1}</span>`}
           </div>
@@ -3426,7 +3494,7 @@
         const vid = parseVideoSource(videoUrl);
         const thumb = (vid && vid.thumbUrl) ? vid.thumbUrl : (allImages[0]?.url || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100');
         html += `
-          <div class="relative w-11 h-11 rounded-lg border-2 border-rose-500 overflow-hidden flex-shrink-0 group shadow-xs bg-black flex items-center justify-center cursor-pointer" onclick="testAdminPlayVideo('edit-prod-video')" title="Preview Product Video">
+          <div class="relative w-12 h-12 rounded-lg border-2 border-rose-500 overflow-hidden flex-shrink-0 group shadow-xs bg-black flex items-center justify-center cursor-pointer" onclick="testAdminPlayVideo('edit-prod-video')" title="Preview Product Video">
             <img src="${thumb}" alt="Video" class="w-full h-full object-cover opacity-75">
             <div class="absolute inset-0 flex items-center justify-center">
               <div class="w-5 h-5 rounded-full bg-rose-600 text-white flex items-center justify-center text-[8px] shadow">
@@ -3612,8 +3680,25 @@
             const priv = cachedPrivate[id] || {};
             const mergedItem = Object.assign({}, pub, priv);
 
-            const idx = local.findIndex(p => p.id === id);
+            const idx = local.findIndex(p => String(p.id) === String(id));
             if (idx >= 0) {
+              const localItem = local[idx];
+              const localTime = localItem.updatedAt ? new Date(localItem.updatedAt).getTime() : 0;
+              const remoteTime = mergedItem.updatedAt ? new Date(mergedItem.updatedAt).getTime() : 0;
+
+              if (localTime > remoteTime) {
+                // Local product version is newer than cloud snapshot; do NOT overwrite local changes!
+                return;
+              }
+
+              // Preserve extra images if local has them and remote lost them
+              const remoteImages = Array.isArray(mergedItem.images) ? mergedItem.images : [];
+              const localImages = Array.isArray(localItem.images) ? localItem.images : [];
+              if (remoteImages.length < localImages.length && localImages.length > 1) {
+                mergedItem.images = Array.from(new Set([...remoteImages, ...localImages]));
+                mergedItem.extraImages = mergedItem.images.filter(x => x !== mergedItem.image);
+              }
+
               if (JSON.stringify(local[idx]) !== JSON.stringify(mergedItem)) {
                 local[idx] = Object.assign({}, local[idx], mergedItem);
                 changed = true;
@@ -4458,6 +4543,10 @@
         loadAdminCatalogList();
       } else if (sub === 'add') {
         calculateProductMarginLive();
+        const container = document.getElementById('extra-images-container');
+        if (container && container.children.length === 0) {
+          addExtraImageInput('');
+        }
       }
     }
 
@@ -4565,16 +4654,17 @@
       // Collect all extra images
       const extraImageInputs = Array.from(document.querySelectorAll('#extra-images-container .add-extra-img-input, #extra-images-container .inp-prod-extra-img'));
       const extraImages = [];
+      const mainImageClean = cleanImageUrl(mainImage);
       extraImageInputs.forEach(inp => {
-        const val = (inp.value || '').trim();
-        if (val && (val.startsWith('http://') || val.startsWith('https://'))) {
-          extraImages.push(val);
+        const c = cleanImageUrl(inp.value);
+        if (c && c !== mainImageClean && !extraImages.includes(c)) {
+          extraImages.push(c);
         }
       });
-      const allImages = [mainImage, ...extraImages.filter(x => x !== mainImage)];
+      const allImages = mainImageClean ? [mainImageClean, ...extraImages] : [...extraImages];
 
       // Validations
-      if (!title || !mainImage || !desc) {
+      if (!title || !mainImageClean || !desc) {
         alert("Please fill all required fields (Title, Home Image, and Description).");
         return;
       }
@@ -4611,7 +4701,6 @@
       const now = new Date().toISOString();
 
       // PARTITION 1: Customer-Facing Public Document (/products/{id})
-      // Absolutely NO privateSourceCost, sourceProductUrl, supplierReference, or adminNotes!
       const publicProduct = {
         id: prodId,
         title: title,
@@ -4622,9 +4711,9 @@
         price: price,
         discountPercent: discountPct,
         discountAmount: discountAmt,
-        image: mainImage,
+        image: mainImageClean,
         extraImages: extraImages,
-        images: [mainImage, ...extraImages],
+        images: allImages,
         videoUrl: videoUrl || '',
         description: desc,
         variants: variants,
@@ -4650,16 +4739,10 @@
       };
 
       try {
-        // Dual write to Firestore
-        if (fbFirestore) {
-          await fbFirestore.collection('products').doc(prodId).set(publicProduct);
-          await fbFirestore.collection('admin_product_data').doc(prodId).set(privateProductData);
-        }
-
-        // Merge for Admin Studio local view
+        // 1. SAVE TO LOCAL CATALOG FIRST (Guaranteed persistence, immediate sync)
         const mergedForAdmin = Object.assign({}, publicProduct, privateProductData);
         let catalog = getStoredCatalog();
-        const existingIdx = catalog.findIndex(p => p.id === prodId);
+        const existingIdx = catalog.findIndex(p => String(p.id) === String(prodId));
         if (existingIdx >= 0) {
           catalog[existingIdx] = mergedForAdmin;
         } else {
@@ -4676,11 +4759,29 @@
           });
         } catch(e) {}
 
+        // 2. DUAL WRITE TO FIRESTORE (Resilient, non-blocking)
+        if (fbFirestore) {
+          try {
+            await fbFirestore.collection('products').doc(prodId).set(publicProduct);
+            console.log("[Buyero Admin] Firestore products saved:", prodId, allImages);
+          } catch(fsErr) {
+            console.warn("[Buyero Admin] Firestore product write warning:", fsErr);
+          }
+          try {
+            await fbFirestore.collection('admin_product_data').doc(prodId).set(privateProductData);
+          } catch(fsPrivErr) {
+            console.warn("[Buyero Admin] Firestore admin data write warning:", fsPrivErr);
+          }
+        }
+
         // Reset form & media state
         const form = document.getElementById('form-add-product');
         if (form) form.reset();
         const extraContainer = document.getElementById('extra-images-container');
-        if (extraContainer) extraContainer.innerHTML = '';
+        if (extraContainer) {
+          extraContainer.innerHTML = '';
+          addExtraImageInput('');
+        }
         renderAddProductGalleryLive();
         const thumbPrev = document.getElementById('inp-prod-primary-thumb-preview');
         if (thumbPrev) thumbPrev.innerHTML = `<i class="fa-solid fa-image text-slate-400 text-xs"></i>`;
@@ -4689,8 +4790,8 @@
         const idField = document.getElementById('inp-prod-id');
         if (idField) idField.value = '';
 
-        recordActivityLog('PRODUCT_ADDED', `Added new product "${title}" (ID: ${prodId}) with MRP ₹${mrp} & Sell ₹${price}`);
-        alert(`✅ Product "${title}" has been successfully added to the catalog!`);
+        recordActivityLog('PRODUCT_ADDED', `Added new product "${title}" (ID: ${prodId}) with ${allImages.length} images - MRP ₹${mrp} & Sell ₹${price}`);
+        alert(`✅ Product "${title}" has been successfully added with ${allImages.length} photo(s)!`);
 
         switchProductSubTab('all');
         calculateAnalysisMetrics();
@@ -4782,9 +4883,13 @@
                   <h4 class="font-bold text-xs text-slate-900 truncate" title="${p.title}">${p.title}</h4>
                   ${statusBadge}
                 </div>
-                <div class="flex items-center gap-2 mt-1 text-[11px]">
+                <div class="flex items-center gap-1.5 mt-1 text-[11px] flex-wrap">
                   <span class="px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] font-semibold">${p.category || 'General'}</span>
                   <span class="font-mono text-[10px] text-slate-400">#${p.id}</span>
+                  <span class="px-1.5 py-0.5 bg-orange-50 text-brand-orange border border-orange-200 rounded text-[9px] font-bold flex items-center gap-1">
+                    <i class="fa-solid fa-images text-[8px]"></i> ${(Array.isArray(p.images) && p.images.length > 0) ? p.images.length : ((Array.isArray(p.extraImages) && p.extraImages.length > 0) ? (p.extraImages.length + 1) : 1)} photos
+                  </span>
+                  ${p.videoUrl ? `<span class="px-1.5 py-0.5 bg-rose-50 text-rose-600 border border-rose-200 rounded text-[9px] font-bold flex items-center gap-1"><i class="fa-solid fa-play text-[8px]"></i> Video</span>` : ''}
                 </div>
                 <!-- Public Pricing Row -->
                 <div class="flex items-center gap-2 mt-1">
@@ -4893,19 +4998,38 @@
       document.getElementById('edit-prod-admin-notes').value = p.adminNotes || '';
 
       document.getElementById('edit-prod-variants').value = p.variants || '';
-      document.getElementById('edit-prod-image').value = p.image || '';
+      const mainImgClean = cleanImageUrl(p.image || '');
+      document.getElementById('edit-prod-image').value = mainImgClean;
       onEditPrimaryImageChange();
 
       // Populate Extra Images dynamically
       const extraContainer = document.getElementById('edit-extra-images-container');
       if (extraContainer) {
         extraContainer.innerHTML = '';
-        let extraList = [];
-        if (Array.isArray(p.images) && p.images.length > 0) {
-          extraList = p.images.filter(x => x && x !== p.image);
-        } else if (Array.isArray(p.extraImages)) {
-          extraList = p.extraImages.filter(x => x && x !== p.image);
+        let allImagesList = [];
+        if (Array.isArray(p.images)) {
+          allImagesList = p.images;
+        } else if (typeof p.images === 'string' && p.images.trim()) {
+          try {
+            const parsed = JSON.parse(p.images);
+            if (Array.isArray(parsed)) allImagesList = parsed;
+            else allImagesList = [p.images.trim()];
+          } catch(e) {
+            allImagesList = [p.images.trim()];
+          }
         }
+        if (Array.isArray(p.extraImages)) {
+          allImagesList = [...allImagesList, ...p.extraImages];
+        }
+
+        const extraList = [];
+        allImagesList.forEach(u => {
+          const clean = cleanImageUrl(u);
+          if (clean && clean !== mainImgClean && !extraList.includes(clean)) {
+            extraList.push(clean);
+          }
+        });
+
         if (extraList.length > 0) {
           extraList.forEach(url => addEditExtraImageInput(url));
         } else {
@@ -4950,7 +5074,7 @@
       const submitBtn = document.getElementById('btn-edit-prod-submit');
       if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Saving to Firebase...';
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Saving changes...';
       }
 
       const prodId = document.getElementById('edit-prod-id').value;
@@ -4968,14 +5092,20 @@
       const adminNotes = (document.getElementById('edit-prod-admin-notes').value || '').trim();
 
       const variants = (document.getElementById('edit-prod-variants').value || '').trim() || 'Standard';
-      const mainImage = (document.getElementById('edit-prod-image').value || '').trim();
+      const mainImage = cleanImageUrl(document.getElementById('edit-prod-image').value || '');
       const videoUrl = (document.getElementById('edit-prod-video').value || '').trim();
       const desc = (document.getElementById('edit-prod-desc').value || '').trim();
 
       // Collect all dynamic extra images
       const extraInputs = Array.from(document.querySelectorAll('#edit-extra-images-container .edit-extra-img-input'));
-      const extraImages = extraInputs.map(i => (i.value || '').trim()).filter(Boolean);
-      const allImages = [mainImage, ...extraImages.filter(x => x !== mainImage)];
+      const extraImages = [];
+      extraInputs.forEach(i => {
+        const c = cleanImageUrl(i.value);
+        if (c && c !== mainImage && !extraImages.includes(c)) {
+          extraImages.push(c);
+        }
+      });
+      const allImages = mainImage ? [mainImage, ...extraImages] : [...extraImages];
 
       // Validations
       if (!title || !mainImage || !desc) {
@@ -5047,15 +5177,10 @@
       };
 
       try {
-        if (fbFirestore) {
-          await fbFirestore.collection('products').doc(prodId).set(publicProduct, { merge: true });
-          await fbFirestore.collection('admin_product_data').doc(prodId).set(privateProductData, { merge: true });
-        }
-
-        // Update Admin local catalog
+        // 1. SAVE LOCALLY & BROADCAST FIRST (Instant, never fails)
         const merged = Object.assign({}, publicProduct, privateProductData);
         let catalog = getStoredCatalog();
-        const idx = catalog.findIndex(p => p.id === prodId);
+        const idx = catalog.findIndex(p => String(p.id) === String(prodId));
         if (idx >= 0) {
           catalog[idx] = Object.assign({}, catalog[idx], merged);
         } else {
@@ -5071,11 +5196,26 @@
           });
         } catch(e) {}
 
+        // 2. DUAL WRITE TO FIRESTORE (Resilient, non-blocking)
+        if (fbFirestore) {
+          try {
+            await fbFirestore.collection('products').doc(prodId).set(publicProduct, { merge: true });
+            console.log("[Buyero Admin] Firestore updated successfully:", prodId, allImages);
+          } catch(fsErr) {
+            console.warn("[Buyero Admin] Firestore products set warning:", fsErr);
+          }
+          try {
+            await fbFirestore.collection('admin_product_data').doc(prodId).set(privateProductData, { merge: true });
+          } catch(fsPrivErr) {
+            console.warn("[Buyero Admin] Firestore admin_product_data set warning:", fsPrivErr);
+          }
+        }
+
         closeEditProductModal();
         loadAdminCatalogList();
         calculateAnalysisMetrics();
         recordActivityLog('PRODUCT_EDITED', `Updated product "${title}" (#${prodId}) with ${allImages.length} images - MRP ₹${mrp}, Sell ₹${price}`);
-        alert(`✅ Product "${title}" updated successfully with ${allImages.length} images!`);
+        alert(`✅ Product "${title}" updated successfully!\nTotal ${allImages.length} photo(s) saved.`);
       } catch (err) {
         console.error("[Edit Product Error]", err);
         alert(`Failed to update product: ${err.message || err}`);

@@ -4129,8 +4129,21 @@
             let local = getStoredCatalog();
             let changed = false;
             remoteProds.forEach(rp => {
-              const idx = local.findIndex(p => p.id === rp.id);
+              const idx = local.findIndex(p => String(p.id) === String(rp.id));
               if (idx >= 0) {
+                const localItem = local[idx];
+                const localTime = localItem.updatedAt ? new Date(localItem.updatedAt).getTime() : 0;
+                const remoteTime = rp.updatedAt ? new Date(rp.updatedAt).getTime() : 0;
+                if (localTime > remoteTime) {
+                  // Local version is newer than remote snapshot; keep local changes intact
+                  return;
+                }
+                const remoteImages = Array.isArray(rp.images) ? rp.images : [];
+                const localImages = Array.isArray(localItem.images) ? localItem.images : [];
+                if (remoteImages.length < localImages.length && localImages.length > 1) {
+                  rp.images = Array.from(new Set([...remoteImages, ...localImages]));
+                  rp.extraImages = rp.images.filter(x => x !== rp.image);
+                }
                 if (JSON.stringify(local[idx]) !== JSON.stringify(rp)) {
                   local[idx] = Object.assign({}, local[idx], rp);
                   changed = true;
