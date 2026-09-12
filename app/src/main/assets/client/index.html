@@ -793,32 +793,87 @@
         </div>
       </div>
 
-      <!-- Product Image Gallery (Multi-photo slider with swipe/arrows & thumbnails) -->
+      <!-- Product Media Gallery (Photos + In-App Video Player) -->
       <div class="bg-white border-b border-slate-200">
-        <div class="relative w-full aspect-square bg-slate-100 overflow-hidden flex items-center justify-center group cursor-zoom-in" onclick="openImageLightbox()">
-          <img id="pdetail-main-img" src="" alt="Product Image" class="w-full h-full object-cover transition duration-300">
-          
-          <!-- Top badges on image -->
-          <div class="absolute top-3 left-3 flex flex-col gap-1 z-10">
-            <span id="pdetail-badge" class="bg-brand-orange text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow">Best Seller</span>
-            <span id="pdetail-discount-tag" class="bg-emerald-600 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow">50% OFF</span>
+        <!-- Media Switcher Pill (Only visible when product has video) -->
+        <div id="pdetail-media-switcher" class="hidden flex items-center justify-between px-3 py-2 bg-slate-50 border-b border-slate-100">
+          <div class="flex items-center gap-1.5">
+            <button 
+              type="button" 
+              id="pdetail-tab-btn-photos" 
+              onclick="switchProductDetailMedia('photo')" 
+              class="px-3 py-1 rounded-full text-xs font-bold transition flex items-center gap-1.5 bg-brand-navy text-white shadow-xs"
+            >
+              <i class="fa-solid fa-images text-[11px]"></i>
+              <span>Photos (<span id="pdetail-photo-count-badge">1</span>)</span>
+            </button>
+            <button 
+              type="button" 
+              id="pdetail-tab-btn-video" 
+              onclick="switchProductDetailMedia('video')" 
+              class="px-3 py-1 rounded-full text-xs font-bold transition flex items-center gap-1.5 bg-white text-rose-600 border border-rose-200 hover:bg-rose-50 shadow-xs"
+            >
+              <i class="fa-solid fa-circle-play text-[11px] text-rose-600"></i>
+              <span>Video (वीडियो ▶️)</span>
+            </button>
+          </div>
+          <span class="text-[10px] text-slate-400 font-semibold">In-App Player</span>
+        </div>
+
+        <!-- Media Display Area -->
+        <div class="relative w-full aspect-square bg-slate-100 overflow-hidden">
+          <!-- PHOTO SLIDER VIEW -->
+          <div id="pdetail-photo-view" class="w-full h-full relative cursor-zoom-in group" onclick="openImageLightbox()">
+            <img id="pdetail-main-img" src="" alt="Product Image" class="w-full h-full object-cover transition duration-300">
+            
+            <!-- Top badges on image -->
+            <div class="absolute top-3 left-3 flex flex-col gap-1 z-10">
+              <span id="pdetail-badge" class="bg-brand-orange text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow">Best Seller</span>
+              <span id="pdetail-discount-tag" class="bg-emerald-600 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow">50% OFF</span>
+            </div>
+
+            <!-- Floating Video Play Button (If video available) -->
+            <button 
+              type="button" 
+              id="pdetail-floating-play-btn" 
+              onclick="event.stopPropagation(); switchProductDetailMedia('video')" 
+              class="hidden absolute top-3 right-3 px-3 py-1.5 rounded-full bg-red-600/95 hover:bg-red-700 text-white font-bold text-xs shadow-lg backdrop-blur-sm flex items-center gap-1.5 transition active:scale-95 z-10 animate-pulse"
+              title="Watch Product Video"
+            >
+              <i class="fa-solid fa-play text-[10px]"></i>
+              <span>Play Video ▶️</span>
+            </button>
+
+            <!-- Zoom overlay button -->
+            <button type="button" onclick="event.stopPropagation(); openImageLightbox()" class="absolute bottom-3 left-3 w-8 h-8 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center text-xs transition z-10" title="Click to zoom image">
+              <i class="fa-solid fa-magnifying-glass-plus"></i>
+            </button>
+
+            <!-- Left / Right navigation arrows -->
+            <button type="button" onclick="event.stopPropagation(); prevProductDetailImage()" id="pdetail-btn-prev" class="hidden absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center text-xs transition z-10">
+              <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <button type="button" onclick="event.stopPropagation(); nextProductDetailImage()" id="pdetail-btn-next" class="hidden absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center text-xs transition z-10">
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+
+            <!-- Image counter badge -->
+            <span id="pdetail-img-counter" class="absolute bottom-3 right-3 bg-black/60 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full z-10">1/3</span>
           </div>
 
-          <!-- Zoom overlay button -->
-          <button type="button" onclick="event.stopPropagation(); openImageLightbox()" class="absolute bottom-3 left-3 w-8 h-8 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center text-xs transition z-10" title="Click to zoom image">
-            <i class="fa-solid fa-magnifying-glass-plus"></i>
-          </button>
-
-          <!-- Left / Right navigation arrows -->
-          <button type="button" onclick="event.stopPropagation(); prevProductDetailImage()" id="pdetail-btn-prev" class="hidden absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center text-xs transition z-10">
-            <i class="fa-solid fa-chevron-left"></i>
-          </button>
-          <button type="button" onclick="event.stopPropagation(); nextProductDetailImage()" id="pdetail-btn-next" class="hidden absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center text-xs transition z-10">
-            <i class="fa-solid fa-chevron-right"></i>
-          </button>
-
-          <!-- Image counter badge -->
-          <span id="pdetail-img-counter" class="absolute bottom-3 right-3 bg-black/60 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full z-10">1/3</span>
+          <!-- VIDEO PLAYER VIEW (In-App Player for YouTube / Imgur / MP4) -->
+          <div id="pdetail-video-view" class="hidden w-full h-full bg-black relative flex flex-col items-center justify-center">
+            <div id="pdetail-video-embed-container" class="w-full h-full"></div>
+            <!-- Switch back to Photos button floating on video -->
+            <button 
+              type="button" 
+              onclick="switchProductDetailMedia('photo')" 
+              class="absolute top-2.5 right-2.5 px-3 py-1 bg-black/70 hover:bg-black/90 text-white text-xs font-bold rounded-full backdrop-blur-md z-20 flex items-center gap-1.5 transition active:scale-95 shadow"
+            >
+              <i class="fa-solid fa-images text-[10px]"></i>
+              <span>Back to Photos</span>
+            </button>
+          </div>
         </div>
 
         <!-- Thumbnail Strip -->
@@ -3115,6 +3170,14 @@
     syncChannel.onmessage = (event) => {
       console.log("[Buyero Client Bus] Received sync event:", event.data);
       if (event.data && event.data.type === 'CATALOG_UPDATED') {
+        if (event.data.deletedProductId) {
+          markProductAsDeleted(event.data.deletedProductId);
+          try {
+            let cart = getStoredCart().filter(i => i.id !== event.data.deletedProductId);
+            localStorage.setItem('buyero_cart', JSON.stringify(cart));
+            updateCartBadge();
+          } catch(e) {}
+        }
         setupCategoryPills();
         loadCatalog();
       } else if (event.data && event.data.type === 'ORDER_STATUS_UPDATED') {
@@ -3603,7 +3666,30 @@
       };
     }
 
+    const DELETED_PRODUCTS_STORAGE_KEY = 'buyero_deleted_product_ids';
+
+    function getDeletedProductIds() {
+      try {
+        const raw = localStorage.getItem(DELETED_PRODUCTS_STORAGE_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch(e) {
+        return [];
+      }
+    }
+
+    function markProductAsDeleted(productId) {
+      if (!productId) return;
+      try {
+        const deletedIds = getDeletedProductIds();
+        if (!deletedIds.includes(productId)) {
+          deletedIds.push(productId);
+          localStorage.setItem(DELETED_PRODUCTS_STORAGE_KEY, JSON.stringify(deletedIds));
+        }
+      } catch(e) {}
+    }
+
     function getStoredCatalog() {
+      const deletedIds = getDeletedProductIds();
       const data = localStorage.getItem('buyero_catalog');
       let catalog = DEFAULT_CATALOG;
       if (data !== null) {
@@ -3616,26 +3702,13 @@
           catalog = DEFAULT_CATALOG;
         }
       }
-      // Ensure all items have videoUrl and reelUrl populated
-      let hasUpdates = false;
-      const merged = catalog.map(item => {
-        const def = DEFAULT_CATALOG.find(d => d.id === item.id);
-        if (def) {
-          if (!item.videoUrl && def.videoUrl) { item.videoUrl = def.videoUrl; hasUpdates = true; }
-          if (!item.reelUrl && def.reelUrl) { item.reelUrl = def.reelUrl; hasUpdates = true; }
-        } else {
-          if (!item.videoUrl) { item.videoUrl = "https://www.youtube.com/shorts/3Z9eYpB0tQY"; hasUpdates = true; }
-          if (!item.reelUrl) { item.reelUrl = "https://www.instagram.com/reels/"; hasUpdates = true; }
-        }
-        return item;
-      });
-      // Guarantee only sanitized customer-safe products exist in memory & cache
-      const safeCatalog = merged
-        .filter(item => item && item.status !== 'HIDDEN' && !item.deleted)
+
+      // Guarantee only sanitized customer-safe products exist in memory & cache, and permanently exclude deleted products
+      const safeCatalog = catalog
+        .filter(item => item && item.id && !deletedIds.includes(item.id) && item.status !== 'HIDDEN' && !item.deleted && item.status !== 'DELETED')
         .map(sanitizeCustomerProduct)
         .filter(Boolean);
 
-      try { localStorage.setItem('buyero_catalog', JSON.stringify(safeCatalog)); } catch(e) {}
       return safeCatalog;
     }
 
@@ -5158,6 +5231,23 @@
       // Load Customer Reviews & Ratings
       loadProductDetailReviews(product.id);
 
+      // Setup in-app video and media switcher
+      switchProductDetailMedia('photo');
+      const hasVideo = Boolean(product.videoUrl && product.videoUrl.trim());
+      const mediaSwitcher = document.getElementById('pdetail-media-switcher');
+      const floatingPlayBtn = document.getElementById('pdetail-floating-play-btn');
+      const photoBadge = document.getElementById('pdetail-photo-count-badge');
+
+      if (photoBadge) {
+        photoBadge.textContent = activeDetailImages.length;
+      }
+      if (mediaSwitcher) {
+        mediaSwitcher.classList.toggle('hidden', !hasVideo);
+      }
+      if (floatingPlayBtn) {
+        floatingPlayBtn.classList.toggle('hidden', !hasVideo);
+      }
+
       // Switch to product-detail view
       switchClientView('product-detail');
     }
@@ -5168,7 +5258,135 @@
     }
 
     function goBackFromProductPage() {
+      switchProductDetailMedia('photo');
       switchClientView('shop');
+    }
+
+    function parseClientVideoSource(rawUrl) {
+      if (!rawUrl || typeof rawUrl !== 'string') return null;
+      const url = rawUrl.trim();
+      if (!url) return null;
+
+      // 1. YouTube (watch, shorts, youtu.be, embed, live)
+      const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/))([a-zA-Z0-9_-]{11})/i);
+      if (ytMatch && ytMatch[1]) {
+        const ytId = ytMatch[1];
+        return {
+          type: 'youtube',
+          id: ytId,
+          embedUrl: `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&playsinline=1&modestbranding=1&rel=0`,
+          rawUrl: url
+        };
+      }
+
+      // 2. Imgur Video (.mp4, .gifv, or direct gallery video)
+      if (url.includes('imgur.com')) {
+        let cleanUrl = url.replace(/\.gifv$/i, '.mp4');
+        if (!cleanUrl.match(/\.(mp4|webm)$/i)) {
+          const imgurIdMatch = cleanUrl.match(/imgur\.com\/(?:gallery\/|a\/|t\/[^/]+\/)?([a-zA-Z0-9]+)/i);
+          if (imgurIdMatch && imgurIdMatch[1]) {
+            cleanUrl = `https://i.imgur.com/${imgurIdMatch[1]}.mp4`;
+          }
+        }
+        return {
+          type: 'html5',
+          id: 'imgur',
+          embedUrl: cleanUrl,
+          rawUrl: url
+        };
+      }
+
+      // 3. Direct HTML5 video file
+      if (/\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(url)) {
+        return {
+          type: 'html5',
+          id: 'html5',
+          embedUrl: url,
+          rawUrl: url
+        };
+      }
+
+      return {
+        type: 'web',
+        id: 'web',
+        embedUrl: url,
+        rawUrl: url
+      };
+    }
+
+    function switchProductDetailMedia(mode) {
+      const photoView = document.getElementById('pdetail-photo-view');
+      const videoView = document.getElementById('pdetail-video-view');
+      const embedContainer = document.getElementById('pdetail-video-embed-container');
+      const tabPhotos = document.getElementById('pdetail-tab-btn-photos');
+      const tabVideo = document.getElementById('pdetail-tab-btn-video');
+
+      if (mode === 'video') {
+        if (!activeDetailProduct || !activeDetailProduct.videoUrl) {
+          alert("No video link is configured for this product.");
+          return;
+        }
+
+        if (photoView) photoView.classList.add('hidden');
+        if (videoView) videoView.classList.remove('hidden');
+
+        if (tabPhotos) {
+          tabPhotos.className = "px-3 py-1 rounded-full text-xs font-bold transition flex items-center gap-1.5 bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-xs";
+        }
+        if (tabVideo) {
+          tabVideo.className = "px-3 py-1 rounded-full text-xs font-bold transition flex items-center gap-1.5 bg-rose-600 text-white shadow-xs";
+        }
+
+        if (embedContainer) {
+          const parsed = parseClientVideoSource(activeDetailProduct.videoUrl);
+          if (parsed && parsed.type === 'youtube') {
+            embedContainer.innerHTML = `
+              <iframe 
+                src="${parsed.embedUrl}" 
+                title="${activeDetailProduct.title}" 
+                class="w-full h-full border-0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                allowfullscreen
+              ></iframe>
+            `;
+          } else if (parsed && parsed.type === 'html5') {
+            embedContainer.innerHTML = `
+              <video 
+                src="${parsed.embedUrl}" 
+                controls 
+                autoplay 
+                loop 
+                playsinline 
+                class="w-full h-full object-contain bg-black"
+              ></video>
+            `;
+          } else {
+            embedContainer.innerHTML = `
+              <div class="w-full h-full flex flex-col items-center justify-center p-6 text-white text-center bg-slate-950 space-y-3">
+                <i class="fa-solid fa-circle-play text-4xl text-rose-500 animate-pulse"></i>
+                <h4 class="font-bold text-sm text-slate-100">${activeDetailProduct.title}</h4>
+                <p class="text-xs text-slate-400">External Video Stream</p>
+                <a href="${activeDetailProduct.videoUrl}" target="_blank" class="px-5 py-2.5 bg-gradient-to-r from-rose-600 to-pink-600 text-white text-xs font-bold rounded-xl shadow-lg flex items-center gap-2 transition active:scale-95">
+                  <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                  <span>Play Video Link</span>
+                </a>
+              </div>
+            `;
+          }
+        }
+      } else {
+        // Photo mode
+        if (videoView) videoView.classList.add('hidden');
+        if (embedContainer) embedContainer.innerHTML = ''; // Immediately halt video/audio playback
+        if (photoView) photoView.classList.remove('hidden');
+
+        if (tabPhotos) {
+          tabPhotos.className = "px-3 py-1 rounded-full text-xs font-bold transition flex items-center gap-1.5 bg-brand-navy text-white shadow-xs";
+        }
+        if (tabVideo) {
+          tabVideo.className = "px-3 py-1 rounded-full text-xs font-bold transition flex items-center gap-1.5 bg-white text-rose-600 border border-rose-200 hover:bg-rose-50 shadow-xs";
+        }
+      }
     }
 
     function updateProductDetailImageDisplay() {
@@ -5190,13 +5408,29 @@
       if (nextBtn) nextBtn.classList.toggle('hidden', activeDetailImages.length <= 1);
 
       if (thumbStrip) {
-        if (activeDetailImages.length > 1) {
+        const hasVideo = Boolean(activeDetailProduct && activeDetailProduct.videoUrl && activeDetailProduct.videoUrl.trim());
+        if (activeDetailImages.length > 1 || hasVideo) {
           thumbStrip.classList.remove('hidden');
-          thumbStrip.innerHTML = activeDetailImages.map((src, idx) => `
-            <button onclick="selectProductDetailImage(${idx})" class="w-14 h-14 rounded-xl border-2 overflow-hidden flex-shrink-0 transition ${idx === currentDetailImageIndex ? 'border-brand-orange shadow-md scale-105' : 'border-slate-200 opacity-70 hover:opacity-100'}">
+          let html = activeDetailImages.map((src, idx) => `
+            <button type="button" onclick="selectProductDetailImage(${idx})" class="w-14 h-14 rounded-xl border-2 overflow-hidden flex-shrink-0 transition ${idx === currentDetailImageIndex ? 'border-brand-orange shadow-md scale-105' : 'border-slate-200 opacity-70 hover:opacity-100'}">
               <img src="${src}" alt="Thumb" class="w-full h-full object-cover">
             </button>
           `).join('');
+
+          if (hasVideo) {
+            html += `
+              <button 
+                type="button" 
+                onclick="switchProductDetailMedia('video')" 
+                class="w-14 h-14 rounded-xl border-2 border-rose-400 bg-rose-50 overflow-hidden flex-shrink-0 flex flex-col items-center justify-center text-rose-600 transition hover:border-rose-600 shadow-sm active:scale-95"
+                title="Watch Product Video"
+              >
+                <i class="fa-solid fa-circle-play text-xl text-rose-600"></i>
+                <span class="text-[9px] font-bold text-rose-700 mt-0.5">Video ▶️</span>
+              </button>
+            `;
+          }
+          thumbStrip.innerHTML = html;
         } else {
           thumbStrip.classList.add('hidden');
         }
@@ -5266,6 +5500,7 @@
     function selectProductDetailImage(idx) {
       if (idx >= 0 && idx < activeDetailImages.length) {
         currentDetailImageIndex = idx;
+        switchProductDetailMedia('photo');
         updateProductDetailImageDisplay();
       }
     }
@@ -5314,35 +5549,51 @@
       if (!container) return;
 
       const variantSection = document.getElementById('pdetail-variant-section');
+      const variantLabel = document.getElementById('pdetail-variant-label');
       const cat = (product.category || '').toLowerCase();
       const title = (product.title || '').toLowerCase();
 
       let sizes = [];
-      const isFootwear = cat.includes('footwear') || title.includes('shoe') || title.includes('sneaker') || title.includes('sandal');
-      const isApparel = cat.includes('fashion') || cat.includes('clothing') || title.includes('kurta') || title.includes('saree') || title.includes('shirt') || title.includes('dress') || title.includes('jacket') || title.includes('top') || title.includes('t-shirt') || title.includes('tshirt');
+      const rawVariants = (product.variants || '').trim();
 
-      if (isFootwear) {
-        sizes = ['UK 6', 'UK 7', 'UK 8', 'UK 9', 'UK 10'];
-        selectedDetailSize = 'UK 8';
-      } else if (isApparel) {
-        sizes = ['S', 'M', 'L', 'XL', 'XXL'];
-        selectedDetailSize = 'M';
+      if (rawVariants) {
+        let clean = rawVariants.replace(/^sizes\s*[:\-]?\s*/i, '').trim();
+        if (/^(standard|no\s*size|none|na|n\/a)$/i.test(clean)) {
+          sizes = [];
+        } else if (/^free\s*size$/i.test(clean)) {
+          sizes = ['Free Size'];
+        } else {
+          sizes = clean.split(/[,|\/]+/).map(s => s.trim()).filter(Boolean);
+        }
       } else if (product.sizes && Array.isArray(product.sizes) && product.sizes.length > 0) {
         sizes = product.sizes;
-        selectedDetailSize = sizes[0];
       } else {
-        sizes = [];
-        selectedDetailSize = 'Standard';
+        const isFootwear = cat.includes('footwear') || title.includes('shoe') || title.includes('sneaker') || title.includes('sandal') || title.includes('boot');
+        const isApparel = cat.includes('fashion') || cat.includes('clothing') || title.includes('kurta') || title.includes('saree') || title.includes('shirt') || title.includes('dress') || title.includes('jacket') || title.includes('top') || title.includes('t-shirt') || title.includes('tshirt') || title.includes('hoodie');
+
+        if (isFootwear) {
+          sizes = ['UK 6', 'UK 7', 'UK 8', 'UK 9', 'UK 10'];
+        } else if (isApparel) {
+          sizes = ['S', 'M', 'L', 'XL', 'XXL'];
+        } else {
+          sizes = [];
+        }
       }
 
       if (sizes.length > 0) {
         if (variantSection) variantSection.classList.remove('hidden');
+        selectedDetailSize = sizes[0];
         selectedProductSize = selectedDetailSize;
+
+        if (variantLabel) {
+          variantLabel.innerHTML = `Select Size: <span id="pdetail-selected-size-label" class="text-brand-orange font-bold text-xs">${selectedDetailSize}</span>`;
+        }
+
         container.innerHTML = sizes.map(size => `
           <button 
             type="button"
             onclick="selectProductDetailSize('${size}')" 
-            class="pdetail-size-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${size === selectedDetailSize ? 'border-2 border-brand-orange bg-orange-50 text-brand-orange shadow-sm' : 'border border-slate-300 text-slate-700 bg-white hover:border-brand-navy'}"
+            class="pdetail-size-btn px-4 py-2 rounded-xl text-xs font-bold transition active:scale-95 ${size === selectedDetailSize ? 'border-2 border-brand-orange bg-orange-50 text-brand-orange shadow-sm scale-105' : 'border border-slate-300 text-slate-700 bg-white hover:border-brand-navy'}"
             data-size="${size}">
             ${size}
           </button>
@@ -5350,6 +5601,7 @@
       } else {
         if (variantSection) variantSection.classList.add('hidden');
         selectedProductSize = 'Standard';
+        selectedDetailSize = 'Standard';
         container.innerHTML = '';
       }
     }
@@ -5357,13 +5609,16 @@
     function selectProductDetailSize(size) {
       selectedDetailSize = size;
       selectedProductSize = size;
+      const sizeLabel = document.getElementById('pdetail-selected-size-label');
+      if (sizeLabel) sizeLabel.textContent = size;
+
       const btns = document.querySelectorAll('.pdetail-size-btn');
       btns.forEach(b => {
         const s = b.getAttribute('data-size');
         if (s === size) {
-          b.className = "pdetail-size-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition border-2 border-brand-orange bg-orange-50 text-brand-orange shadow-sm";
+          b.className = "pdetail-size-btn px-4 py-2 rounded-xl text-xs font-bold transition active:scale-95 border-2 border-brand-orange bg-orange-50 text-brand-orange shadow-sm scale-105";
         } else {
-          b.className = "pdetail-size-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition border border-slate-300 text-slate-700 bg-white hover:border-brand-navy";
+          b.className = "pdetail-size-btn px-4 py-2 rounded-xl text-xs font-bold transition active:scale-95 border border-slate-300 text-slate-700 bg-white hover:border-brand-navy";
         }
       });
     }
@@ -6441,8 +6696,10 @@
         return;
       }
 
+      const chosenSize = size || selectedProductSize || selectedDetailSize || 'Standard';
+      const itemKey = `${productId}__${chosenSize}`;
       let cart = getStoredCart();
-      const existing = cart.find(item => item.id === productId && (item.size || 'M') === size);
+      const existing = cart.find(item => (item.cartKey || `${item.id}__${item.size || 'Standard'}`) === itemKey);
 
       if (existing) {
         if (existing.quantity >= 5) {
@@ -6453,13 +6710,13 @@
       } else {
         cart.push({
           id: product.id,
-          title: `${product.title} (${size})`,
+          cartKey: itemKey,
+          title: `${product.title} (${chosenSize})`,
           baseTitle: product.title,
           image: product.image,
           sellingPrice: product.sellingPrice,
           mrp: product.mrp,
-
-          size: size,
+          size: chosenSize,
           quantity: 1
         });
       }
@@ -6480,7 +6737,7 @@
       addNotification({
         id: 'notif_cart_' + Date.now(),
         title: 'Added to Cart',
-        message: `${product.title} (Size: ${size}) has been added to your bag.`,
+        message: `${product.title} (Size: ${chosenSize}) has been added to your bag.`,
         time: 'Just now',
         read: true
       });
@@ -6558,22 +6815,26 @@
       container.innerHTML = cart.map(item => {
         const itemTotal = item.sellingPrice * item.quantity;
         subtotal += itemTotal;
+        const key = item.cartKey || `${item.id}__${item.size || 'Standard'}`;
 
         return `
           <div class="flex items-center gap-3 p-2.5 bg-slate-50 border border-slate-200/80 rounded-xl">
             <img src="${item.image}" alt="${item.title}" class="w-14 h-14 object-cover rounded-lg bg-white border border-slate-200 flex-shrink-0">
             <div class="flex-1 min-w-0">
-              <h5 class="font-semibold text-xs text-slate-900 truncate">${item.title}</h5>
-              <div class="font-poppins font-bold text-xs text-brand-orange mt-0.5">₹${item.sellingPrice}</div>
+              <h5 class="font-semibold text-xs text-slate-900 truncate">${item.baseTitle || item.title}</h5>
+              <div class="flex items-center gap-2 mt-0.5">
+                <span class="font-poppins font-bold text-xs text-brand-orange">₹${item.sellingPrice}</span>
+                <span class="px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 text-[10px] font-bold border border-amber-200">Size: ${item.size || 'Standard'}</span>
+              </div>
               
               <!-- Quantity Controls -->
               <div class="flex items-center gap-2 mt-2">
                 <div class="flex items-center border border-slate-300 rounded-lg bg-white overflow-hidden shadow-2xs">
-                  <button type="button" onclick="changeCartQty('${item.id}', -1)" class="w-6 h-6 flex items-center justify-center text-slate-600 hover:bg-slate-100 text-xs font-bold">-</button>
+                  <button type="button" onclick="changeCartQty('${key}', -1)" class="w-6 h-6 flex items-center justify-center text-slate-600 hover:bg-slate-100 text-xs font-bold">-</button>
                   <span class="w-6 text-center text-xs font-bold text-slate-800">${item.quantity}</span>
-                  <button type="button" onclick="changeCartQty('${item.id}', 1)" class="w-6 h-6 flex items-center justify-center text-slate-600 hover:bg-slate-100 text-xs font-bold">+</button>
+                  <button type="button" onclick="changeCartQty('${key}', 1)" class="w-6 h-6 flex items-center justify-center text-slate-600 hover:bg-slate-100 text-xs font-bold">+</button>
                 </div>
-                <button type="button" onclick="removeCartItem('${item.id}')" class="text-slate-400 hover:text-rose-500 text-xs p-1 transition" title="Remove item">
+                <button type="button" onclick="removeCartItem('${key}')" class="text-slate-400 hover:text-rose-500 text-xs p-1 transition" title="Remove item">
                   <i class="fa-regular fa-trash-can"></i>
                 </button>
               </div>
@@ -6600,9 +6861,9 @@
       if (totalEl) totalEl.textContent = `₹${finalTotal}`;
     }
 
-    function changeCartQty(id, delta) {
+    function changeCartQty(key, delta) {
       let cart = getStoredCart();
-      const item = cart.find(i => i.id === id);
+      const item = cart.find(i => (i.cartKey || `${i.id}__${i.size || 'Standard'}`) === key || i.id === key);
       if (!item) return;
 
       if (delta > 0 && item.quantity >= 5) {
@@ -6612,7 +6873,7 @@
 
       item.quantity += delta;
       if (item.quantity <= 0) {
-        cart = cart.filter(i => i.id !== id);
+        cart = cart.filter(i => (i.cartKey || `${i.id}__${i.size || 'Standard'}`) !== key && i.id !== key);
       }
 
       saveCart(cart);
@@ -6621,9 +6882,9 @@
       updateProductDetailCartBadge();
     }
 
-    function removeCartItem(id) {
+    function removeCartItem(key) {
       let cart = getStoredCart();
-      cart = cart.filter(i => i.id !== id);
+      cart = cart.filter(i => (i.cartKey || `${i.id}__${i.size || 'Standard'}`) !== key && i.id !== key);
       saveCart(cart);
       renderCartDrawerItems();
       updateCartBadges();

@@ -599,22 +599,23 @@
           <!-- Variant Availability (Customer Visible) -->
           <div>
             <div class="flex items-center justify-between mb-1">
-              <label class="block text-xs font-bold text-slate-700">Variant Options (Customer Visible)</label>
+              <label class="block text-xs font-bold text-slate-700">Variant / Size Options (Customer Visible)</label>
               <span class="text-[10px] text-slate-400">Optional</span>
             </div>
             <input 
               type="text" 
               id="inp-prod-variants" 
-              placeholder="e.g. Sizes S, M, L, XL or Standard" 
+              placeholder="e.g. Sizes S, M, L, XL or No Size" 
               class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl outline-none focus:border-brand-navy"
             />
             <!-- Quick Variant Presets -->
             <div class="flex flex-wrap gap-1.5 mt-1.5 text-[10px]">
-              <span class="text-slate-400 self-center">Presets:</span>
+              <span class="text-slate-400 self-center font-medium">Presets:</span>
               <button type="button" onclick="setProductVariantPreset('inp-prod-variants', 'Sizes S, M, L, XL, XXL')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md transition">👗 S, M, L, XL, XXL</button>
-              <button type="button" onclick="setProductVariantPreset('inp-prod-variants', 'Sizes 6, 7, 8, 9, 10')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md transition">👟 6, 7, 8, 9, 10</button>
+              <button type="button" onclick="setProductVariantPreset('inp-prod-variants', 'Sizes UK 6, UK 7, UK 8, UK 9, UK 10')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md transition">👟 UK 6, 7, 8, 9, 10</button>
               <button type="button" onclick="setProductVariantPreset('inp-prod-variants', 'Sizes 38, 40, 42, 44')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md transition">👔 38, 40, 42, 44</button>
-              <button type="button" onclick="setProductVariantPreset('inp-prod-variants', 'Standard')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md transition">🚫 Standard (No sizes)</button>
+              <button type="button" onclick="setProductVariantPreset('inp-prod-variants', 'Free Size')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md transition">✨ Free Size</button>
+              <button type="button" onclick="setProductVariantPreset('inp-prod-variants', 'No Size')" class="px-2 py-0.5 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold border border-amber-200 rounded-md transition">🚫 No Size (बिना साइज)</button>
             </div>
           </div>
 
@@ -634,29 +635,39 @@
               type="url" 
               id="inp-prod-image" 
               required 
-              placeholder="https://images.unsplash.com/..." 
+              oninput="updateAdminImagePreview('inp-prod-image', 'inp-prod-image-preview')"
+              placeholder="https://images.unsplash.com/... ya Imgur/web image link" 
               class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl outline-none focus:border-brand-navy"
             />
+            <!-- Live Image Preview Box -->
+            <div id="inp-prod-image-preview" class="hidden"></div>
+
             <div id="extra-images-container" class="space-y-1.5">
               <!-- Extra dynamic image inputs added here -->
             </div>
           </div>
 
-          <!-- Product Video / Reel Link (Instagram / YouTube) -->
+          <!-- Product Video Link (YouTube, Imgur, Direct Video) -->
           <div class="space-y-1.5 p-3 bg-pink-50/70 border border-pink-200 rounded-2xl">
-            <label class="block text-xs font-bold text-pink-900 flex items-center gap-1.5">
-              <i class="fa-solid fa-circle-play text-rose-600"></i>
-              <span>Product Video / Reel Link (Instagram Reel, YouTube Short, or Video URL)</span>
-            </label>
+            <div class="flex items-center justify-between">
+              <label class="block text-xs font-bold text-pink-900 flex items-center gap-1.5">
+                <i class="fa-solid fa-circle-play text-rose-600"></i>
+                <span>Product Video Link (YouTube, Imgur, or MP4)</span>
+              </label>
+              <span class="text-[10px] text-rose-600 font-semibold">Optional</span>
+            </div>
             <p class="text-[10px] text-pink-700 leading-relaxed">
-              Yahan aap kisi bhi social media reel (Instagram, YouTube Short) ya video ka link laga sakte hain. User app me click karke reel dekh payenge!
+              यहाँ YouTube (Normal, Shorts, youtu.be), Imgur वीडियो, या कोई भी MP4 वीडियो लिंक डालें। कस्टमर ऐप में फ़ोटो के साथ वीडियो भी देख सकेंगे!
             </p>
             <input 
               type="url" 
               id="inp-prod-video" 
-              placeholder="https://www.youtube.com/shorts/... ya https://www.instagram.com/reel/..." 
+              oninput="updateAdminVideoPreview('inp-prod-video', 'inp-prod-video-preview')"
+              placeholder="e.g. https://www.youtube.com/watch?v=... ya https://youtu.be/... ya https://imgur.com/..." 
               class="w-full px-3 py-2 text-xs border border-pink-300 rounded-xl outline-none focus:border-rose-500 bg-white"
             />
+            <!-- Live Video Preview Box -->
+            <div id="inp-prod-video-preview" class="hidden"></div>
           </div>
 
           <!-- Full Specifications / Description -->
@@ -1361,6 +1372,91 @@
   </div>
 
   <!-- ========================================================= -->
+  <!-- MODAL: PERMANENT PRODUCT DELETION WITH CONFIRM CHECKBOX    -->
+  <!-- ========================================================= -->
+  <div id="modal-delete-product-confirm" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border border-slate-100 space-y-4">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-xl flex-shrink-0">
+          <i class="fa-solid fa-trash-can"></i>
+        </div>
+        <div>
+          <h3 class="font-poppins font-bold text-sm text-slate-900">Delete Product?</h3>
+          <p class="text-[11px] text-slate-500">क्या आप वाकई इस उत्पाद को हटाना चाहते हैं?</p>
+        </div>
+      </div>
+
+      <!-- Selected Product Thumbnail & Info -->
+      <div class="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex items-center gap-3">
+        <img id="del-modal-img" src="" alt="" class="w-12 h-12 rounded-xl object-cover border border-slate-200 flex-shrink-0" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100'">
+        <div class="overflow-hidden">
+          <h4 id="del-modal-title" class="font-bold text-xs text-slate-900 truncate">Product Title</h4>
+          <div class="flex items-center gap-2 mt-0.5">
+            <span id="del-modal-price" class="text-xs text-brand-orange font-bold">₹0</span>
+            <span id="del-modal-id" class="text-[10px] text-slate-400 font-mono"></span>
+          </div>
+        </div>
+      </div>
+
+      <p class="text-xs text-slate-600 leading-relaxed">
+        यह प्रोडक्ट आपके स्टोर और डेटाबेस दोनों से हमेशा के लिए हट जाएगा।
+      </p>
+
+      <!-- Confirmation Checkbox (Permission box tik) -->
+      <div class="p-3 bg-rose-50/80 border border-rose-200 rounded-2xl flex items-start gap-2.5">
+        <input 
+          type="checkbox" 
+          id="chk-delete-product-permission" 
+          onchange="onDeletePermissionBoxToggled(this.checked)"
+          class="mt-0.5 w-4 h-4 rounded text-rose-600 focus:ring-rose-500 cursor-pointer"
+        />
+        <label for="chk-delete-product-permission" class="text-xs text-slate-700 font-semibold cursor-pointer select-none leading-snug">
+          हाँ, मैं इस प्रोडक्ट को हमेशा के लिए डिलीट करना चाहता हूँ (Confirm permanent deletion)
+        </label>
+      </div>
+
+      <!-- Action Buttons: Cancel and Confirm -->
+      <div class="flex gap-2 pt-1">
+        <button 
+          type="button" 
+          onclick="closeDeleteProductModal()" 
+          class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition"
+        >
+          Cancel (रद्द करें)
+        </button>
+        <button 
+          type="button" 
+          id="btn-confirm-delete-action" 
+          onclick="executeConfirmedProductDelete()" 
+          disabled
+          class="flex-1 py-2.5 bg-rose-300 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 cursor-not-allowed opacity-60"
+        >
+          <i class="fa-solid fa-trash-can text-xs"></i>
+          <span>Confirm (हटाएं)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL: ADMIN VIDEO TEST PLAYER                            -->
+  <!-- ========================================================= -->
+  <div id="modal-admin-video-tester" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full overflow-hidden shadow-2xl border border-slate-100 flex flex-col">
+      <div class="p-3 bg-brand-navy text-white flex items-center justify-between">
+        <span class="text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-circle-play text-rose-500"></i> Video Link Test</span>
+        <button onclick="closeAdminVideoTester()" class="text-slate-300 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div id="admin-video-tester-container" class="w-full aspect-video bg-black flex items-center justify-center">
+        <!-- iframe or video player -->
+      </div>
+      <div class="p-2.5 bg-slate-50 text-center">
+        <button onclick="closeAdminVideoTester()" class="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold rounded-xl text-xs">Close Test</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
   <!-- MODAL: EDIT PRODUCT DETAILS                               -->
   <!-- ========================================================= -->
   <div id="modal-edit-product" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3">
@@ -1479,30 +1575,45 @@
         <!-- Variant Availability (Customer Visible) -->
         <div>
           <div class="flex items-center justify-between mb-1">
-            <label class="block font-bold text-slate-700 text-xs">Variant Options (Customer Visible)</label>
+            <label class="block font-bold text-slate-700 text-xs">Variant / Size Options (Customer Visible)</label>
             <span class="text-[10px] text-slate-400">Optional</span>
           </div>
-          <input type="text" id="edit-prod-variants" placeholder="e.g. Sizes S, M, L, XL" class="w-full px-3 py-1.5 border border-slate-300 rounded-xl outline-none focus:border-brand-navy text-xs" />
+          <input type="text" id="edit-prod-variants" placeholder="e.g. Sizes S, M, L, XL or No Size" class="w-full px-3 py-1.5 border border-slate-300 rounded-xl outline-none focus:border-brand-navy text-xs" />
           <!-- Quick Variant Presets -->
           <div class="flex flex-wrap gap-1.5 mt-1.5 text-[10px]">
-            <span class="text-slate-400 self-center">Presets:</span>
+            <span class="text-slate-400 self-center font-medium">Presets:</span>
             <button type="button" onclick="setProductVariantPreset('edit-prod-variants', 'Sizes S, M, L, XL, XXL')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md transition">👗 S, M, L, XL, XXL</button>
-            <button type="button" onclick="setProductVariantPreset('edit-prod-variants', 'Sizes 6, 7, 8, 9, 10')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md transition">👟 6, 7, 8, 9, 10</button>
+            <button type="button" onclick="setProductVariantPreset('edit-prod-variants', 'Sizes UK 6, UK 7, UK 8, UK 9, UK 10')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md transition">👟 UK 6, 7, 8, 9, 10</button>
             <button type="button" onclick="setProductVariantPreset('edit-prod-variants', 'Sizes 38, 40, 42, 44')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md transition">👔 38, 40, 42, 44</button>
-            <button type="button" onclick="setProductVariantPreset('edit-prod-variants', 'Standard')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md transition">🚫 Standard</button>
+            <button type="button" onclick="setProductVariantPreset('edit-prod-variants', 'Free Size')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md transition">✨ Free Size</button>
+            <button type="button" onclick="setProductVariantPreset('edit-prod-variants', 'No Size')" class="px-2 py-0.5 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold border border-amber-200 rounded-md transition">🚫 No Size (बिना साइज)</button>
           </div>
         </div>
 
         <div>
           <label class="block font-bold text-slate-700 mb-0.5">Image URL *</label>
-          <input type="url" id="edit-prod-image" required class="w-full px-3 py-1.5 border border-slate-300 rounded-xl outline-none focus:border-brand-navy" />
+          <input 
+            type="url" 
+            id="edit-prod-image" 
+            required 
+            oninput="updateAdminImagePreview('edit-prod-image', 'edit-prod-image-preview')"
+            class="w-full px-3 py-1.5 border border-slate-300 rounded-xl outline-none focus:border-brand-navy" 
+          />
+          <div id="edit-prod-image-preview" class="hidden"></div>
         </div>
 
         <div>
           <label class="block font-bold text-rose-700 mb-0.5 flex items-center gap-1">
-            <i class="fa-solid fa-circle-play text-rose-500"></i> Video / Reel Link (Instagram Reel / YouTube Short)
+            <i class="fa-solid fa-circle-play text-rose-500"></i> Video Link (YouTube, Imgur, or MP4)
           </label>
-          <input type="url" id="edit-prod-video" placeholder="https://www.youtube.com/shorts/... ya https://www.instagram.com/reel/..." class="w-full px-3 py-1.5 border border-pink-300 rounded-xl outline-none focus:border-rose-500" />
+          <input 
+            type="url" 
+            id="edit-prod-video" 
+            oninput="updateAdminVideoPreview('edit-prod-video', 'edit-prod-video-preview')"
+            placeholder="https://www.youtube.com/watch?v=... ya https://youtu.be/... ya Imgur" 
+            class="w-full px-3 py-1.5 border border-pink-300 rounded-xl outline-none focus:border-rose-500" 
+          />
+          <div id="edit-prod-video-preview" class="hidden"></div>
         </div>
 
         <div>
@@ -2600,9 +2711,32 @@
     }
 
     /* =========================================================
-       DATA PERSISTENCE HELPERS
+       DATA PERSISTENCE & VIDEO HELPERS
        ========================================================= */
+    const DELETED_PRODUCTS_STORAGE_KEY = 'buyero_deleted_product_ids';
+
+    function getDeletedProductIds() {
+      try {
+        const raw = localStorage.getItem(DELETED_PRODUCTS_STORAGE_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch(e) {
+        return [];
+      }
+    }
+
+    function markProductAsDeleted(productId) {
+      if (!productId) return;
+      try {
+        const deletedIds = getDeletedProductIds();
+        if (!deletedIds.includes(productId)) {
+          deletedIds.push(productId);
+          localStorage.setItem(DELETED_PRODUCTS_STORAGE_KEY, JSON.stringify(deletedIds));
+        }
+      } catch(e) {}
+    }
+
     function getStoredCatalog() {
+      const deletedIds = getDeletedProductIds();
       const data = localStorage.getItem('buyero_catalog');
       let catalog = DEFAULT_CATALOG;
       if (data !== null) {
@@ -2615,30 +2749,192 @@
           catalog = DEFAULT_CATALOG;
         }
       }
-      // Ensure videoUrl and reelUrl are populated
-      let hasUpdates = false;
-      const merged = catalog.map(item => {
-        if (!item.videoUrl) {
-          item.videoUrl = "https://www.youtube.com/shorts/3Z9eYpB0tQY";
-          hasUpdates = true;
-        }
-        if (!item.reelUrl) {
-          item.reelUrl = "https://www.instagram.com/reels/";
-          hasUpdates = true;
-        }
-        return item;
-      });
-      if (hasUpdates) {
-        try { localStorage.setItem('buyero_catalog', JSON.stringify(merged)); } catch(e) {}
-      }
-      return merged;
+      // Filter out any deleted products permanently
+      const filtered = catalog.filter(item => item && item.id && !deletedIds.includes(item.id) && !item.deleted && item.status !== 'DELETED');
+      return filtered;
     }
 
     function saveCatalog(catalog) {
-      localStorage.setItem('buyero_catalog', JSON.stringify(catalog));
+      const deletedIds = getDeletedProductIds();
+      const filtered = Array.isArray(catalog) 
+        ? catalog.filter(item => item && item.id && !deletedIds.includes(item.id) && !item.deleted && item.status !== 'DELETED')
+        : [];
+      localStorage.setItem('buyero_catalog', JSON.stringify(filtered));
       try {
-        syncChannel.postMessage({ type: 'CATALOG_UPDATED', catalog });
+        syncChannel.postMessage({ type: 'CATALOG_UPDATED', catalog: filtered });
       } catch(e) {}
+    }
+
+    function saveStoredCatalog(catalog) {
+      saveCatalog(catalog);
+    }
+
+    /* Video URL Parser for YouTube, Imgur, Direct MP4/WebM */
+    function parseVideoSource(rawUrl) {
+      if (!rawUrl || typeof rawUrl !== 'string') return null;
+      const url = rawUrl.trim();
+      if (!url) return null;
+
+      // 1. YouTube (Standard watch, shorts, youtu.be, embed, live)
+      const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/))([a-zA-Z0-9_-]{11})/i);
+      if (ytMatch && ytMatch[1]) {
+        const ytId = ytMatch[1];
+        return {
+          type: 'youtube',
+          id: ytId,
+          embedUrl: `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&playsinline=1&modestbranding=1&rel=0`,
+          thumbUrl: `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`,
+          rawUrl: url
+        };
+      }
+
+      // 2. Imgur Video (gifv, mp4, direct links)
+      if (url.includes('imgur.com')) {
+        let cleanUrl = url.replace(/\.gifv$/i, '.mp4');
+        if (!cleanUrl.match(/\.(mp4|webm)$/i)) {
+          const imgurIdMatch = cleanUrl.match(/imgur\.com\/(?:gallery\/|a\/|t\/[^/]+\/)?([a-zA-Z0-9]+)/i);
+          if (imgurIdMatch && imgurIdMatch[1]) {
+            cleanUrl = `https://i.imgur.com/${imgurIdMatch[1]}.mp4`;
+          }
+        }
+        return {
+          type: 'html5',
+          id: 'imgur',
+          embedUrl: cleanUrl,
+          url: cleanUrl,
+          thumbUrl: cleanUrl.replace(/\.mp4$/i, '.jpg'),
+          rawUrl: url
+        };
+      }
+
+      // 3. Direct HTML5 Video File (mp4, webm, ogg, mov)
+      if (/\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(url)) {
+        return {
+          type: 'html5',
+          id: 'html5',
+          embedUrl: url,
+          url: url,
+          thumbUrl: '',
+          rawUrl: url
+        };
+      }
+
+      // 4. Fallback Generic
+      if (url.startsWith('http')) {
+        return {
+          type: 'unknown',
+          id: 'web',
+          embedUrl: url,
+          url: url,
+          thumbUrl: '',
+          rawUrl: url
+        };
+      }
+
+      return null;
+    }
+
+    /* Live Previews in Admin Form */
+    function updateAdminImagePreview(inputId, previewContainerId) {
+      const inp = document.getElementById(inputId);
+      const container = document.getElementById(previewContainerId);
+      if (!inp || !container) return;
+      const url = inp.value.trim();
+      if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+        container.innerHTML = `
+          <div class="mt-2 p-2 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-3">
+            <img src="${url}" alt="Preview" class="w-14 h-14 object-cover rounded-lg border border-slate-200 shadow-2xs" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100';">
+            <div class="text-[11px] text-slate-600">
+              <span class="text-emerald-600 font-bold flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> Image Link Active</span>
+              <span class="text-[9px] text-slate-400 block truncate max-w-xs mt-0.5">${url}</span>
+            </div>
+          </div>
+        `;
+        container.classList.remove('hidden');
+      } else {
+        container.innerHTML = '';
+        container.classList.add('hidden');
+      }
+    }
+
+    function updateAdminVideoPreview(inputId, previewContainerId) {
+      const inp = document.getElementById(inputId);
+      const container = document.getElementById(previewContainerId);
+      if (!inp || !container) return;
+      const url = inp.value.trim();
+      if (!url) {
+        container.innerHTML = '';
+        container.classList.add('hidden');
+        return;
+      }
+      const parsed = parseVideoSource(url);
+      if (parsed) {
+        let badgeHtml = '';
+        if (parsed.type === 'youtube') {
+          badgeHtml = `<span class="px-2 py-0.5 bg-red-100 text-red-700 font-bold rounded text-[9px]"><i class="fa-brands fa-youtube mr-0.5"></i> YouTube</span>`;
+        } else if (parsed.type === 'html5') {
+          badgeHtml = `<span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 font-bold rounded text-[9px]"><i class="fa-solid fa-video mr-0.5"></i> Video File</span>`;
+        } else {
+          badgeHtml = `<span class="px-2 py-0.5 bg-slate-100 text-slate-700 font-bold rounded text-[9px]">Web Video</span>`;
+        }
+
+        container.innerHTML = `
+          <div class="mt-2 p-2 bg-white/90 border border-pink-200 rounded-xl flex items-center justify-between gap-3 shadow-2xs">
+            <div class="flex items-center gap-2.5 overflow-hidden">
+              <div class="w-10 h-10 rounded-lg bg-slate-900 text-white flex items-center justify-center flex-shrink-0 relative overflow-hidden">
+                ${parsed.thumbUrl ? `<img src="${parsed.thumbUrl}" class="w-full h-full object-cover">` : ''}
+                <i class="fa-solid fa-play text-xs text-white absolute"></i>
+              </div>
+              <div class="overflow-hidden">
+                <div class="flex items-center gap-1.5">${badgeHtml} <span class="text-[10px] text-pink-700 font-bold">Ready</span></div>
+                <span class="text-[9px] text-slate-500 truncate block max-w-[180px] mt-0.5">${url}</span>
+              </div>
+            </div>
+            <button type="button" onclick="testAdminPlayVideo('${inputId}')" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg text-[10px] flex items-center gap-1 transition flex-shrink-0 shadow-2xs">
+              <i class="fa-solid fa-circle-play"></i> Test Video
+            </button>
+          </div>
+        `;
+        container.classList.remove('hidden');
+      } else {
+        container.innerHTML = `
+          <div class="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-xl text-[10px] text-amber-800 flex items-center gap-1.5">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span>Please enter a valid YouTube, Imgur, or MP4 video URL.</span>
+          </div>
+        `;
+        container.classList.remove('hidden');
+      }
+    }
+
+    function testAdminPlayVideo(inputId) {
+      const inp = document.getElementById(inputId);
+      if (!inp) return;
+      const val = inp.value.trim();
+      if (!val) {
+        alert("Please enter a video URL first.");
+        return;
+      }
+      const src = parseVideoSource(val);
+      const modal = document.getElementById('modal-admin-video-tester');
+      const container = document.getElementById('admin-video-tester-container');
+      if (!modal || !container) return;
+
+      if (src && src.type === 'youtube') {
+        container.innerHTML = `<iframe src="${src.embedUrl}" class="w-full h-full border-0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+      } else if (src && src.type === 'html5') {
+        container.innerHTML = `<video src="${src.url}" controls autoplay playsinline class="w-full h-full object-contain bg-black"></video>`;
+      } else {
+        container.innerHTML = `<div class="p-6 text-center text-xs text-white">Video format: ${escapeHtml(val)}<br><a href="${escapeHtml(val)}" target="_blank" class="text-indigo-400 underline mt-2 inline-block">Open Video in New Tab</a></div>`;
+      }
+      modal.classList.remove('hidden');
+    }
+
+    function closeAdminVideoTester() {
+      const modal = document.getElementById('modal-admin-video-tester');
+      const container = document.getElementById('admin-video-tester-container');
+      if (container) container.innerHTML = '';
+      if (modal) modal.classList.add('hidden');
     }
 
     function ensureCatalogSeeded() {
@@ -4104,6 +4400,8 @@
       document.getElementById('edit-prod-desc').value = p.description || '';
 
       calculateEditProductMarginLive();
+      updateAdminImagePreview('edit-prod-image', 'edit-prod-image-preview');
+      updateAdminVideoPreview('edit-prod-video', 'edit-prod-video-preview');
 
       const modal = document.getElementById('modal-edit-product');
       if (modal) modal.classList.remove('hidden');
@@ -4114,6 +4412,10 @@
       if (modal) modal.classList.add('hidden');
       const form = document.getElementById('form-edit-product');
       if (form) form.reset();
+      const imgPrev = document.getElementById('edit-prod-image-preview');
+      if (imgPrev) { imgPrev.innerHTML = ''; imgPrev.classList.add('hidden'); }
+      const vidPrev = document.getElementById('edit-prod-video-preview');
+      if (vidPrev) { vidPrev.innerHTML = ''; vidPrev.classList.add('hidden'); }
       const submitBtn = document.getElementById('btn-edit-prod-submit');
       if (submitBtn) {
         submitBtn.disabled = false;
@@ -4301,37 +4603,128 @@
       }
     }
 
-    async function deleteProductFromCatalog(productId) {
+    /* =========================================================
+       CUSTOM PRODUCT DELETION MODAL WITH PERMISSION CHECKBOX
+       ========================================================= */
+    let productPendingDeletionId = null;
+
+    function deleteProductFromCatalog(productId) {
+      const catalog = getStoredCatalog();
+      const p = catalog.find(x => x.id === productId);
+      if (!p) {
+        alert("Product not found.");
+        return;
+      }
+
+      productPendingDeletionId = productId;
+
+      // Populate Modal details
+      const imgEl = document.getElementById('del-modal-img');
+      const titleEl = document.getElementById('del-modal-title');
+      const priceEl = document.getElementById('del-modal-price');
+      const idEl = document.getElementById('del-modal-id');
+      const chkEl = document.getElementById('chk-delete-product-permission');
+      const btnEl = document.getElementById('btn-confirm-delete-action');
+
+      if (imgEl) imgEl.src = p.image || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100';
+      if (titleEl) titleEl.textContent = p.title || 'Product';
+      if (priceEl) priceEl.textContent = `₹${p.sellingPrice || p.price || 0}`;
+      if (idEl) idEl.textContent = `#${p.id}`;
+
+      // Reset checkbox and disabled state of confirm button
+      if (chkEl) chkEl.checked = false;
+      if (btnEl) {
+        btnEl.disabled = true;
+        btnEl.className = "flex-1 py-2.5 bg-rose-300 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 cursor-not-allowed opacity-60";
+        btnEl.innerHTML = `<i class="fa-solid fa-trash-can text-xs"></i><span>Confirm (हटाएं)</span>`;
+      }
+
+      const modal = document.getElementById('modal-delete-product-confirm');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function onDeletePermissionBoxToggled(checked) {
+      const btn = document.getElementById('btn-confirm-delete-action');
+      if (!btn) return;
+      if (checked) {
+        btn.disabled = false;
+        btn.className = "flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-md active:scale-95 cursor-pointer";
+      } else {
+        btn.disabled = true;
+        btn.className = "flex-1 py-2.5 bg-rose-300 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 cursor-not-allowed opacity-60";
+      }
+    }
+
+    function closeDeleteProductModal() {
+      productPendingDeletionId = null;
+      const modal = document.getElementById('modal-delete-product-confirm');
+      if (modal) modal.classList.add('hidden');
+      const chk = document.getElementById('chk-delete-product-permission');
+      if (chk) chk.checked = false;
+    }
+
+    async function executeConfirmedProductDelete() {
+      if (!productPendingDeletionId) {
+        closeDeleteProductModal();
+        return;
+      }
+
+      const chk = document.getElementById('chk-delete-product-permission');
+      if (!chk || !chk.checked) {
+        alert("कृपया पहले परमिशन बॉक्स (Tick Box) पर टिक करें!");
+        return;
+      }
+
+      const productId = productPendingDeletionId;
+      const btn = document.getElementById('btn-confirm-delete-action');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-xs"></i><span>Deleting...</span>`;
+      }
+
       const catalog = getStoredCatalog();
       const p = catalog.find(x => x.id === productId);
       const title = p ? p.title : productId;
 
-      if (!confirm(`Are you sure you want to permanently delete "${title}" from the catalog? This action will remove it from both customer store and admin database.`)) {
-        return;
-      }
-
       try {
+        // 1. Delete from Firestore if connected
         if (fbFirestore) {
-          await fbFirestore.collection('products').doc(productId).delete().catch(() => {});
-          await fbFirestore.collection('admin_product_data').doc(productId).delete().catch(() => {});
+          try {
+            await fbFirestore.collection('products').doc(productId).delete();
+          } catch(e) {}
+          try {
+            await fbFirestore.collection('admin_product_data').doc(productId).delete();
+          } catch(e) {}
         }
 
-        const filtered = catalog.filter(x => x.id !== productId);
-        saveStoredCatalog(filtered);
+        // 2. Mark in local permanent blacklist
+        markProductAsDeleted(productId);
 
+        // 3. Remove from catalog & persist
+        const filtered = catalog.filter(x => x.id !== productId);
+        saveCatalog(filtered);
+
+        // 4. Broadcast sync event to client
         try {
           syncChannel.postMessage({
             type: 'CATALOG_UPDATED',
+            deletedProductId: productId,
             productId: productId
           });
         } catch(e) {}
 
+        closeDeleteProductModal();
         loadAdminCatalogList();
         calculateAnalysisMetrics();
-        recordActivityLog('PRODUCT_DELETED', `Deleted product "${title}" (#${productId})`);
+        recordActivityLog('PRODUCT_DELETED', `Permanently deleted product "${title}" (#${productId})`);
+        alert(`✅ उत्पाद "${title}" सफलतापूर्वक हटा दिया गया है!`);
       } catch (err) {
         console.error("[Delete Product Error]", err);
         alert(`Failed to delete product: ${err.message || err}`);
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = `<i class="fa-solid fa-trash-can text-xs"></i><span>Confirm (हटाएं)</span>`;
+        }
       }
     }
 
