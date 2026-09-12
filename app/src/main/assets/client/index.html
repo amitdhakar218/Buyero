@@ -650,21 +650,23 @@
         </div>
 
         <!-- Buyero Chat Bottom Bar: Text-Only Message Composer -->
-        <form onsubmit="handleSendClientChatMessage(event)" class="p-2.5 bg-white border-t border-slate-200 flex items-center gap-2 flex-shrink-0">
+        <form id="client-chat-form" onsubmit="event.preventDefault(); handleSendClientChatMessage(event); return false;" class="p-2.5 bg-white border-t border-slate-200 flex items-center gap-2 flex-shrink-0">
           <!-- Text Input Field -->
           <input 
             type="text" 
             id="client-chat-input" 
             placeholder="Write your message here..." 
+            onkeydown="if(event.key==='Enter'){event.preventDefault(); handleSendClientChatMessage(event);}"
             class="flex-1 px-4 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-full outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange text-slate-800"
             autocomplete="off"
           />
 
           <!-- Send Message Button -->
           <button 
-            type="submit" 
+            type="button" 
             id="client-chat-send-btn" 
-            class="px-4 py-2.5 bg-brand-orange hover:bg-brand-deep text-white font-bold rounded-full flex items-center justify-center gap-1.5 text-xs shadow-sm transition active:scale-95 flex-shrink-0"
+            onclick="handleSendClientChatMessage(event)"
+            class="px-4 py-2.5 bg-brand-orange hover:bg-brand-deep text-white font-bold rounded-full flex items-center justify-center gap-1.5 text-xs shadow-sm transition active:scale-95 flex-shrink-0 cursor-pointer"
             title="Send message"
           >
             <span>Send</span>
@@ -3061,6 +3063,16 @@
       showBuyeroPrompt(String(msg || ''), defaultVal || '', 'Input Required');
       return defaultVal || null;
     };
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
     /* =========================================================
        FIREBASE CONFIGURATION & SERVICE HOOKS
        Connected to User's Firebase Project: buyero-68abd
@@ -3130,14 +3142,31 @@
           time: 'Just now',
           read: false
         });
-      } else if (event.data && event.data.type === 'NEW_SUPPORT_MESSAGE') {
+      } else if (event.data && (event.data.type === 'NEW_SUPPORT_MESSAGE' || event.data.type === 'ADMIN_CHAT_REPLY')) {
         let messages = getStoredSupportMessages();
-        if (event.data.message) {
-          const idx = messages.findIndex(m => m.id === event.data.message.id);
-          if (idx >= 0) messages[idx] = event.data.message;
-          else messages.push(event.data.message);
+        const incoming = event.data.message || {
+          id: 'msg_adm_' + Date.now(),
+          clientId: event.data.clientId || 'ALL',
+          userId: event.data.clientId || 'ALL',
+          sender: 'Buyero Support',
+          text: event.data.text || '',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          isAdmin: true,
+          seen: false,
+          isEdited: false,
+          createdAt: new Date().toISOString()
+        };
+        const identity = getClientChatIdentity();
+        const isForMe = !incoming.clientId || 
+                        incoming.clientId === 'ALL' || 
+                        incoming.clientId === identity.clientId || 
+                        incoming.userId === identity.userId;
+        if (isForMe && incoming.text) {
+          const idx = messages.findIndex(m => m.id === incoming.id);
+          if (idx >= 0) messages[idx] = incoming;
+          else messages.push(incoming);
           saveSupportMessages(messages);
-          loadClientChatMessages();
+          try { loadClientChatMessages(); } catch (e) {}
         }
       } else if (event.data && event.data.type === 'SUPPORT_MESSAGE_EDITED') {
         let messages = getStoredSupportMessages();
@@ -10334,38 +10363,64 @@
        ========================================================= */
 
     function getClientChatIdentity() {
-      const authUid = (fbAuth && fbAuth.currentUser) 
-        ? fbAuth.currentUser.uid 
-        : ((currentUser && (currentUser.authUid || currentUser.uuid || currentUser.userId)) ? (currentUser.authUid || currentUser.uuid || currentUser.userId) : null);
+      let authUid = null;
+      try {
+        if (typeof fbAuth !== 'undefined' && fbAuth && fbAuth.currentUser) {
+          authUid = fbAuth.currentUser.uid;
+        }
+      } catch (e) {}
+
+      if (!authUid && currentUser && typeof currentUser === 'object') {
+        authUid = currentUser.authUid || currentUser.uuid || currentUser.userId || null;
+      }
+
       let clientId = authUid;
       if (!clientId) {
-        clientId = localStorage.getItem('buyero_client_chat_id');
+        try {
+          clientId = localStorage.getItem('buyero_client_chat_id');
+        } catch (e) {}
         if (!clientId) {
           clientId = 'USR_' + Math.floor(100000 + Math.random() * 900000);
-          localStorage.setItem('buyero_client_chat_id', clientId);
+          try {
+            localStorage.setItem('buyero_client_chat_id', clientId);
+          } catch (e) {}
         }
       }
-      const clientName = (currentUser && currentUser.name) ? currentUser.name : ('Customer ' + clientId.slice(-4));
-      const clientPhone = (currentUser && currentUser.phone) ? currentUser.phone : '';
+      clientId = String(clientId || 'USR_100001');
+
+      let clientName = 'Customer';
+      if (currentUser && typeof currentUser === 'object' && currentUser.name) {
+        clientName = currentUser.name;
+      } else {
+        clientName = 'Customer ' + clientId.slice(-4);
+      }
+
+      let clientPhone = '';
+      if (currentUser && typeof currentUser === 'object' && currentUser.phone) {
+        clientPhone = currentUser.phone;
+      }
+
       return { clientId, userId: authUid || clientId, clientName, clientPhone };
     }
 
     function getStoredSupportMessages() {
       try {
         const raw = localStorage.getItem('buyero_support_chat_messages');
-        return raw ? JSON.parse(raw) : [
-          {
-            id: 'msg_welcome',
-            clientId: 'ALL',
-            sender: 'Support Team',
-            text: 'Namaste! Welcome to Buyero Help & Support. How can we assist you today?',
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            isAdmin: true
-          }
-        ];
-      } catch (e) {
-        return [];
-      }
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch (e) {}
+      return [
+        {
+          id: 'msg_welcome',
+          clientId: 'ALL',
+          sender: 'Buyero Support',
+          text: 'Namaste! Welcome to Buyero Help & Support. How can we assist you today?',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          isAdmin: true
+        }
+      ];
     }
 
     function toggleClientChatSendMicButton(val) {
@@ -10550,6 +10605,9 @@
       const text = input.value.trim();
       if (!text) return false;
 
+      // Clear input immediately for instant tactile feedback
+      input.value = '';
+
       if (!currentUser) {
         try {
           currentUser = JSON.parse(localStorage.getItem('buyero_user') || 'null');
@@ -10560,10 +10618,10 @@
 
       const newMsg = {
         id: 'msg_' + Date.now() + '_' + Math.floor(Math.random() * 10000),
-        clientId: identity.clientId,
-        userId: identity.userId,
-        sender: identity.clientName,
-        clientName: identity.clientName,
+        clientId: identity.clientId || 'GUEST',
+        userId: identity.userId || identity.clientId || 'GUEST',
+        sender: identity.clientName || 'Customer',
+        clientName: identity.clientName || 'Customer',
         userPhone: identity.clientPhone || (currentUser ? currentUser.phone : '') || '',
         userEmail: (currentUser ? currentUser.email : '') || '',
         userPhoto: (currentUser ? currentUser.photoURL : '') || '',
@@ -10575,11 +10633,19 @@
         createdAt: new Date().toISOString()
       };
 
-      const messages = getStoredSupportMessages();
-      messages.push(newMsg);
-      saveSupportMessages(messages);
-      loadClientChatMessages();
-      input.value = '';
+      try {
+        const messages = getStoredSupportMessages();
+        messages.push(newMsg);
+        saveSupportMessages(messages);
+      } catch (saveErr) {
+        console.warn("[Save Client Chat Message Error]", saveErr);
+      }
+
+      try {
+        loadClientChatMessages();
+      } catch (renderErr) {
+        console.warn("[Render Client Chat Message Error]", renderErr);
+      }
 
       // Broadcast to Admin Studio immediately (both events for bulletproof compatibility)
       try {
@@ -11076,6 +11142,31 @@
       if (saveProfileBtn && !saveProfileBtn.disabled) {
         saveProfileBtn.innerHTML = `<i class="fa-solid fa-coins text-yellow-200 mr-1.5"></i> <span>${t.confirmCoins}</span>`;
       }
+    }
+
+    // Direct DOM event binding for Support Chat send button and enter key
+    function bindClientChatListeners() {
+      const sendBtn = document.getElementById('client-chat-send-btn');
+      if (sendBtn) {
+        sendBtn.onclick = (e) => {
+          e.preventDefault();
+          handleSendClientChatMessage(e);
+        };
+      }
+      const chatInput = document.getElementById('client-chat-input');
+      if (chatInput) {
+        chatInput.onkeydown = (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            handleSendClientChatMessage(e);
+          }
+        };
+      }
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', bindClientChatListeners);
+    } else {
+      bindClientChatListeners();
     }
   </script>
 </body>

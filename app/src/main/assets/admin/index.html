@@ -981,20 +981,22 @@
             </div>
 
             <!-- Chat Bottom Bar: Clean Text Input & Send Button (NO Attachment, NO Camera, NO Mic) -->
-            <form id="admin-chat-reply-form" onsubmit="handleSendAdminReply(event)" class="p-2.5 bg-[#f0f2f5] border-t border-slate-200 flex items-center gap-2 flex-shrink-0">
+            <form id="admin-chat-reply-form" onsubmit="event.preventDefault(); handleSendAdminReply(event); return false;" class="p-2.5 bg-[#f0f2f5] border-t border-slate-200 flex items-center gap-2 flex-shrink-0">
               <input 
                 type="text" 
                 id="admin-chat-reply-input" 
                 placeholder="Type a message to customer..." 
+                onkeydown="if(event.key==='Enter'){event.preventDefault(); handleSendAdminReply(event);}"
                 class="flex-1 px-4 py-2.5 text-xs bg-white border border-slate-300 rounded-full outline-none focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] transition shadow-xs"
                 autocomplete="off"
               />
 
               <!-- Send Button -->
               <button 
-                type="submit" 
+                type="button" 
                 id="admin-chat-send-btn" 
-                class="w-10 h-10 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-full flex items-center justify-center text-sm shadow-md transition active:scale-95 flex-shrink-0"
+                onclick="handleSendAdminReply(event)"
+                class="w-10 h-10 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-full flex items-center justify-center text-sm shadow-md transition active:scale-95 flex-shrink-0 cursor-pointer"
                 title="Send message"
               >
                 <i class="fa-solid fa-paper-plane text-xs"></i>
@@ -2218,6 +2220,16 @@
       if (uid && ALLOWED_ADMIN_UIDS.includes(uid)) return true;
       if (email && email.toLowerCase() === MASTER_OWNER_EMAIL.toLowerCase()) return true;
       return false;
+    }
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     }
 
     let activeAdminTab = 'analysis';
@@ -7121,13 +7133,32 @@ FINANCIAL BREAKDOWN:
     }
 
     function handleSendAdminReply(event) {
-      event.preventDefault();
+      if (event) {
+        if (typeof event.preventDefault === 'function') event.preventDefault();
+        if (typeof event.stopPropagation === 'function') event.stopPropagation();
+      }
       const input = document.getElementById('admin-chat-reply-input');
+      if (!input) return false;
       const text = input.value.trim();
-      if (!text || !selectedChatClientId) return;
+      if (!text) return false;
+
+      if (!selectedChatClientId) {
+        // Auto-select first thread if available
+        const msgs = getStoredChatMessages();
+        const firstWithClient = msgs.find(m => m.clientId && m.clientId !== 'ALL');
+        if (firstWithClient) {
+          selectedChatClientId = firstWithClient.clientId;
+          selectChatThread(selectedChatClientId, firstWithClient.clientName || 'Customer');
+        } else {
+          selectedChatClientId = 'ALL';
+        }
+      }
+
+      // Clear input immediately for instant feedback
+      input.value = '';
 
       const newMsg = {
-        id: 'msg_' + Date.now(),
+        id: 'msg_' + Date.now() + '_' + Math.floor(Math.random() * 10000),
         clientId: selectedChatClientId,
         userId: selectedChatClientId,
         sender: 'Buyero Support',
@@ -7139,20 +7170,33 @@ FINANCIAL BREAKDOWN:
         createdAt: new Date().toISOString()
       };
 
-      let messages = getStoredChatMessages();
-      messages.push(newMsg);
-      saveChatMessages(messages);
+      try {
+        let messages = getStoredChatMessages();
+        messages.push(newMsg);
+        saveChatMessages(messages);
+      } catch (saveErr) {
+        console.warn("[Admin Save Message Error]", saveErr);
+      }
 
       // Persist to Firestore support_chats
       if (fbFirestore) {
-        fbFirestore.collection('support_chats').add(newMsg).catch(e => {
-          console.warn("[Admin Firestore Send Message Error]", e);
-        });
+        try {
+          fbFirestore.collection('support_chats').add(newMsg).catch(e => {
+            console.warn("[Admin Firestore Send Message Error]", e);
+          });
+        } catch (e) {}
       }
 
-      input.value = '';
-      renderActiveThreadMessages();
-      loadAdminChatThreads();
+      try {
+        renderActiveThreadMessages();
+      } catch (rErr) {
+        console.warn("[Admin Render Thread Error]", rErr);
+      }
+      try {
+        loadAdminChatThreads();
+      } catch (lErr) {
+        console.warn("[Admin Load Threads Error]", lErr);
+      }
 
       // Broadcast to client storefront
       try {
@@ -7171,6 +7215,7 @@ FINANCIAL BREAKDOWN:
           message: newMsg
         });
       } catch(e) {}
+      return false;
     }
 
     /* Urgent Order Support Tickets */
@@ -7358,6 +7403,31 @@ FINANCIAL BREAKDOWN:
         return;
       }
     });
+
+    // Direct DOM event binding for Admin Support Chat reply send button and enter key
+    function bindAdminChatListeners() {
+      const sendBtn = document.getElementById('admin-chat-send-btn');
+      if (sendBtn) {
+        sendBtn.onclick = (e) => {
+          e.preventDefault();
+          handleSendAdminReply(e);
+        };
+      }
+      const chatInput = document.getElementById('admin-chat-reply-input');
+      if (chatInput) {
+        chatInput.onkeydown = (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            handleSendAdminReply(e);
+          }
+        };
+      }
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', bindAdminChatListeners);
+    } else {
+      bindAdminChatListeners();
+    }
   </script>
 </body>
 </html>
