@@ -609,12 +609,15 @@
         <!-- Buyero Support Header -->
         <div class="p-3.5 bg-brand-navy text-white flex items-center justify-between shadow-xs">
           <div class="flex items-center gap-3 min-w-0">
-            <div class="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-brand-orange text-base font-bold shadow-xs flex-shrink-0">
-              <img src="assets/logo.png" alt="Buyero" class="w-6 h-6 object-contain" onerror="this.outerHTML='<i class=\\\'fa-solid fa-headset text-brand-orange\\\'></i>'"/>
+            <div class="w-10 h-10 rounded-2xl bg-white p-1.5 shadow-sm border border-white/20 flex items-center justify-center flex-shrink-0">
+              <svg class="w-full h-full" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <g><polygon points="12,46 22,41 22,90 12,88" fill="#13a388" /><polygon points="22,41 56,43 56,92 22,90" fill="#20d5a3" /><path d="M 28,42 C 28,26 48,26 48,42" stroke="#68ffd8" stroke-width="3.5" stroke-linecap="round" fill="none" /></g>
+                <g><path d="M 47,58 C 47,44 65,44 65,58" stroke="#ffaec3" stroke-width="3.5" stroke-linecap="round" fill="none" /><polygon points="38,62 48,58 48,99 38,96" fill="#d84f7b" /><polygon points="48,58 78,57 78,96 48,99" fill="#ff8ba0" /></g>
+              </svg>
             </div>
             <div class="min-w-0">
               <div class="flex items-center gap-2">
-                <h4 class="font-bold text-sm font-poppins truncate text-white">Buyero Support</h4>
+                <h4 class="font-bold text-sm font-poppins truncate text-white">Buyer<span class="text-brand-orange" style="color:#f77f33;">o</span> Support</h4>
                 <span class="inline-flex items-center gap-1 text-[9.5px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
                   <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Online
                 </span>
@@ -3895,22 +3898,21 @@
         try { supportChatUnsubscribe(); } catch(e) {}
         supportChatUnsubscribe = null;
       }
-      const authUid = (fbAuth && fbAuth.currentUser) 
-        ? fbAuth.currentUser.uid 
-        : ((currentUser && (currentUser.authUid || currentUser.uuid || currentUser.userId)) ? (currentUser.authUid || currentUser.uuid || currentUser.userId) : null);
-      if (!authUid) return;
+      const identity = getClientChatIdentity();
+      const targetId = identity.userId || identity.clientId;
+      if (!targetId) return;
 
       try {
         supportChatUnsubscribe = fbFirestore.collection('support_chats')
-          .where('userId', '==', authUid)
+          .where('clientId', '==', targetId)
           .onSnapshot((snapshot) => {
             if (!snapshot) return;
             let messages = getStoredSupportMessages();
             let changed = false;
             snapshot.docChanges().forEach(change => {
+              const msg = change.doc.data();
+              if (!msg || !msg.text) return;
               if (change.type === 'added') {
-                const msg = change.doc.data();
-                if (!msg || !msg.text) return;
                 const exists = messages.some(m => m.id === msg.id || (m.timestamp === msg.timestamp && m.text === msg.text));
                 if (!exists) {
                   messages.push(msg);
@@ -3926,6 +3928,12 @@
                       read: false
                     });
                   }
+                }
+              } else if (change.type === 'modified') {
+                const idx = messages.findIndex(m => m.id === msg.id);
+                if (idx >= 0) {
+                  messages[idx] = Object.assign({}, messages[idx], msg);
+                  changed = true;
                 }
               }
             });
@@ -10324,11 +10332,6 @@
        HELP & SUPPORT CHAT CONTROLLER
        Two-Way communication between Client and Admin Studio
        ========================================================= */
-    function openWhatsAppDirect() {
-      const phone = "919174573889";
-      const text = encodeURIComponent("Hello Buyero Admin, I have a question regarding my order and products.");
-      window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
-    }
 
     function getClientChatIdentity() {
       const authUid = (fbAuth && fbAuth.currentUser) 
@@ -10473,10 +10476,13 @@
       if (myMessages.length === 0) {
         container.innerHTML = `
           <div class="py-16 text-center text-slate-500">
-            <div class="w-14 h-14 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center text-brand-orange text-2xl mx-auto mb-3">
-              <i class="fa-solid fa-headset"></i>
+            <div class="w-16 h-16 rounded-3xl bg-white border border-slate-200 shadow-sm flex items-center justify-center p-3 mx-auto mb-3">
+              <svg class="w-full h-full" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <g><polygon points="12,46 22,41 22,90 12,88" fill="#13a388" /><polygon points="22,41 56,43 56,92 22,90" fill="#20d5a3" /><path d="M 28,42 C 28,26 48,26 48,42" stroke="#68ffd8" stroke-width="3.5" stroke-linecap="round" fill="none" /></g>
+                <g><path d="M 47,58 C 47,44 65,44 65,58" stroke="#ffaec3" stroke-width="3.5" stroke-linecap="round" fill="none" /><polygon points="38,62 48,58 48,99 38,96" fill="#d84f7b" /><polygon points="48,58 78,57 78,96 48,99" fill="#ff8ba0" /></g>
+              </svg>
             </div>
-            <p class="font-semibold text-xs text-slate-700">Say hello to Buyero Support!</p>
+            <p class="font-poppins font-bold text-sm text-slate-800">Say hello to Buyer<span style="color:#f77f33;">o</span> Support!</p>
             <span class="text-[11px] text-slate-400 block mt-0.5">We are online to assist with orders and inquiries</span>
           </div>
         `;
@@ -10535,32 +10541,32 @@
     }
 
     function handleSendClientChatMessage(e) {
-      e.preventDefault();
+      if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+      }
       const input = document.getElementById('client-chat-input');
+      if (!input) return false;
       const text = input.value.trim();
-      if (!text) return;
+      if (!text) return false;
 
       if (!currentUser) {
-        openAuthModal('support_gate');
-        showBuyeroModal({
-          title: 'Sign In Required',
-          message: 'Please sign in to send messages to customer support.',
-          type: 'info'
-        });
-        return;
+        try {
+          currentUser = JSON.parse(localStorage.getItem('buyero_user') || 'null');
+        } catch(err) {}
       }
 
       const identity = getClientChatIdentity();
 
       const newMsg = {
-        id: 'msg_' + Date.now(),
+        id: 'msg_' + Date.now() + '_' + Math.floor(Math.random() * 10000),
         clientId: identity.clientId,
         userId: identity.userId,
         sender: identity.clientName,
         clientName: identity.clientName,
-        userPhone: identity.clientPhone || (currentUser ? currentUser.phone : ''),
-        userEmail: currentUser ? currentUser.email : '',
-        userPhoto: currentUser ? (currentUser.photoURL || '') : '',
+        userPhone: identity.clientPhone || (currentUser ? currentUser.phone : '') || '',
+        userEmail: (currentUser ? currentUser.email : '') || '',
+        userPhoto: (currentUser ? currentUser.photoURL : '') || '',
         text: text,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         isAdmin: false,
@@ -10575,11 +10581,23 @@
       loadClientChatMessages();
       input.value = '';
 
-      // Broadcast to Admin Studio
+      // Broadcast to Admin Studio immediately (both events for bulletproof compatibility)
       try {
         syncChannel.postMessage({
           type: 'NEW_CHAT_MESSAGE',
-          message: newMsg
+          message: newMsg,
+          clientId: identity.clientId,
+          text: text,
+          sender: identity.clientName,
+          phone: newMsg.userPhone
+        });
+        syncChannel.postMessage({
+          type: 'NEW_SUPPORT_MESSAGE',
+          message: newMsg,
+          clientId: identity.clientId,
+          text: text,
+          sender: identity.clientName,
+          phone: newMsg.userPhone
         });
       } catch (err) {}
 
@@ -10591,6 +10609,7 @@
           });
         } catch (err) {}
       }
+      return false;
     }
 
     async function refreshClientChatMessages(btn) {
@@ -10729,7 +10748,7 @@
       if (!event.data) return;
       const identity = getClientChatIdentity();
 
-      if (event.data.type === 'ADMIN_CHAT_REPLY' || event.data.type === 'NEW_SUPPORT_MESSAGE') {
+      if (event.data.type === 'ADMIN_CHAT_REPLY' || (event.data.type === 'NEW_SUPPORT_MESSAGE' && event.data.isAdmin)) {
         const incomingClientId = event.data.clientId || (event.data.message && event.data.message.clientId);
         const incomingText = event.data.text || (event.data.message && event.data.message.text);
 

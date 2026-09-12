@@ -857,15 +857,18 @@
             <!-- Buyero Branded Chat Header -->
             <div class="p-3.5 bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white flex items-center justify-between shadow-xs">
               <div class="flex items-center gap-2.5">
-                <div class="w-8 h-8 rounded-xl bg-white/10 border border-amber-400/30 flex items-center justify-center text-amber-400 flex-shrink-0">
-                  <i class="fa-solid fa-headset text-sm"></i>
+                <div class="w-9 h-9 rounded-2xl bg-white p-1.5 border border-amber-400/40 shadow-sm flex items-center justify-center flex-shrink-0">
+                  <svg class="w-full h-full" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g><polygon points="12,46 22,41 22,90 12,88" fill="#13a388" /><polygon points="22,41 56,43 56,92 22,90" fill="#20d5a3" /><path d="M 28,42 C 28,26 48,26 48,42" stroke="#68ffd8" stroke-width="3.5" stroke-linecap="round" fill="none" /></g>
+                    <g><path d="M 47,58 C 47,44 65,44 65,58" stroke="#ffaec3" stroke-width="3.5" stroke-linecap="round" fill="none" /><polygon points="38,62 48,58 48,99 38,96" fill="#d84f7b" /><polygon points="48,58 78,57 78,96 48,99" fill="#ff8ba0" /></g>
+                  </svg>
                 </div>
                 <div>
                   <div class="flex items-center gap-1.5">
                     <span class="font-poppins font-black text-sm text-white tracking-tight">Buyer<span class="text-brand-orange" style="color:#f77f33;">o</span></span>
                     <span class="px-1.5 py-0.2 bg-amber-400/20 text-amber-300 text-[8.5px] font-bold rounded-full uppercase tracking-wider">Support</span>
                   </div>
-                  <p class="text-[9.5px] text-slate-300 font-medium">Customer Conversations</p>
+                  <p class="text-[9.5px] text-slate-300 font-medium">Live Customer Conversations</p>
                 </div>
               </div>
               <button onclick="loadAdminChatThreads()" class="w-7 h-7 rounded-full hover:bg-white/20 flex items-center justify-center text-xs text-slate-300 hover:text-white transition active:scale-95" title="Refresh chats">
@@ -965,11 +968,15 @@
               style="background-color: #efeae2; background-image: radial-gradient(#d1c7b7 0.8px, #efeae2 0.8px); background-size: 16px 16px;"
             >
               <div class="py-20 text-center text-slate-500">
-                <div class="w-14 h-14 rounded-2xl bg-white/80 border border-slate-200 shadow-sm flex items-center justify-center text-slate-400 text-2xl mx-auto mb-3">
-                  <i class="fa-solid fa-comments"></i>
+                <div class="w-16 h-16 rounded-3xl bg-white border border-slate-200 shadow-sm flex items-center justify-center p-3 mx-auto mb-3">
+                  <svg class="w-full h-full" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g><polygon points="12,46 22,41 22,90 12,88" fill="#13a388" /><polygon points="22,41 56,43 56,92 22,90" fill="#20d5a3" /><path d="M 28,42 C 28,26 48,26 48,42" stroke="#68ffd8" stroke-width="3.5" stroke-linecap="round" fill="none" /></g>
+                    <g><path d="M 47,58 C 47,44 65,44 65,58" stroke="#ffaec3" stroke-width="3.5" stroke-linecap="round" fill="none" /><polygon points="38,62 48,58 48,99 38,96" fill="#d84f7b" /><polygon points="48,58 78,57 78,96 48,99" fill="#ff8ba0" /></g>
+                  </svg>
                 </div>
-                <p class="font-semibold text-slate-700">Select a customer to view messages</p>
-                <span class="text-[10px] text-slate-400 block mt-1">Directly synced with Firebase Firestore in real time</span>
+                <h4 class="font-poppins font-bold text-sm text-slate-800">Buyer<span style="color:#f77f33;">o</span> Support Desk</h4>
+                <p class="font-medium text-xs text-slate-600 mt-1">Select a customer thread on the left to start live messaging</p>
+                <span class="text-[10px] text-slate-400 block mt-1">Real-time sync with customers • No message deletion</span>
               </div>
             </div>
 
@@ -2230,11 +2237,46 @@
       } else if (event.data && event.data.type === 'ORDER_UPDATED') {
         logActivityEvent('ORDER', `Order #${event.data.orderId || (event.data.order && event.data.order.orderId)} status updated: ${event.data.order ? event.data.order.status : 'Updated'}`);
         refreshAllAdminData();
-      } else if (event.data && event.data.type === 'NEW_SUPPORT_MESSAGE') {
-        logActivityEvent('CHAT', `Message from ${event.data.sender || 'Customer'}: "${(event.data.text || '').slice(0, 30)}..."`);
+      } else if (event.data && (event.data.type === 'NEW_SUPPORT_MESSAGE' || event.data.type === 'NEW_CHAT_MESSAGE')) {
+        const incomingMsg = event.data.message || {
+          id: 'msg_' + Date.now(),
+          clientId: event.data.clientId || 'CUSTOMER',
+          userId: event.data.clientId || 'CUSTOMER',
+          sender: event.data.sender || 'Customer',
+          clientName: event.data.sender || 'Customer',
+          userPhone: event.data.phone || '',
+          text: event.data.text || '',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          isAdmin: false,
+          seen: false,
+          isEdited: false,
+          createdAt: new Date().toISOString()
+        };
+
+        let messages = getStoredChatMessages();
+        const exists = messages.some(m => m.id === incomingMsg.id || (m.timestamp === incomingMsg.timestamp && m.text === incomingMsg.text && m.clientId === incomingMsg.clientId));
+        if (!exists) {
+          messages.push(incomingMsg);
+          saveChatMessages(messages);
+        }
+
+        logActivityEvent('CHAT', `Message from ${incomingMsg.sender || incomingMsg.clientName || 'Customer'}: "${(incomingMsg.text || '').slice(0, 30)}..."`);
         loadAdminChatThreads();
-        if (selectedChatClientId === event.data.clientId) {
+        if (selectedChatClientId === incomingMsg.clientId || selectedChatClientId === incomingMsg.userId) {
           renderActiveThreadMessages();
+        }
+      } else if (event.data && event.data.type === 'SUPPORT_MESSAGE_EDITED') {
+        let messages = getStoredChatMessages();
+        const msg = messages.find(m => m.id === event.data.msgId);
+        if (msg) {
+          msg.text = event.data.text;
+          msg.isEdited = true;
+          msg.editedAt = new Date().toISOString();
+          saveChatMessages(messages);
+          loadAdminChatThreads();
+          if (selectedChatClientId === msg.clientId || selectedChatClientId === msg.userId) {
+            renderActiveThreadMessages();
+          }
         }
       }
     };
@@ -6001,15 +6043,13 @@ FINANCIAL BREAKDOWN:
                 <i class="fa-solid fa-address-card"></i> View Full Profile
               </button>
               ${u.phone ? `
-                <a 
-                  href="https://wa.me/91${u.phone}?text=Hello%20${encodeURIComponent(u.name)}%2C%20this%20is%20Buyero%20Customer%20Support." 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  class="py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-[11px] transition flex items-center gap-1"
-                  title="WhatsApp Customer"
+                <button 
+                  onclick="openAdminChatWithUser('${safeUid || ('usr_' + safePhone)}', '${safeName}', '${safePhone}')" 
+                  class="py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-[11px] transition flex items-center gap-1.5 shadow-xs"
+                  title="Open Live Chat with Customer"
                 >
-                  <i class="fa-brands fa-whatsapp"></i> Chat
-                </a>
+                  <i class="fa-solid fa-comments"></i> Chat
+                </button>
               ` : ''}
             </div>
           </div>
@@ -6876,6 +6916,11 @@ FINANCIAL BREAKDOWN:
       }
     }
 
+    function openAdminChatWithUser(clientId, clientName, clientPhone) {
+      switchAdminBottomNav('support');
+      selectChatThread(clientId, clientName || clientPhone || 'Customer');
+    }
+
     function selectChatThread(clientId, clientName) {
       selectedChatClientId = clientId;
       const avatarEl = document.getElementById('active-chat-avatar');
@@ -6971,11 +7016,15 @@ FINANCIAL BREAKDOWN:
       if (messages.length === 0) {
         container.innerHTML = `
           <div class="py-20 text-center text-slate-500">
-            <div class="w-14 h-14 rounded-2xl bg-white/80 border border-slate-200 shadow-sm flex items-center justify-center text-slate-400 text-2xl mx-auto mb-3">
-              <i class="fa-solid fa-headset text-brand-orange"></i>
+            <div class="w-16 h-16 rounded-3xl bg-white border border-slate-200 shadow-sm flex items-center justify-center p-3 mx-auto mb-3">
+              <svg class="w-full h-full" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <g><polygon points="12,46 22,41 22,90 12,88" fill="#13a388" /><polygon points="22,41 56,43 56,92 22,90" fill="#20d5a3" /><path d="M 28,42 C 28,26 48,26 48,42" stroke="#68ffd8" stroke-width="3.5" stroke-linecap="round" fill="none" /></g>
+                <g><path d="M 47,58 C 47,44 65,44 65,58" stroke="#ffaec3" stroke-width="3.5" stroke-linecap="round" fill="none" /><polygon points="38,62 48,58 48,99 38,96" fill="#d84f7b" /><polygon points="48,58 78,57 78,96 48,99" fill="#ff8ba0" /></g>
+              </svg>
             </div>
-            <p class="font-semibold text-xs text-slate-700">No messages yet with this customer</p>
-            <span class="text-[10px] text-slate-400 block mt-0.5">Send a message below to start assisting</span>
+            <p class="font-poppins font-bold text-sm text-slate-800">Buyer<span style="color:#f77f33;">o</span> Live Support</p>
+            <p class="font-semibold text-xs text-slate-700 mt-1">No messages yet with this customer</p>
+            <span class="text-[10px] text-slate-400 block mt-0.5">Type a message below to start assisting</span>
           </div>
         `;
         return;
@@ -7111,7 +7160,15 @@ FINANCIAL BREAKDOWN:
           type: 'NEW_SUPPORT_MESSAGE',
           clientId: selectedChatClientId,
           text: text,
-          isAdmin: true
+          isAdmin: true,
+          message: newMsg
+        });
+        syncChannel.postMessage({
+          type: 'ADMIN_CHAT_REPLY',
+          clientId: selectedChatClientId,
+          text: text,
+          isAdmin: true,
+          message: newMsg
         });
       } catch(e) {}
     }
