@@ -3769,11 +3769,13 @@
       const discountAmount = Math.max(0, mrp - sellingPrice);
       const discountPercent = mrp > 0 ? Math.round((discountAmount / mrp) * 100) : 0;
 
-      // Extract all valid image URLs cleanly (no fake query params, no duplicates)
+      // Extract all valid image URLs cleanly (no fake query params)
       let cleanImages = [];
-      if (Array.isArray(p.images)) {
+      const mainImg = (typeof p.image === 'string' ? p.image.trim() : '');
+
+      if (Array.isArray(p.images) && p.images.length > 0) {
         p.images.forEach(u => {
-          if (u && typeof u === 'string' && u.trim() && !cleanImages.includes(u.trim())) {
+          if (u && typeof u === 'string' && u.trim()) {
             cleanImages.push(u.trim());
           }
         });
@@ -3782,27 +3784,28 @@
           const parsed = JSON.parse(p.images);
           if (Array.isArray(parsed)) {
             parsed.forEach(u => {
-              if (u && typeof u === 'string' && u.trim() && !cleanImages.includes(u.trim())) {
+              if (u && typeof u === 'string' && u.trim()) {
                 cleanImages.push(u.trim());
               }
             });
           }
         } catch(e) {}
       }
-      if (Array.isArray(p.extraImages)) {
+
+      if (cleanImages.length === 0 && Array.isArray(p.extraImages) && p.extraImages.length > 0) {
+        if (mainImg) cleanImages.push(mainImg);
         p.extraImages.forEach(u => {
-          if (u && typeof u === 'string' && u.trim() && !cleanImages.includes(u.trim())) {
+          if (u && typeof u === 'string' && u.trim()) {
             cleanImages.push(u.trim());
           }
         });
       }
-      const mainImg = (typeof p.image === 'string' ? p.image.trim() : '');
-      if (mainImg && !cleanImages.includes(mainImg)) {
-        cleanImages.unshift(mainImg);
-      }
+
       if (cleanImages.length === 0 && mainImg) {
         cleanImages.push(mainImg);
       }
+
+      const extraImgs = cleanImages.length > 1 ? cleanImages.slice(1) : [];
 
       return {
         id: String(p.id || ''),
@@ -3814,9 +3817,9 @@
         sellingPrice: sellingPrice,
         discountAmount: discountAmount,
         discountPercent: discountPercent,
-        image: mainImg || (cleanImages[0] || ''),
+        image: cleanImages[0] || mainImg || '',
         images: cleanImages,
-        extraImages: cleanImages.filter(x => x !== (mainImg || cleanImages[0])),
+        extraImages: extraImgs,
         videoUrl: p.videoUrl || '',
         reelUrl: p.reelUrl || '',
         description: p.description || '',
@@ -4141,8 +4144,8 @@
                 const remoteImages = Array.isArray(rp.images) ? rp.images : [];
                 const localImages = Array.isArray(localItem.images) ? localItem.images : [];
                 if (remoteImages.length < localImages.length && localImages.length > 1) {
-                  rp.images = Array.from(new Set([...remoteImages, ...localImages]));
-                  rp.extraImages = rp.images.filter(x => x !== rp.image);
+                  rp.images = [...localImages];
+                  rp.extraImages = rp.images.slice(1);
                 }
                 if (JSON.stringify(local[idx]) !== JSON.stringify(rp)) {
                   local[idx] = Object.assign({}, local[idx], rp);
@@ -5339,6 +5342,8 @@
       // Setup gallery images (Only real images added by admin, no dummy query params)
       if (Array.isArray(product.images) && product.images.length > 0) {
         activeDetailImages = product.images.filter(x => x && typeof x === 'string' && x.trim());
+      } else if (Array.isArray(product.extraImages) && product.extraImages.length > 0) {
+        activeDetailImages = [product.image || '', ...product.extraImages].filter(x => x && typeof x === 'string' && x.trim());
       } else if (product.image && typeof product.image === 'string' && product.image.trim()) {
         activeDetailImages = [product.image.trim()];
       } else {

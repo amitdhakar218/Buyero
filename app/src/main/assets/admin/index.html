@@ -3300,7 +3300,7 @@
       const extraImgs = [];
       extraInputs.forEach(i => {
         const c = cleanImageUrl(i.value);
-        if (c && !extraImgs.includes(c) && c !== mainImg) extraImgs.push(c);
+        if (c) extraImgs.push(c);
       });
       const videoUrl = (document.getElementById('inp-prod-video')?.value || '').trim();
 
@@ -3461,7 +3461,7 @@
       const extraImgs = [];
       extraInputs.forEach(i => {
         const c = cleanImageUrl(i.value);
-        if (c && !extraImgs.includes(c) && c !== mainImg) extraImgs.push(c);
+        if (c) extraImgs.push(c);
       });
       const videoUrl = (document.getElementById('edit-prod-video')?.value || '').trim();
 
@@ -3691,12 +3691,16 @@
                 return;
               }
 
-              // Preserve extra images if local has them and remote lost them
+              // Safely preserve extra images if remote lost them or local has them
               const remoteImages = Array.isArray(mergedItem.images) ? mergedItem.images : [];
               const localImages = Array.isArray(localItem.images) ? localItem.images : [];
               if (remoteImages.length < localImages.length && localImages.length > 1) {
-                mergedItem.images = Array.from(new Set([...remoteImages, ...localImages]));
-                mergedItem.extraImages = mergedItem.images.filter(x => x !== mergedItem.image);
+                mergedItem.images = [...localImages];
+                mergedItem.extraImages = mergedItem.images.slice(1);
+              } else if (Array.isArray(mergedItem.extraImages) && mergedItem.extraImages.length > 0) {
+                mergedItem.images = [mergedItem.image || '', ...mergedItem.extraImages].filter(Boolean);
+              } else if (Array.isArray(mergedItem.images) && mergedItem.images.length > 1) {
+                mergedItem.extraImages = mergedItem.images.slice(1);
               }
 
               if (JSON.stringify(local[idx]) !== JSON.stringify(mergedItem)) {
@@ -4657,7 +4661,7 @@
       const mainImageClean = cleanImageUrl(mainImage);
       extraImageInputs.forEach(inp => {
         const c = cleanImageUrl(inp.value);
-        if (c && c !== mainImageClean && !extraImages.includes(c)) {
+        if (c) {
           extraImages.push(c);
         }
       });
@@ -5006,29 +5010,44 @@
       const extraContainer = document.getElementById('edit-extra-images-container');
       if (extraContainer) {
         extraContainer.innerHTML = '';
-        let allImagesList = [];
-        if (Array.isArray(p.images)) {
-          allImagesList = p.images;
-        } else if (typeof p.images === 'string' && p.images.trim()) {
+        const extraList = [];
+
+        // 1. First check dedicated extraImages
+        if (Array.isArray(p.extraImages) && p.extraImages.length > 0) {
+          p.extraImages.forEach(u => {
+            const clean = cleanImageUrl(u);
+            if (clean) extraList.push(clean);
+          });
+        } else if (typeof p.extraImages === 'string' && p.extraImages.trim()) {
           try {
-            const parsed = JSON.parse(p.images);
-            if (Array.isArray(parsed)) allImagesList = parsed;
-            else allImagesList = [p.images.trim()];
-          } catch(e) {
-            allImagesList = [p.images.trim()];
-          }
-        }
-        if (Array.isArray(p.extraImages)) {
-          allImagesList = [...allImagesList, ...p.extraImages];
+            const parsed = JSON.parse(p.extraImages);
+            if (Array.isArray(parsed)) {
+              parsed.forEach(u => {
+                const clean = cleanImageUrl(u);
+                if (clean) extraList.push(clean);
+              });
+            }
+          } catch(e) {}
         }
 
-        const extraList = [];
-        allImagesList.forEach(u => {
-          const clean = cleanImageUrl(u);
-          if (clean && clean !== mainImgClean && !extraList.includes(clean)) {
-            extraList.push(clean);
+        // 2. If extraImages was empty, check p.images (take elements after index 0)
+        if (extraList.length === 0) {
+          let allImgList = [];
+          if (Array.isArray(p.images)) {
+            allImgList = p.images;
+          } else if (typeof p.images === 'string' && p.images.trim()) {
+            try {
+              const parsed = JSON.parse(p.images);
+              if (Array.isArray(parsed)) allImgList = parsed;
+            } catch(e) {}
           }
-        });
+          if (allImgList.length > 1) {
+            allImgList.slice(1).forEach(u => {
+              const clean = cleanImageUrl(u);
+              if (clean) extraList.push(clean);
+            });
+          }
+        }
 
         if (extraList.length > 0) {
           extraList.forEach(url => addEditExtraImageInput(url));
@@ -5101,7 +5120,7 @@
       const extraImages = [];
       extraInputs.forEach(i => {
         const c = cleanImageUrl(i.value);
-        if (c && c !== mainImage && !extraImages.includes(c)) {
+        if (c) {
           extraImages.push(c);
         }
       });
