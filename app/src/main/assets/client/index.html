@@ -3944,6 +3944,20 @@
 
     function restoreCloudUserData(cloudData) {
       if (!cloudData) return;
+      // 0. Authoritative Coins restoration from Firebase
+      const cloudCoins = Number(
+        cloudData.coins !== undefined ? cloudData.coins :
+        (cloudData.walletCoins !== undefined ? cloudData.walletCoins :
+        (cloudData.walletBalance !== undefined ? cloudData.walletBalance : null))
+      );
+      if (cloudCoins !== null && !isNaN(cloudCoins)) {
+        const safeCoins = Math.max(0, cloudCoins);
+        localStorage.setItem('buyero_user_coins', String(safeCoins));
+        if (currentUser) {
+          currentUser.coins = safeCoins;
+          currentUser.walletCoins = safeCoins;
+        }
+      }
       // 1. Cart restoration from Firebase
       if (Array.isArray(cloudData.cart)) {
         localStorage.setItem('buyero_cart', JSON.stringify(cloudData.cart));
@@ -4218,12 +4232,33 @@
         supportChatUnsubscribe = null;
       }
       const identity = getClientChatIdentity();
-      const targetId = identity.userId || identity.clientId;
-      if (!targetId) return;
+      const myUid = identity.userId || identity.clientId;
+      const myAuthUid = identity.authUid;
+      const myEmail = (identity.clientEmail || (currentUser ? currentUser.email : '') || '').toLowerCase().trim();
+      const myPhone = (identity.clientPhone || (currentUser ? currentUser.phone : '') || '').replace(/[^0-9]/g, '').slice(-10);
+
+      function isMessageForMe(msg) {
+        if (!msg) return false;
+        if (msg.clientId === 'ALL') return true;
+        if (myUid && (msg.clientId === myUid || msg.userId === myUid)) return true;
+        if (myAuthUid && (msg.clientId === myAuthUid || msg.userId === myAuthUid || msg.authUid === myAuthUid)) return true;
+        if (msg.targetUids && Array.isArray(msg.targetUids)) {
+          if (myUid && msg.targetUids.includes(myUid)) return true;
+          if (myAuthUid && msg.targetUids.includes(myAuthUid)) return true;
+        }
+        if (myEmail) {
+          const msgEmail = (msg.userEmail || msg.clientEmail || '').toLowerCase().trim();
+          if (msgEmail && msgEmail === myEmail) return true;
+        }
+        if (myPhone) {
+          const msgPhone = (msg.userPhone || msg.clientPhone || '').replace(/[^0-9]/g, '').slice(-10);
+          if (msgPhone && msgPhone === myPhone) return true;
+        }
+        return false;
+      }
 
       try {
         supportChatUnsubscribe = fbFirestore.collection('support_chats')
-          .where('clientId', '==', targetId)
           .onSnapshot((snapshot) => {
             if (!snapshot) return;
             let messages = getStoredSupportMessages();
@@ -4231,10 +4266,13 @@
             snapshot.docChanges().forEach(change => {
               const msg = change.doc.data();
               if (!msg || !msg.text) return;
+              if (!isMessageForMe(msg)) return;
+
+              const msgKey = msg.id || change.doc.id;
               if (change.type === 'added') {
-                const exists = messages.some(m => m.id === msg.id || (m.timestamp === msg.timestamp && m.text === msg.text));
+                const exists = messages.some(m => (m.id && m.id === msgKey) || (m.timestamp === msg.timestamp && m.text === msg.text && m.sender === msg.sender));
                 if (!exists) {
-                  messages.push(msg);
+                  messages.push(Object.assign({}, msg, { id: msgKey }));
                   changed = true;
                   if (msg.isAdmin) {
                     const supportDot = document.getElementById('support-nav-dot');
@@ -4249,9 +4287,9 @@
                   }
                 }
               } else if (change.type === 'modified') {
-                const idx = messages.findIndex(m => m.id === msg.id);
+                const idx = messages.findIndex(m => m.id === msgKey || (m.timestamp === msg.timestamp && m.text === msg.text));
                 if (idx >= 0) {
-                  messages[idx] = Object.assign({}, messages[idx], msg);
+                  messages[idx] = Object.assign({}, messages[idx], msg, { id: msgKey });
                   changed = true;
                 }
               }
@@ -4358,6 +4396,11 @@
       // 4. Update Profile Info
       renderUserProfile();
       if (currentUser && (currentUser.email || currentUser.uuid)) {
+        // Start authoritative real-time wallet coins listener immediately
+        listenToUserWalletRealtime(currentUser.uuid || currentUser.authUid || currentUser.userId);
+        // Start real-time support chats listener immediately
+        listenToSupportChatsRealtime();
+
         // Fetch orders and ensure latest cloud profile is synchronized
         fetchCloudOrdersForUser(currentUser);
         if (currentUser.email) {
@@ -4372,6 +4415,7 @@
               restoreCloudUserData(cloudP);
               renderUserProfile();
               fetchCloudOrdersForUser(currentUser);
+              listenToUserWalletRealtime(preferredId);
             }
           }).catch(() => {});
         }
@@ -10454,35 +10498,114 @@
     }
 
     let userWalletUnsubscribe = null;
+    let userWalletAltUnsubscribe = null;
+
     function listenToUserWalletRealtime(uid) {
-      if (!fbFirestore || !uid) return;
+      if (!fbFirestore) return;
+      const primaryUid = uid || (currentUser ? (currentUser.authUid || currentUser.uuid || currentUser.userId) : null) || (fbAuth && fbAuth.currentUser ? fbAuth.currentUser.uid : null);
+      if (!primaryUid) return;
+
       if (userWalletUnsubscribe) {
-        userWalletUnsubscribe();
+        try { userWalletUnsubscribe(); } catch(e) {}
         userWalletUnsubscribe = null;
       }
-      try {
-        userWalletUnsubscribe = fbFirestore.collection('users').doc(uid).onSnapshot(docSnap => {
-          if (docSnap && docSnap.exists) {
-            const data = docSnap.data();
-            const serverCoins = Number(data.coins !== undefined ? data.coins : (data.walletCoins !== undefined ? data.walletCoins : 0)) || 0;
-            if (currentUser) {
-              currentUser.coins = serverCoins;
-              currentUser.walletCoins = serverCoins;
-              if (data.referralCode && !currentUser.referralCode) currentUser.referralCode = data.referralCode;
-              if (data.referredByUid && !currentUser.referredByUid) currentUser.referredByUid = data.referredByUid;
-              if (data.referredByCode && !currentUser.referredByCode) currentUser.referredByCode = data.referredByCode;
-              localStorage.setItem('buyero_user', JSON.stringify(currentUser));
-            }
-            localStorage.setItem('buyero_user_coins', String(serverCoins));
-            renderUserProfile();
+      if (userWalletAltUnsubscribe) {
+        try { userWalletAltUnsubscribe(); } catch(e) {}
+        userWalletAltUnsubscribe = null;
+      }
+
+      function applyLiveWalletSnapshot(data) {
+        if (!data) return;
+        const serverCoins = Number(
+          data.coins !== undefined ? data.coins :
+          (data.walletCoins !== undefined ? data.walletCoins :
+          (data.walletBalance !== undefined ? data.walletBalance : null))
+        );
+        if (serverCoins !== null && !isNaN(serverCoins)) {
+          const safeCoins = Math.max(0, serverCoins);
+          if (currentUser) {
+            currentUser.coins = safeCoins;
+            currentUser.walletCoins = safeCoins;
+            if (data.referralCode && !currentUser.referralCode) currentUser.referralCode = data.referralCode;
+            if (data.referredByUid && !currentUser.referredByUid) currentUser.referredByUid = data.referredByUid;
+            if (data.referredByCode && !currentUser.referredByCode) currentUser.referredByCode = data.referredByCode;
+            localStorage.setItem('buyero_user', JSON.stringify(currentUser));
+          }
+          localStorage.setItem('buyero_user_coins', String(safeCoins));
+          renderUserProfile();
+          if (typeof renderCheckoutPriceBreakdown === 'function') {
             renderCheckoutPriceBreakdown();
           }
+          console.log("[Buyero Realtime Wallet] Coins updated live from Firebase:", safeCoins);
+        }
+      }
+
+      try {
+        userWalletUnsubscribe = fbFirestore.collection('users').doc(primaryUid).onSnapshot(docSnap => {
+          if (docSnap && docSnap.exists) {
+            applyLiveWalletSnapshot(docSnap.data());
+          }
         }, err => {
-          console.warn("[Realtime Wallet Listener]", err);
+          console.warn("[Realtime Wallet Listener primaryUid]", err);
         });
+
+        // Also listen to secondary ID (authUid vs uuid) if distinct
+        const altUid = (currentUser && currentUser.authUid && currentUser.authUid !== primaryUid) 
+          ? currentUser.authUid 
+          : (fbAuth && fbAuth.currentUser && fbAuth.currentUser.uid !== primaryUid ? fbAuth.currentUser.uid : null);
+        if (altUid) {
+          userWalletAltUnsubscribe = fbFirestore.collection('users').doc(altUid).onSnapshot(docSnap => {
+            if (docSnap && docSnap.exists) {
+              applyLiveWalletSnapshot(docSnap.data());
+            }
+          }, err => {
+            console.warn("[Realtime Wallet Listener altUid]", err);
+          });
+        }
       } catch (e) {
         console.warn("[Realtime Wallet Init Error]", e);
       }
+    }
+
+    async function checkAuthoritativeWalletBalance() {
+      if (!fbFirestore) return getUserCoins();
+      const targetUid = (fbAuth && fbAuth.currentUser && fbAuth.currentUser.uid) ||
+                        (currentUser && (currentUser.authUid || currentUser.uuid || currentUser.userId)) || null;
+      if (!targetUid) return getUserCoins();
+
+      try {
+        let uSnap = await fbFirestore.collection('users').doc(targetUid).get();
+        if ((!uSnap || !uSnap.exists) && currentUser && currentUser.authUid && currentUser.authUid !== targetUid) {
+          uSnap = await fbFirestore.collection('users').doc(currentUser.authUid).get();
+        }
+        if ((!uSnap || !uSnap.exists) && currentUser && currentUser.email) {
+          const emailSnap = await fbFirestore.collection('users').where('email', '==', currentUser.email.toLowerCase().trim()).limit(1).get();
+          if (!emailSnap.empty) uSnap = emailSnap.docs[0];
+        }
+
+        if (uSnap && uSnap.exists) {
+          const data = uSnap.data();
+          const serverCoins = Number(
+            data.coins !== undefined ? data.coins :
+            (data.walletCoins !== undefined ? data.walletCoins :
+            (data.walletBalance !== undefined ? data.walletBalance : null))
+          );
+          if (serverCoins !== null && !isNaN(serverCoins)) {
+            const safeCoins = Math.max(0, serverCoins);
+            localStorage.setItem('buyero_user_coins', String(safeCoins));
+            if (currentUser) {
+              currentUser.coins = safeCoins;
+              currentUser.walletCoins = safeCoins;
+              localStorage.setItem('buyero_user', JSON.stringify(currentUser));
+            }
+            renderUserProfile();
+            return safeCoins;
+          }
+        }
+      } catch (e) {
+        console.warn("[checkAuthoritativeWalletBalance error]", e);
+      }
+      return getUserCoins();
     }
 
     function resumePendingAuthAction() {
@@ -10536,20 +10659,24 @@
       }
       renderUserProfile();
 
-      // Authoritative cloud persistence
-      const targetUid = (fbAuth && fbAuth.currentUser && fbAuth.currentUser.uid) ||
-                        (currentUser && currentUser.authUid) ||
-                        (currentUser && currentUser.uuid && !currentUser.uuid.startsWith('usr_') ? currentUser.uuid : null);
-      if (fbFirestore && targetUid) {
-        try {
-          await fbFirestore.collection('users').doc(targetUid).set({
+      // Authoritative cloud persistence across all user documents (authUid and uuid)
+      const uidsToUpdate = new Set();
+      if (fbAuth && fbAuth.currentUser && fbAuth.currentUser.uid) uidsToUpdate.add(fbAuth.currentUser.uid);
+      if (currentUser && currentUser.authUid) uidsToUpdate.add(currentUser.authUid);
+      if (currentUser && currentUser.uuid) uidsToUpdate.add(currentUser.uuid);
+      if (currentUser && currentUser.userId) uidsToUpdate.add(currentUser.userId);
+
+      if (fbFirestore && uidsToUpdate.size > 0) {
+        uidsToUpdate.forEach(targetDocId => {
+          fbFirestore.collection('users').doc(targetDocId).set({
             walletCoins: sanitizedCoins,
             coins: sanitizedCoins,
+            walletBalance: sanitizedCoins,
             walletUpdatedAt: new Date().toISOString()
-          }, { merge: true });
-        } catch (err) {
-          console.warn("[Cloud Wallet Sync Error]", err);
-        }
+          }, { merge: true }).catch(err => {
+            console.warn("[Cloud Wallet Sync Error]", err);
+          });
+        });
       }
     }
 
@@ -11293,33 +11420,48 @@
         authUid = currentUser.authUid || currentUser.uuid || currentUser.userId || null;
       }
 
-      let clientId = authUid;
+      let persistentId = null;
+      try {
+        persistentId = localStorage.getItem('buyero_permanent_chat_client_id');
+      } catch (e) {}
+
+      let clientId = authUid || persistentId;
       if (!clientId) {
         try {
           clientId = localStorage.getItem('buyero_client_chat_id');
         } catch (e) {}
         if (!clientId) {
-          clientId = 'USR_' + Math.floor(100000 + Math.random() * 900000);
-          try {
-            localStorage.setItem('buyero_client_chat_id', clientId);
-          } catch (e) {}
+          clientId = 'usr_' + Date.now().toString(36) + '_' + Math.floor(1000 + Math.random() * 9000);
         }
       }
-      clientId = String(clientId || 'USR_100001');
+      clientId = String(clientId);
+
+      try {
+        localStorage.setItem('buyero_permanent_chat_client_id', clientId);
+        localStorage.setItem('buyero_client_chat_id', clientId);
+      } catch (e) {}
 
       let clientName = 'Customer';
-      if (currentUser && typeof currentUser === 'object' && currentUser.name) {
-        clientName = currentUser.name;
-      } else {
-        clientName = 'Customer ' + clientId.slice(-4);
-      }
-
       let clientPhone = '';
-      if (currentUser && typeof currentUser === 'object' && currentUser.phone) {
-        clientPhone = currentUser.phone;
+      let clientEmail = '';
+      let clientPhoto = '';
+
+      if (currentUser && typeof currentUser === 'object') {
+        if (currentUser.name) clientName = currentUser.name;
+        if (currentUser.phone) clientPhone = currentUser.phone;
+        if (currentUser.email) clientEmail = currentUser.email;
+        if (currentUser.photoURL) clientPhoto = currentUser.photoURL;
       }
 
-      return { clientId, userId: authUid || clientId, clientName, clientPhone };
+      return {
+        clientId,
+        userId: authUid || clientId,
+        authUid: authUid,
+        clientName,
+        clientPhone,
+        clientEmail,
+        clientPhoto
+      };
     }
 
     function getStoredSupportMessages() {
@@ -11337,7 +11479,8 @@
           sender: 'Buyero Support',
           text: 'Namaste! Welcome to Buyero Help & Support. How can we assist you today?',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          isAdmin: true
+          isAdmin: true,
+          seen: true
         }
       ];
     }
@@ -11396,11 +11539,17 @@
 
       // Persist to Firestore support_chats
       if (fbFirestore) {
-        fbFirestore.collection('support_chats').where('id', '==', msgId).get().then(snap => {
-          snap.forEach(doc => {
-            doc.ref.update({ text: trimmed, isEdited: true, editedAt: msg.editedAt }).catch(() => {});
-          });
-        }).catch(() => {});
+        fbFirestore.collection('support_chats').doc(msgId).update({
+          text: trimmed,
+          isEdited: true,
+          editedAt: msg.editedAt
+        }).catch(() => {
+          fbFirestore.collection('support_chats').where('id', '==', msgId).get().then(snap => {
+            snap.forEach(doc => {
+              doc.ref.update({ text: trimmed, isEdited: true, editedAt: msg.editedAt }).catch(() => {});
+            });
+          }).catch(() => {});
+        });
       }
 
       loadClientChatMessages();
@@ -11421,25 +11570,47 @@
 
       const identity = getClientChatIdentity();
       let allMessages = getStoredSupportMessages();
-      
-      // Filter for this specific customer
-      const myMessages = allMessages.filter(msg => 
-        msg.clientId === 'ALL' || 
-        msg.clientId === identity.clientId || 
-        msg.userId === identity.userId || 
-        (!msg.clientId && msg.isAdmin)
-      );
+      const myUid = identity.userId || identity.clientId;
+      const myAuthUid = identity.authUid;
+      const myEmail = (identity.clientEmail || (currentUser ? currentUser.email : '') || '').toLowerCase().trim();
+      const myPhone = (identity.clientPhone || (currentUser ? currentUser.phone : '') || '').replace(/[^0-9]/g, '').slice(-10);
 
-      // Mark admin messages as seen (✓✓ in Firestore and locally)
+      // Filter for this specific customer with comprehensive identifier matching
+      const myMessages = allMessages.filter(msg => {
+        if (!msg) return false;
+        if (msg.clientId === 'ALL') return true;
+        if (myUid && (msg.clientId === myUid || msg.userId === myUid)) return true;
+        if (myAuthUid && (msg.clientId === myAuthUid || msg.userId === myAuthUid || msg.authUid === myAuthUid)) return true;
+        if (msg.targetUids && Array.isArray(msg.targetUids)) {
+          if (myUid && msg.targetUids.includes(myUid)) return true;
+          if (myAuthUid && msg.targetUids.includes(myAuthUid)) return true;
+        }
+        if (myEmail) {
+          const msgEmail = (msg.userEmail || msg.clientEmail || '').toLowerCase().trim();
+          if (msgEmail && msgEmail === myEmail) return true;
+        }
+        if (myPhone) {
+          const msgPhone = (msg.userPhone || msg.clientPhone || '').replace(/[^0-9]/g, '').slice(-10);
+          if (msgPhone && msgPhone === myPhone) return true;
+        }
+        return (!msg.clientId && msg.isAdmin);
+      });
+
+      // Mark admin messages as seen (real-time ✓✓ seen receipt in Firestore and locally)
       let hasUnseenAdmin = false;
       myMessages.forEach(m => {
         if (m.isAdmin && !m.seen) {
           m.seen = true;
           hasUnseenAdmin = true;
           if (fbFirestore && m.id) {
-            fbFirestore.collection('support_chats').where('id', '==', m.id).get().then(snap => {
-              snap.forEach(doc => doc.ref.update({ seen: true }).catch(() => {}));
-            }).catch(() => {});
+            fbFirestore.collection('support_chats').doc(m.id).update({
+              seen: true,
+              seenAt: new Date().toISOString()
+            }).catch(() => {
+              fbFirestore.collection('support_chats').where('id', '==', m.id).get().then(snap => {
+                snap.forEach(doc => doc.ref.update({ seen: true, seenAt: new Date().toISOString() }).catch(() => {}));
+              }).catch(() => {});
+            });
           }
         }
       });
@@ -11485,7 +11656,6 @@
               </span>
               <div class="flex items-center gap-1.5">
                 ${msg.isEdited ? `<span class="italic text-[9px] ${isUserMsg ? 'text-emerald-200' : 'text-amber-600'} font-semibold">(Edited)</span>` : ''}
-                <!-- Edit button for customer message (No delete button) -->
                 ${isUserMsg ? `
                   <button 
                     type="button" 
@@ -11504,7 +11674,11 @@
             <div class="flex items-center justify-end gap-1.5 mt-1 text-[9.5px] ${isUserMsg ? 'text-slate-300' : 'text-slate-400'} font-mono select-none">
               <span>${msg.timestamp || ''}</span>
               ${isUserMsg ? `
-                <i class="fa-solid fa-check-double text-[10.5px] ${msg.seen ? 'text-emerald-400' : 'text-slate-400'}" title="${msg.seen ? 'Seen by Support' : 'Delivered'}"></i>
+                ${msg.seen ? `
+                  <i class="fa-solid fa-check-double text-[11px] text-[#53bdeb] font-bold" title="Seen by Support"></i>
+                ` : `
+                  <i class="fa-solid fa-check text-[10.5px] text-slate-300/80" title="Sent to Support"></i>
+                `}
               ` : ''}
             </div>
           </div>
@@ -11524,7 +11698,6 @@
       const text = input.value.trim();
       if (!text) return false;
 
-      // Clear input immediately for instant tactile feedback
       input.value = '';
 
       if (!currentUser) {
@@ -11539,15 +11712,16 @@
         id: 'msg_' + Date.now() + '_' + Math.floor(Math.random() * 10000),
         clientId: identity.clientId || 'GUEST',
         userId: identity.userId || identity.clientId || 'GUEST',
+        authUid: identity.authUid || (fbAuth && fbAuth.currentUser ? fbAuth.currentUser.uid : null),
         sender: identity.clientName || 'Customer',
         clientName: identity.clientName || 'Customer',
         userPhone: identity.clientPhone || (currentUser ? currentUser.phone : '') || '',
-        userEmail: (currentUser ? currentUser.email : '') || '',
-        userPhoto: (currentUser ? currentUser.photoURL : '') || '',
+        userEmail: identity.clientEmail || (currentUser ? currentUser.email : '') || '',
+        userPhoto: identity.clientPhoto || (currentUser ? currentUser.photoURL : '') || '',
         text: text,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         isAdmin: false,
-        seen: false, // will turn green when admin views it
+        seen: false, // Single tick initially; will turn into double blue tick when Admin views it
         isEdited: false,
         createdAt: new Date().toISOString()
       };
@@ -11566,7 +11740,7 @@
         console.warn("[Render Client Chat Message Error]", renderErr);
       }
 
-      // Broadcast to Admin Studio immediately (both events for bulletproof compatibility)
+      // Broadcast to Admin Studio immediately
       try {
         syncChannel.postMessage({
           type: 'NEW_CHAT_MESSAGE',
@@ -11586,10 +11760,10 @@
         });
       } catch (err) {}
 
-      // Push to Firestore if online
+      // Push to Firestore with deterministic doc ID
       if (fbFirestore) {
         try {
-          fbFirestore.collection('support_chats').add(newMsg).catch(err => {
+          fbFirestore.collection('support_chats').doc(newMsg.id).set(newMsg).catch(err => {
             console.warn("[Client Send Message Firestore Error]", err);
           });
         } catch (err) {}

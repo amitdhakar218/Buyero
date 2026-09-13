@@ -1441,8 +1441,32 @@
           </div>
           <div class="p-2.5 bg-amber-50 border border-amber-200 rounded-2xl text-center">
             <span class="text-[9px] text-amber-700 font-bold block uppercase">Coins Balance</span>
-            <span class="font-bold text-sm text-amber-900" id="modal-cust-wallet">50 Coins</span>
+            <span class="font-bold text-sm text-amber-900" id="modal-cust-wallet">0 Coins</span>
           </div>
+        </div>
+
+        <!-- Live Customer Coins Control (Direct Firebase Sync) -->
+        <div class="p-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/90 rounded-2xl text-xs space-y-2">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5 font-bold text-amber-950">
+              <i class="fa-solid fa-coins text-amber-500 text-sm"></i>
+              <span>Manage User Coins (Firebase Live Sync)</span>
+            </div>
+            <span id="modal-cust-coins-badge" class="px-2.5 py-0.5 bg-amber-200 text-amber-900 font-extrabold rounded-full text-[11px] shadow-2xs">0 Coins</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="relative flex-1">
+              <input type="number" id="input-modal-cust-coins" min="0" max="100000" placeholder="Enter new coins" class="w-full pl-7 pr-3 py-1.5 bg-white border border-amber-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500" />
+              <i class="fa-solid fa-coins absolute left-2.5 top-2.5 text-amber-400 text-[10px]"></i>
+            </div>
+            <button type="button" onclick="updateCustomerCoinsFromAdminModal()" class="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold rounded-xl text-xs shadow-xs transition flex items-center gap-1.5">
+              <i class="fa-solid fa-floppy-disk"></i>
+              <span>Save Coins</span>
+            </button>
+          </div>
+          <p class="text-[10px] text-amber-800 leading-tight">
+            <i class="fa-solid fa-shield-halved text-amber-600 mr-1"></i>High-security: Updates Firestore instantly. If user has app open, coins balance updates live in real time.
+          </p>
         </div>
 
         <!-- Primary Delivery Address -->
@@ -6977,10 +7001,11 @@ FINANCIAL BREAKDOWN:
           target.photoURL = candPhoto.trim();
         }
 
-        if (rec.walletBalance !== undefined || rec.coins !== undefined) {
-          const bal = Number(rec.walletBalance !== undefined ? rec.walletBalance : rec.coins) || 0;
-          if (bal > target.walletBalance) {
-            target.walletBalance = bal;
+        if (rec.coins !== undefined || rec.walletCoins !== undefined || rec.walletBalance !== undefined) {
+          const rawVal = rec.coins !== undefined ? rec.coins : (rec.walletCoins !== undefined ? rec.walletCoins : rec.walletBalance);
+          const bal = Number(rawVal);
+          if (!isNaN(bal)) {
+            target.walletBalance = Math.max(0, bal);
           }
         }
 
@@ -7026,7 +7051,7 @@ FINANCIAL BREAKDOWN:
             normEmail: normalizeUserEmail(ru.email),
             email: ru.email || '',
             photoURL: ru.photoURL || ru.photo || '',
-            walletBalance: Number(ru.walletBalance !== undefined ? ru.walletBalance : (ru.coins !== undefined ? ru.coins : 50)) || 50,
+            walletBalance: Number(ru.coins !== undefined ? ru.coins : (ru.walletCoins !== undefined ? ru.walletCoins : (ru.walletBalance !== undefined ? ru.walletBalance : 10))) || 10,
             savedAddresses: [],
             createdAt: ru.createdAt || '',
             orders: []
@@ -7050,7 +7075,7 @@ FINANCIAL BREAKDOWN:
             normEmail: normalizeUserEmail(lu.email),
             email: lu.email || '',
             photoURL: lu.photoURL || '',
-            walletBalance: Number(lu.walletBalance !== undefined ? lu.walletBalance : 50) || 50,
+            walletBalance: Number(lu.coins !== undefined ? lu.coins : (lu.walletCoins !== undefined ? lu.walletCoins : (lu.walletBalance !== undefined ? lu.walletBalance : 10))) || 10,
             savedAddresses: [],
             createdAt: lu.createdAt || '',
             orders: []
@@ -7076,7 +7101,7 @@ FINANCIAL BREAKDOWN:
             normEmail: normE,
             email: ord.customerEmail || '',
             photoURL: '',
-            walletBalance: 50,
+            walletBalance: 10,
             savedAddresses: [],
             createdAt: ord.timestamp || '',
             orders: []
@@ -7301,6 +7326,9 @@ FINANCIAL BREAKDOWN:
       const pincodeEl = document.getElementById('modal-cust-pincode');
       const ordersSummaryEl = document.getElementById('modal-cust-orders-summary');
       const ordersListEl = document.getElementById('modal-cust-orders-list');
+      const walletEl = document.getElementById('modal-cust-wallet');
+      const coinsBadgeEl = document.getElementById('modal-cust-coins-badge');
+      const coinsInputEl = document.getElementById('input-modal-cust-coins');
 
       const displayName = matchedUser?.name || name || customerOrders[0]?.customerName || 'Customer';
       const displayPhone = matchedUser?.phone || phone || customerOrders[0]?.phone || '';
@@ -7310,6 +7338,21 @@ FINANCIAL BREAKDOWN:
         ? (typeof matchedUser.savedAddresses[0] === 'string' ? matchedUser.savedAddresses[0] : (matchedUser.savedAddresses[0].street || matchedUser.savedAddresses[0].fullAddress || 'Saved Address'))
         : (address || customerOrders[0]?.address || 'No saved address recorded');
       const displayPin = customerOrders[0]?.pincode || '-';
+      const customerCoins = Math.max(0, Number(matchedUser?.walletBalance !== undefined ? matchedUser.walletBalance : (matchedUser?.coins !== undefined ? matchedUser.coins : 0)));
+
+      // Save active customer data for live admin edits
+      window.activeAdminModalCustomer = {
+        uid: displayUid,
+        uids: matchedUser?.aliases ? matchedUser.aliases : [displayUid].filter(Boolean),
+        phone: displayPhone,
+        email: displayEmail,
+        name: displayName,
+        coins: customerCoins
+      };
+
+      if (walletEl) walletEl.textContent = `${customerCoins} Coins`;
+      if (coinsBadgeEl) coinsBadgeEl.textContent = `${customerCoins} Coins`;
+      if (coinsInputEl) coinsInputEl.value = customerCoins;
 
       const totalSpent = customerOrders.reduce((sum, o) => {
         const amt = Number(o.totalAmount !== undefined ? o.totalAmount : (o.total !== undefined ? o.total : (o.finalAmount || 0))) || 0;
@@ -7365,6 +7408,70 @@ FINANCIAL BREAKDOWN:
 
       const modal = document.getElementById('modal-customer-profile');
       if (modal) modal.classList.remove('hidden');
+    }
+
+    async function updateCustomerCoinsFromAdminModal() {
+      const inputEl = document.getElementById('input-modal-cust-coins');
+      if (!inputEl) return;
+      const newCoins = Math.max(0, parseInt(inputEl.value, 10) || 0);
+      if (isNaN(newCoins)) {
+        alert("Please enter a valid coin amount.");
+        return;
+      }
+
+      if (!window.activeAdminModalCustomer) {
+        alert("No active customer selected.");
+        return;
+      }
+
+      const targetUids = new Set(window.activeAdminModalCustomer.uids || []);
+      if (window.activeAdminModalCustomer.uid) targetUids.add(window.activeAdminModalCustomer.uid);
+
+      // Write authoritative balance to Firebase Firestore across all documents for this customer
+      if (fbFirestore) {
+        for (const docId of targetUids) {
+          try {
+            await fbFirestore.collection('users').doc(docId).set({
+              coins: newCoins,
+              walletCoins: newCoins,
+              walletBalance: newCoins,
+              walletUpdatedAt: new Date().toISOString()
+            }, { merge: true });
+          } catch (e) {
+            console.warn("[Admin updateCustomerCoins Error]", e);
+          }
+        }
+      }
+
+      window.activeAdminModalCustomer.coins = newCoins;
+
+      // Update in cachedAdminUsers
+      if (typeof cachedAdminUsers !== 'undefined') {
+        cachedAdminUsers.forEach(u => {
+          if (targetUids.has(u.uid) || (u.aliases && u.aliases.some(a => targetUids.has(a)))) {
+            u.walletBalance = newCoins;
+            u.coins = newCoins;
+          }
+        });
+      }
+
+      // Update UI elements
+      const walletEl = document.getElementById('modal-cust-wallet');
+      const badgeEl = document.getElementById('modal-cust-coins-badge');
+      if (walletEl) walletEl.textContent = `${newCoins} Coins`;
+      if (badgeEl) badgeEl.textContent = `${newCoins} Coins`;
+
+      // Broadcast to client app via syncChannel
+      try {
+        syncChannel.postMessage({
+          type: 'WALLET_COINS_UPDATED_FROM_ADMIN',
+          uids: Array.from(targetUids),
+          coins: newCoins
+        });
+      } catch (e) {}
+
+      showAdminToast(`Updated user coins to ${newCoins} in Firebase!`, 'SUCCESS');
+      loadAdminUsersList();
     }
 
     function closeCustomerProfileModal() {
@@ -7965,50 +8072,78 @@ FINANCIAL BREAKDOWN:
       return palettes[Math.abs(hash) % palettes.length];
     }
 
+    function resolveCanonicalCustomerForChat(m) {
+      if (!m) return null;
+      const rawId = m.clientId || m.userId || '';
+      const phone = normalizeUserPhone(m.userPhone || m.clientPhone);
+      const email = normalizeUserEmail(m.userEmail || m.clientEmail);
+
+      if (typeof cachedAdminUsers !== 'undefined' && cachedAdminUsers.length > 0) {
+        const match = cachedAdminUsers.find(u => {
+          if (rawId && (u.uid === rawId || (u.aliases && u.aliases.includes(rawId)))) return true;
+          if (phone && (u.normPhone === phone || u.phone === phone)) return true;
+          if (email && (u.normEmail === email || u.email === email)) return true;
+          return false;
+        });
+        if (match) return match;
+      }
+      return null;
+    }
+
     function loadAdminChatThreads() {
       const listContainer = document.getElementById('admin-chat-threads-list');
       if (!listContainer) return;
       const messages = getStoredChatMessages();
 
-      // Group by clientId
+      // Group by canonical customer identity to prevent separate fragmented threads
       const threadMap = {};
       messages.forEach(m => {
-        const id = m.clientId || m.userId || 'GUEST';
-        if (!threadMap[id]) {
-          threadMap[id] = {
-            clientId: id,
-            clientName: (m.clientName && m.clientName !== 'Buyero Support') ? m.clientName : (m.sender !== 'Buyero Support' ? m.sender : 'Customer'),
-            clientPhone: m.clientPhone || m.userPhone || '',
-            clientEmail: m.userEmail || '',
-            photoURL: m.userPhoto || '',
+        if (!m) return;
+        const matchedCust = resolveCanonicalCustomerForChat(m);
+        const canonId = matchedCust ? matchedCust.uid : (m.clientId || m.userId || 'GUEST');
+        const custName = matchedCust ? matchedCust.name : ((m.clientName && m.clientName !== 'Buyero Support') ? m.clientName : (m.sender !== 'Buyero Support' ? m.sender : 'Customer'));
+        const custPhone = matchedCust ? matchedCust.phone : (m.clientPhone || m.userPhone || '');
+        const custEmail = matchedCust ? matchedCust.email : (m.userEmail || '');
+        const custPhoto = matchedCust ? matchedCust.photoURL : (m.userPhoto || '');
+
+        if (!threadMap[canonId]) {
+          threadMap[canonId] = {
+            clientId: canonId,
+            clientName: custName,
+            clientPhone: custPhone,
+            clientEmail: custEmail,
+            photoURL: custPhoto,
             lastMessage: m.text,
             lastTime: m.timestamp || '',
             lastIsoTime: m.createdAt || '',
             lastIsAdmin: Boolean(m.isAdmin),
             lastSeen: Boolean(m.seen),
-            unreadCount: (!m.isAdmin && !m.seen) ? 1 : 0
+            unreadCount: (!m.isAdmin && !m.seen) ? 1 : 0,
+            linkedUids: new Set([m.clientId, m.userId, canonId].filter(Boolean))
           };
         } else {
-          threadMap[id].lastMessage = m.text;
-          threadMap[id].lastTime = m.timestamp || threadMap[id].lastTime;
-          threadMap[id].lastIsoTime = m.createdAt || threadMap[id].lastIsoTime;
-          threadMap[id].lastIsAdmin = Boolean(m.isAdmin);
-          threadMap[id].lastSeen = Boolean(m.seen);
-          if (m.clientName && m.clientName !== 'Buyero Support') threadMap[id].clientName = m.clientName;
-          if (m.userPhone) threadMap[id].clientPhone = m.userPhone;
-          if (m.userPhoto) threadMap[id].photoURL = m.userPhoto;
+          threadMap[canonId].linkedUids.add(m.clientId);
+          threadMap[canonId].linkedUids.add(m.userId);
+          threadMap[canonId].lastMessage = m.text;
+          threadMap[canonId].lastTime = m.timestamp || threadMap[canonId].lastTime;
+          threadMap[canonId].lastIsoTime = m.createdAt || threadMap[canonId].lastIsoTime;
+          threadMap[canonId].lastIsAdmin = Boolean(m.isAdmin);
+          threadMap[canonId].lastSeen = Boolean(m.seen);
+          if (custName && custName !== 'Customer' && threadMap[canonId].clientName === 'Customer') threadMap[canonId].clientName = custName;
+          if (custPhone && !threadMap[canonId].clientPhone) threadMap[canonId].clientPhone = custPhone;
+          if (custPhoto && !threadMap[canonId].photoURL) threadMap[canonId].photoURL = custPhoto;
           if (!m.isAdmin && !m.seen) {
-            threadMap[id].unreadCount = (threadMap[id].unreadCount || 0) + 1;
+            threadMap[canonId].unreadCount = (threadMap[canonId].unreadCount || 0) + 1;
           }
         }
       });
 
-      // Merge all registered customers from user system so admin can chat with any customer
+      // Merge registered customers from directory so admin can start chat with any user
       const allAppUsers = (typeof cachedAdminUsers !== 'undefined' && cachedAdminUsers.length > 0) 
         ? cachedAdminUsers 
         : getStoredUsers();
       allAppUsers.forEach(u => {
-        const uid = u.uuid || u.userId || u.uid;
+        const uid = u.uid || u.uuid || u.userId;
         if (!uid) return;
         if (!threadMap[uid]) {
           threadMap[uid] = {
@@ -8022,7 +8157,8 @@ FINANCIAL BREAKDOWN:
             lastIsoTime: '',
             lastIsAdmin: false,
             lastSeen: true,
-            unreadCount: 0
+            unreadCount: 0,
+            linkedUids: new Set(u.aliases ? [uid, ...u.aliases] : [uid])
           };
         } else {
           if (!threadMap[uid].clientPhone && u.phone) threadMap[uid].clientPhone = u.phone;
@@ -8100,8 +8236,8 @@ FINANCIAL BREAKDOWN:
         if (t.lastMessage && t.lastMessage !== 'Tap to start conversation') {
           if (t.lastIsAdmin) {
             statusIconHtml = t.lastSeen
-              ? `<i class="fa-solid fa-check-double text-[11px] text-[#10b981] flex-shrink-0" title="Seen by customer"></i>`
-              : `<i class="fa-solid fa-check-double text-[11px] text-slate-400 flex-shrink-0" title="Delivered"></i>`;
+              ? `<i class="fa-solid fa-check-double text-[11px] text-[#53bdeb] font-bold flex-shrink-0" title="Seen by customer"></i>`
+              : `<i class="fa-solid fa-check text-[10.5px] text-slate-400 flex-shrink-0" title="Delivered"></i>`;
           }
         }
 
@@ -8163,9 +8299,9 @@ FINANCIAL BREAKDOWN:
         rightPane.classList.add('flex');
       }
 
-      // Find client photo from cached users or chat messages
+      // Find client details from cached users
       const matchedClient = (typeof cachedAdminUsers !== 'undefined' && cachedAdminUsers.length > 0)
-        ? cachedAdminUsers.find(u => u.uid === clientId || u.phone === clientId || u.name === clientName)
+        ? cachedAdminUsers.find(u => u.uid === clientId || (u.aliases && u.aliases.includes(clientId)) || u.phone === clientId || u.name === clientName)
         : null;
       const clientPhoto = matchedClient?.photoURL || '';
       const initial = (clientName || 'C')[0].toUpperCase();
@@ -8180,18 +8316,30 @@ FINANCIAL BREAKDOWN:
       if (nameEl) nameEl.textContent = clientName || 'Customer';
       if (profileBtn) profileBtn.classList.remove('hidden');
 
-      // Mark thread messages as seen (✓✓ in Firestore and locally)
+      // Mark thread messages as seen (real-time ✓✓ blue ticks in Firestore and locally)
       let messages = getStoredChatMessages();
       let hasUnseen = false;
+      const linkedUids = new Set([clientId]);
+      if (matchedClient) {
+        linkedUids.add(matchedClient.uid);
+        if (matchedClient.aliases) matchedClient.aliases.forEach(a => linkedUids.add(a));
+      }
+
       messages.forEach(m => {
-        if ((m.clientId === clientId || m.userId === clientId) && !m.isAdmin && !m.seen) {
+        const isThisClient = linkedUids.has(m.clientId) || linkedUids.has(m.userId) || (matchedClient && matchedClient.phone && (m.userPhone === matchedClient.phone || m.clientPhone === matchedClient.phone));
+        if (isThisClient && !m.isAdmin && !m.seen) {
           m.seen = true;
           hasUnseen = true;
           // Update in Firestore in real time
           if (fbFirestore && m.id) {
-            fbFirestore.collection('support_chats').where('id', '==', m.id).get().then(snap => {
-              snap.forEach(doc => doc.ref.update({ seen: true }).catch(() => {}));
-            }).catch(() => {});
+            fbFirestore.collection('support_chats').doc(m.id).update({
+              seen: true,
+              seenAt: new Date().toISOString()
+            }).catch(() => {
+              fbFirestore.collection('support_chats').where('id', '==', m.id).get().then(snap => {
+                snap.forEach(doc => doc.ref.update({ seen: true, seenAt: new Date().toISOString() }).catch(() => {}));
+              }).catch(() => {});
+            });
           }
         }
       });
@@ -8235,9 +8383,24 @@ FINANCIAL BREAKDOWN:
       const container = document.getElementById('admin-chat-messages-container');
       if (!container || !selectedChatClientId) return;
 
-      const messages = getStoredChatMessages().filter(m => 
-        m.clientId === selectedChatClientId || m.userId === selectedChatClientId || m.clientId === 'ALL'
-      );
+      const matchedClient = (typeof cachedAdminUsers !== 'undefined' && cachedAdminUsers.length > 0)
+        ? cachedAdminUsers.find(u => u.uid === selectedChatClientId || (u.aliases && u.aliases.includes(selectedChatClientId)))
+        : null;
+
+      const linkedUids = new Set([selectedChatClientId]);
+      if (matchedClient) {
+        linkedUids.add(matchedClient.uid);
+        if (matchedClient.aliases) matchedClient.aliases.forEach(a => linkedUids.add(a));
+      }
+
+      const messages = getStoredChatMessages().filter(m => {
+        if (!m) return false;
+        if (m.clientId === 'ALL') return true;
+        if (linkedUids.has(m.clientId) || linkedUids.has(m.userId)) return true;
+        if (matchedClient && matchedClient.phone && (m.userPhone === matchedClient.phone || m.clientPhone === matchedClient.phone)) return true;
+        if (matchedClient && matchedClient.email && (m.userEmail === matchedClient.email || m.clientEmail === matchedClient.email)) return true;
+        return false;
+      });
 
       if (messages.length === 0) {
         container.innerHTML = `
@@ -8278,7 +8441,6 @@ FINANCIAL BREAKDOWN:
               </span>
               <div class="flex items-center gap-1.5">
                 ${m.isEdited ? '<span class="italic text-[9px] text-amber-600 font-semibold">(Edited)</span>' : ''}
-                <!-- Edit button for message (NO delete button ever) -->
                 <button 
                   type="button" 
                   onclick="editAdminChatMessage('${m.id}')" 
@@ -8295,14 +8457,17 @@ FINANCIAL BREAKDOWN:
             <div class="flex items-center justify-end gap-1 mt-1 text-[9.5px] text-slate-500 font-mono select-none">
               <span>${m.timestamp || ''}</span>
               ${isAdminMsg ? `
-                <i class="fa-solid fa-check-double text-[10px] ${m.seen ? 'text-[#10b981]' : 'text-slate-400'}" title="${m.seen ? 'Seen by customer' : 'Delivered'}"></i>
+                ${m.seen ? `
+                  <i class="fa-solid fa-check-double text-[11px] text-[#53bdeb] font-bold" title="Seen by customer"></i>
+                ` : `
+                  <i class="fa-solid fa-check text-[10.5px] text-slate-400" title="Delivered to customer"></i>
+                `}
               ` : ''}
             </div>
           </div>
         </div>
       `}).join('');
 
-      // Auto scroll to bottom
       container.scrollTop = container.scrollHeight;
     }
 
@@ -8326,11 +8491,17 @@ FINANCIAL BREAKDOWN:
 
       // Persist to Firestore support_chats
       if (fbFirestore) {
-        fbFirestore.collection('support_chats').where('id', '==', msgId).get().then(snap => {
-          snap.forEach(doc => {
-            doc.ref.update({ text: trimmed, isEdited: true, editedAt: msg.editedAt }).catch(() => {});
-          });
-        }).catch(() => {});
+        fbFirestore.collection('support_chats').doc(msgId).update({
+          text: trimmed,
+          isEdited: true,
+          editedAt: msg.editedAt
+        }).catch(() => {
+          fbFirestore.collection('support_chats').where('id', '==', msgId).get().then(snap => {
+            snap.forEach(doc => {
+              doc.ref.update({ text: trimmed, isEdited: true, editedAt: msg.editedAt }).catch(() => {});
+            });
+          }).catch(() => {});
+        });
       }
 
       renderActiveThreadMessages();
@@ -8357,7 +8528,6 @@ FINANCIAL BREAKDOWN:
       if (!text) return false;
 
       if (!selectedChatClientId) {
-        // Auto-select first thread if available
         const msgs = getStoredChatMessages();
         const firstWithClient = msgs.find(m => m.clientId && m.clientId !== 'ALL');
         if (firstWithClient) {
@@ -8368,18 +8538,28 @@ FINANCIAL BREAKDOWN:
         }
       }
 
-      // Clear input immediately for instant feedback
       input.value = '';
+
+      const matchedClient = (typeof cachedAdminUsers !== 'undefined' && cachedAdminUsers.length > 0)
+        ? cachedAdminUsers.find(u => u.uid === selectedChatClientId || (u.aliases && u.aliases.includes(selectedChatClientId)))
+        : null;
+
+      const targetUids = Array.from(new Set([
+        selectedChatClientId,
+        ...(matchedClient?.aliases || []),
+        matchedClient?.uid
+      ].filter(Boolean)));
 
       const newMsg = {
         id: 'msg_' + Date.now() + '_' + Math.floor(Math.random() * 10000),
         clientId: selectedChatClientId,
         userId: selectedChatClientId,
+        targetUids: targetUids,
         sender: 'Buyero Support',
         text: text,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         isAdmin: true,
-        seen: false, // will turn green when customer opens/views support
+        seen: false, // Single tick initially; becomes double blue tick when customer views support
         isEdited: false,
         createdAt: new Date().toISOString()
       };
@@ -8392,10 +8572,10 @@ FINANCIAL BREAKDOWN:
         console.warn("[Admin Save Message Error]", saveErr);
       }
 
-      // Persist to Firestore support_chats
+      // Persist to Firestore support_chats with deterministic document ID
       if (fbFirestore) {
         try {
-          fbFirestore.collection('support_chats').add(newMsg).catch(e => {
+          fbFirestore.collection('support_chats').doc(newMsg.id).set(newMsg).catch(e => {
             console.warn("[Admin Firestore Send Message Error]", e);
           });
         } catch (e) {}
