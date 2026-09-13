@@ -921,9 +921,9 @@
 
         <!-- Media Display Area -->
         <div id="pdetail-media-container" class="relative w-full aspect-square bg-slate-100 overflow-hidden transition-all duration-300">
-          <!-- PHOTO SLIDER VIEW -->
-          <div id="pdetail-photo-view" class="w-full h-full relative cursor-zoom-in group" onclick="openImageLightbox()">
-            <img id="pdetail-main-img" src="" alt="Product Image" class="w-full h-full object-cover transition duration-300">
+          <!-- PHOTO SLIDER VIEW (With Touch Screen Swipe & Indicator Dots) -->
+          <div id="pdetail-photo-view" class="w-full h-full relative cursor-pointer select-none group touch-pan-y">
+            <img id="pdetail-main-img" src="" alt="Product Image" class="w-full h-full object-cover transition-opacity duration-200 pointer-events-none select-none">
             
             <!-- Top badges on image -->
             <div class="absolute top-3 left-3 flex flex-col gap-1 z-10 pointer-events-none">
@@ -932,17 +932,20 @@
             </div>
 
             <!-- Zoom overlay button -->
-            <button type="button" onclick="event.stopPropagation(); openImageLightbox()" class="absolute bottom-3 left-3 w-8 h-8 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center text-xs transition z-10" title="Click to zoom image">
+            <button type="button" onclick="event.stopPropagation(); openImageLightbox()" class="absolute bottom-3 left-3 w-8 h-8 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center text-xs transition z-10 shadow-sm" title="Click to zoom image">
               <i class="fa-solid fa-magnifying-glass-plus"></i>
             </button>
 
             <!-- Left / Right navigation arrows -->
-            <button type="button" onclick="event.stopPropagation(); prevProductDetailImage()" id="pdetail-btn-prev" class="hidden absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center text-xs transition z-10">
+            <button type="button" onclick="event.stopPropagation(); prevProductDetailImage()" id="pdetail-btn-prev" class="hidden absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center text-xs transition z-10 shadow-sm">
               <i class="fa-solid fa-chevron-left"></i>
             </button>
-            <button type="button" onclick="event.stopPropagation(); nextProductDetailImage()" id="pdetail-btn-next" class="hidden absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center text-xs transition z-10">
+            <button type="button" onclick="event.stopPropagation(); nextProductDetailImage()" id="pdetail-btn-next" class="hidden absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center text-xs transition z-10 shadow-sm">
               <i class="fa-solid fa-chevron-right"></i>
             </button>
+
+            <!-- Swipe Indicator Dots -->
+            <div id="pdetail-dots-indicator" class="hidden absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-10 pointer-events-none px-2 py-1 bg-black/30 backdrop-blur-xs rounded-full"></div>
 
             <!-- Image counter badge -->
             <span id="pdetail-img-counter" class="absolute bottom-3 right-3 bg-black/60 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full z-10">1/3</span>
@@ -1797,17 +1800,17 @@
       <!-- Scrollable Product Content -->
       <div class="overflow-y-auto flex-1 p-4 space-y-4">
         
-        <!-- 2. Image Slider with Thumbnails -->
+        <!-- 2. Image Slider with Thumbnails (Supports Swipe Gestures) -->
         <div class="space-y-2">
-          <div class="relative bg-slate-100 rounded-2xl h-64 overflow-hidden border border-slate-200 shadow-inner group">
-            <img id="modal-product-img" src="" alt="Product" class="w-full h-full object-cover transition duration-300">
-            <span id="modal-badge" class="absolute bottom-3 left-3 bg-brand-orange text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider shadow">Best Seller</span>
+          <div id="modal-img-slider-box" class="relative bg-slate-100 rounded-2xl h-64 overflow-hidden border border-slate-200 shadow-inner group select-none cursor-pointer touch-pan-y">
+            <img id="modal-product-img" src="" alt="Product" class="w-full h-full object-cover transition duration-300 pointer-events-none select-none">
+            <span id="modal-badge" class="absolute bottom-3 left-3 bg-brand-orange text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider shadow pointer-events-none">Best Seller</span>
             
             <!-- Slider navigation buttons -->
-            <button onclick="prevProductImage()" id="btn-prev-img" class="hidden absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center text-xs transition">
+            <button onclick="event.stopPropagation(); prevProductImage()" id="btn-prev-img" class="hidden absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center text-xs transition z-10 shadow-sm">
               <i class="fa-solid fa-chevron-left"></i>
             </button>
-            <button onclick="nextProductImage()" id="btn-next-img" class="hidden absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center text-xs transition">
+            <button onclick="event.stopPropagation(); nextProductImage()" id="btn-next-img" class="hidden absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center text-xs transition z-10 shadow-sm">
               <i class="fa-solid fa-chevron-right"></i>
             </button>
           </div>
@@ -3826,9 +3829,11 @@
         variants: p.variants || '',
         inStock: p.inStock !== false && p.status !== 'OUT_OF_STOCK' && p.status !== 'HIDDEN',
         status: p.status || (p.inStock !== false ? 'PUBLISHED' : 'OUT_OF_STOCK'),
-        rating: Number(p.rating) || 4.7,
+        rating: (!isNaN(Number(p.rating)) && Number(p.rating) > 0) ? Number(p.rating) : 4.8,
         likesCount: Number(p.likesCount) || 0,
-        reviewCount: Number(p.reviewCount) || 24,
+        reviewCount: (p.reviewCount !== undefined && p.reviewCount !== null) ? Number(p.reviewCount) : (p.ratingCount !== undefined ? Number(p.ratingCount) : 0),
+        ratingCount: (p.ratingCount !== undefined && p.ratingCount !== null) ? Number(p.ratingCount) : (p.reviewCount !== undefined ? Number(p.reviewCount) : 0),
+        reviews: Array.isArray(p.reviews) ? p.reviews : [],
         createdAt: p.createdAt || '',
         updatedAt: p.updatedAt || ''
       };
@@ -3880,7 +3885,20 @@
       return safeCatalog;
     }
 
+    function getEffectiveUserId() {
+      if (typeof fbAuth !== 'undefined' && fbAuth && fbAuth.currentUser && fbAuth.currentUser.uid) {
+        return fbAuth.currentUser.uid;
+      }
+      if (typeof currentUser !== 'undefined' && currentUser) {
+        return currentUser.authUid || currentUser.uuid || currentUser.userId || (currentUser.phone ? 'phone_' + currentUser.phone : null);
+      }
+      return null;
+    }
+
     function getStoredCart() {
+      if (!currentUser) {
+        return [];
+      }
       const data = localStorage.getItem('buyero_cart');
       try {
         return data ? JSON.parse(data) : [];
@@ -3891,34 +3909,46 @@
 
     function syncUserDataFieldToFirestore(field, value) {
       if (!fbFirestore) return;
-      const uid = (fbAuth && fbAuth.currentUser && fbAuth.currentUser.uid) ||
-                  (currentUser && currentUser.authUid) ||
-                  (currentUser && currentUser.uuid && !currentUser.uuid.startsWith('usr_') ? currentUser.uuid : null);
+      const uid = getEffectiveUserId();
       if (!uid) return;
       try {
+        // 1. Update main user document in Firestore
         fbFirestore.collection('users').doc(uid).set({
           [field]: value,
           updatedAt: new Date().toISOString()
-        }, { merge: true }).catch(() => {});
-      } catch (e) {}
+        }, { merge: true }).catch((err) => console.warn(`[Firestore sync ${field}]`, err));
+
+        // 2. Also keep dedicated cloud document for fast Cart / Wishlist sync
+        if (field === 'cart') {
+          fbFirestore.collection('user_carts').doc(uid).set({
+            items: value,
+            userId: uid,
+            updatedAt: new Date().toISOString()
+          }, { merge: true }).catch(() => {});
+        } else if (field === 'wishlist') {
+          fbFirestore.collection('user_wishlists').doc(uid).set({
+            productIds: value,
+            userId: uid,
+            updatedAt: new Date().toISOString()
+          }, { merge: true }).catch(() => {});
+        }
+      } catch (e) {
+        console.warn(`[syncUserDataFieldToFirestore error]`, e);
+      }
     }
 
     function restoreCloudUserData(cloudData) {
       if (!cloudData) return;
-      // 1. Cart restoration
-      if (Array.isArray(cloudData.cart) && cloudData.cart.length > 0) {
-        const localCart = getStoredCart();
-        if (!localCart || localCart.length === 0) {
-          localStorage.setItem('buyero_cart', JSON.stringify(cloudData.cart));
-          updateCartBadges();
-        }
+      // 1. Cart restoration from Firebase
+      if (Array.isArray(cloudData.cart)) {
+        localStorage.setItem('buyero_cart', JSON.stringify(cloudData.cart));
+        updateCartBadges();
       }
-      // 2. Wishlist restoration
-      if (Array.isArray(cloudData.wishlist) && cloudData.wishlist.length > 0) {
-        let localLikes = getLikedProducts();
-        const mergedLikes = Array.from(new Set([...localLikes, ...cloudData.wishlist]));
-        localStorage.setItem('buyero_liked_products', JSON.stringify(mergedLikes));
+      // 2. Wishlist restoration from Firebase
+      if (Array.isArray(cloudData.wishlist)) {
+        localStorage.setItem('buyero_liked_products', JSON.stringify(cloudData.wishlist));
         updateWishlistBadge();
+        loadCatalog();
       }
       // 3. Saved Addresses restoration
       if (Array.isArray(cloudData.savedAddresses) && cloudData.savedAddresses.length > 0) {
@@ -3938,6 +3968,7 @@
     }
 
     function saveCart(cart) {
+      if (!currentUser) return;
       localStorage.setItem('buyero_cart', JSON.stringify(cart));
       updateCartBadges();
       syncUserDataFieldToFirestore('cart', cart);
@@ -4537,6 +4568,9 @@
        WISHLIST / LIKES ENGINE
        ========================================================= */
     function getLikedProducts() {
+      if (!currentUser) {
+        return [];
+      }
       try {
         const raw = localStorage.getItem('buyero_liked_products');
         return raw ? JSON.parse(raw) : [];
@@ -5108,6 +5142,7 @@
           ? Math.round(((product.mrp - product.sellingPrice) / product.mrp) * 100)
           : 0;
         const isOutOfStock = product.inStock === false;
+        const ratingSummary = getProductRatingSummary(product);
 
         return `
           <div class="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col group ${isOutOfStock ? 'opacity-85' : ''}">
@@ -5166,9 +5201,9 @@
                 </h4>
                 <div class="flex items-center gap-1 mt-1 text-[10px] text-slate-500">
                   <span class="flex items-center gap-0.5 bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-bold border border-emerald-200">
-                    <i class="fa-solid fa-star text-amber-500 text-[8px]"></i> ${(product.rating || 4.8).toFixed(1)}
+                    <i class="fa-solid fa-star text-amber-500 text-[8px]"></i> ${ratingSummary.score}
                   </span>
-                  <span>(${product.ratingCount || 120})</span>
+                  <span class="text-slate-500 font-medium">${ratingSummary.count > 0 ? `(${ratingSummary.count})` : '<span class="text-[9px] text-slate-400">New</span>'}</span>
                 </div>
               </div>
 
@@ -5256,65 +5291,48 @@
     let directCheckoutItem = null;
     let selectedReviewStars = 5;
 
-    // Review Database in localStorage
+    // Review Database in localStorage (Synced with Firebase Firestore 'reviews' collection)
     function getStoredReviews() {
       try {
         const raw = localStorage.getItem('buyero_product_reviews');
-        if (raw) return JSON.parse(raw);
-      } catch (e) {}
-
-      // Initial authentic customer reviews
-      return [
-        {
-          id: 'rev_1',
-          productId: 'prod_1',
-          name: 'Priya Sharma',
-          city: 'Jaipur',
-          rating: 5,
-          comment: 'Fabric quality is super soft cotton and fit is perfect as shown in picture. Fast delivery in 3 days!',
-          date: '2 days ago'
-        },
-        {
-          id: 'rev_2',
-          productId: 'prod_1',
-          name: 'Sunita Verma',
-          city: 'Delhi',
-          rating: 4,
-          comment: 'Very nice embroidery work. Value for money at this discounted price.',
-          date: '1 week ago'
-        },
-        {
-          id: 'rev_3',
-          productId: 'prod_2',
-          name: 'Vikas Patel',
-          city: 'Ahmedabad',
-          rating: 5,
-          comment: 'Sound clarity and bass is amazing! Battery lasts for 2 full days on heavy calling. Original product.',
-          date: '3 days ago'
-        },
-        {
-          id: 'rev_4',
-          productId: 'prod_3',
-          name: 'Anil Kumar',
-          city: 'Indore',
-          rating: 5,
-          comment: 'Very comfortable sole for running and gym. Size fits exactly. Cash on delivery was smooth.',
-          date: '5 days ago'
-        },
-        {
-          id: 'rev_5',
-          productId: 'prod_4',
-          name: 'Meena Gupta',
-          city: 'Bhopal',
-          rating: 5,
-          comment: 'LED temperature sensor on the cap works accurately. Keeps warm water for 12+ hours. Great packing!',
-          date: 'Yesterday'
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) return parsed;
         }
-      ];
+      } catch (e) {}
+      return [];
     }
 
     function saveStoredReviews(reviews) {
-      localStorage.setItem('buyero_product_reviews', JSON.stringify(reviews));
+      localStorage.setItem('buyero_product_reviews', JSON.stringify(Array.isArray(reviews) ? reviews : []));
+    }
+
+    // Unified helper: Home page cards and Product Detail Page ALWAYS show the exact same rating & review count
+    function getProductRatingSummary(product) {
+      if (!product) return { score: '5.0', count: 0, hasReviews: false };
+      const allReviews = getStoredReviews();
+      const prodReviews = allReviews.filter(r => r && r.productId === product.id);
+
+      if (prodReviews.length > 0) {
+        const sum = prodReviews.reduce((acc, r) => acc + (Number(r.rating) || 5), 0);
+        const avg = (sum / prodReviews.length).toFixed(1);
+        return {
+          score: avg,
+          count: prodReviews.length,
+          hasReviews: true
+        };
+      }
+
+      // If product has a rating from Firestore or catalog, use it without fake review counts
+      const rawRating = Number(product.rating);
+      const ratingScore = (!isNaN(rawRating) && rawRating > 0) ? rawRating.toFixed(1) : '4.8';
+      const realCount = Number(product.reviewCount || product.ratingCount || 0);
+
+      return {
+        score: ratingScore,
+        count: realCount,
+        hasReviews: realCount > 0
+      };
     }
 
     let currentModalImageIndex = 0;
@@ -5351,6 +5369,7 @@
       }
       currentDetailImageIndex = 0;
       updateProductDetailImageDisplay();
+      initProductImageSwipeGestures();
 
       // Top title
       const topTitle = document.getElementById('pdetail-top-title');
@@ -5368,15 +5387,16 @@
       if (discountTag) discountTag.textContent = `${discountPct}% OFF`;
       if (pctOff) pctOff.textContent = `${discountPct}% OFF`;
 
-      // Category & Rating
+      // Category & Rating (Synchronized with real Firestore / local reviews)
       const catEl = document.getElementById('pdetail-category');
       if (catEl) catEl.textContent = product.category || 'General';
 
+      const ratingSummary = getProductRatingSummary(product);
       const ratingVal = document.getElementById('pdetail-rating-val');
-      if (ratingVal) ratingVal.textContent = (product.rating || 4.8).toFixed(1);
+      if (ratingVal) ratingVal.textContent = ratingSummary.score;
 
       const ratingCount = document.getElementById('pdetail-rating-count');
-      if (ratingCount) ratingCount.textContent = `(${product.ratingCount || 1240} Ratings)`;
+      if (ratingCount) ratingCount.textContent = ratingSummary.count > 0 ? `(${ratingSummary.count} Ratings)` : '(No Ratings Yet)';
 
       // Title & Price
       const titleEl = document.getElementById('pdetail-title');
@@ -5635,9 +5655,12 @@
       const nextBtn = document.getElementById('pdetail-btn-next');
       const counter = document.getElementById('pdetail-img-counter');
       const thumbStrip = document.getElementById('pdetail-thumbnails-strip');
+      const dotsContainer = document.getElementById('pdetail-dots-indicator');
 
       if (imgEl && activeDetailImages.length > 0) {
+        imgEl.style.opacity = '0.6';
         imgEl.src = activeDetailImages[currentDetailImageIndex];
+        setTimeout(() => { if (imgEl) imgEl.style.opacity = '1'; }, 100);
       }
 
       if (counter) {
@@ -5646,6 +5669,18 @@
 
       if (prevBtn) prevBtn.classList.toggle('hidden', activeDetailImages.length <= 1);
       if (nextBtn) nextBtn.classList.toggle('hidden', activeDetailImages.length <= 1);
+
+      // Render swipe dots indicator
+      if (dotsContainer) {
+        if (activeDetailImages.length > 1) {
+          dotsContainer.classList.remove('hidden');
+          dotsContainer.innerHTML = activeDetailImages.map((_, idx) => `
+            <span class="h-1.5 rounded-full transition-all duration-300 ${idx === currentDetailImageIndex ? 'w-5 bg-white shadow-sm' : 'w-1.5 bg-white/50'}"></span>
+          `).join('');
+        } else {
+          dotsContainer.classList.add('hidden');
+        }
+      }
 
       if (thumbStrip) {
         const hasVideo = Boolean(activeDetailProduct && activeDetailProduct.videoUrl && activeDetailProduct.videoUrl.trim());
@@ -5684,6 +5719,154 @@
         } else {
           thumbStrip.classList.add('hidden');
         }
+      }
+    }
+
+    /* =========================================================
+       TOUCH & SWIPE GESTURE ENGINE (Screen Swipe ⬅️ ➡️ Navigation)
+       Allows natural swiping on photos without needing to click buttons
+       ========================================================= */
+    function setupSwipeHandler(el, handlers) {
+      if (!el) return;
+      let startX = 0;
+      let startY = 0;
+      let moveX = 0;
+      let moveY = 0;
+      let isDown = false;
+      let isSwiping = false;
+      let startTime = 0;
+
+      function onStart(x, y) {
+        isDown = true;
+        isSwiping = false;
+        startX = x;
+        startY = y;
+        moveX = x;
+        moveY = y;
+        startTime = Date.now();
+      }
+
+      function onMove(x, y) {
+        if (!isDown) return;
+        moveX = x;
+        moveY = y;
+        const diffX = moveX - startX;
+        const diffY = moveY - startY;
+        if (Math.abs(diffX) > 15 && Math.abs(diffX) > Math.abs(diffY)) {
+          isSwiping = true;
+        }
+      }
+
+      function onEnd() {
+        if (!isDown) return;
+        isDown = false;
+        const diffX = moveX - startX;
+        const diffY = moveY - startY;
+        const duration = Date.now() - startTime;
+        const threshold = 35; // minimum swipe distance in pixels
+
+        if (Math.abs(diffX) > threshold && Math.abs(diffX) > Math.abs(diffY)) {
+          if (diffX < 0) {
+            // Swipe Left -> Next Image
+            if (typeof handlers.onSwipeLeft === 'function') handlers.onSwipeLeft();
+          } else {
+            // Swipe Right -> Previous Image
+            if (typeof handlers.onSwipeRight === 'function') handlers.onSwipeRight();
+          }
+        } else if (!isSwiping && Math.abs(diffX) < 12 && Math.abs(diffY) < 12 && duration < 400) {
+          // Tap / Click without swipe
+          if (typeof handlers.onTap === 'function') handlers.onTap();
+        }
+      }
+
+      // Touch events (Mobile touchscreens)
+      el.addEventListener('touchstart', (e) => {
+        if (e.touches && e.touches.length === 1) {
+          onStart(e.touches[0].clientX, e.touches[0].clientY);
+        }
+      }, { passive: true });
+
+      el.addEventListener('touchmove', (e) => {
+        if (e.touches && e.touches.length === 1) {
+          onMove(e.touches[0].clientX, e.touches[0].clientY);
+        }
+      }, { passive: true });
+
+      el.addEventListener('touchend', () => {
+        onEnd();
+      }, { passive: true });
+
+      // Mouse drag events (Desktop preview & cursor swipes)
+      el.addEventListener('mousedown', (e) => {
+        onStart(e.clientX, e.clientY);
+      });
+      el.addEventListener('mousemove', (e) => {
+        onMove(e.clientX, e.clientY);
+      });
+      el.addEventListener('mouseup', () => {
+        onEnd();
+      });
+      el.addEventListener('mouseleave', () => {
+        if (isDown) onEnd();
+      });
+    }
+
+    function initProductImageSwipeGestures() {
+      // 1. PDP Main Photo Container
+      const pdetailPhotoView = document.getElementById('pdetail-photo-view');
+      if (pdetailPhotoView && !pdetailPhotoView.dataset.swipeAttached) {
+        pdetailPhotoView.dataset.swipeAttached = 'true';
+        setupSwipeHandler(pdetailPhotoView, {
+          onSwipeLeft: () => {
+            if (activeDetailImages.length > 1) {
+              nextProductDetailImage();
+            }
+          },
+          onSwipeRight: () => {
+            if (activeDetailImages.length > 1) {
+              prevProductDetailImage();
+            }
+          },
+          onTap: () => {
+            openImageLightbox(currentDetailImageIndex);
+          }
+        });
+      }
+
+      // 2. Quick View Modal Image Slider Box
+      const modalImgBox = document.getElementById('modal-img-slider-box');
+      if (modalImgBox && !modalImgBox.dataset.swipeAttached) {
+        modalImgBox.dataset.swipeAttached = 'true';
+        setupSwipeHandler(modalImgBox, {
+          onSwipeLeft: () => {
+            if (activeModalImages.length > 1) {
+              nextProductImage();
+            }
+          },
+          onSwipeRight: () => {
+            if (activeModalImages.length > 1) {
+              prevProductImage();
+            }
+          }
+        });
+      }
+
+      // 3. Fullscreen Lightbox Image Container
+      const lightboxModal = document.getElementById('modal-image-lightbox');
+      if (lightboxModal && !lightboxModal.dataset.swipeAttached) {
+        lightboxModal.dataset.swipeAttached = 'true';
+        setupSwipeHandler(lightboxModal, {
+          onSwipeLeft: () => {
+            if (activeDetailImages && activeDetailImages.length > 1) {
+              nextLightboxImage();
+            }
+          },
+          onSwipeRight: () => {
+            if (activeDetailImages && activeDetailImages.length > 1) {
+              prevLightboxImage();
+            }
+          }
+        });
       }
     }
 
@@ -6037,35 +6220,9 @@
       if (!feed) return;
 
       const allReviews = getStoredReviews();
-      let productReviews = allReviews.filter(r => r.productId === productId);
-      
-      // If specific product has no reviews yet, seed authentic reviews
-      if (productReviews.length === 0) {
-        productReviews = [
-          {
-            id: 'rev_' + productId + '_1',
-            productId: productId,
-            name: 'Priya Sharma',
-            city: 'Jaipur',
-            rating: 5,
-            comment: 'Outstanding quality and very fast doorstep delivery. Size and fit are exactly as described!',
-            date: '2 days ago',
-            verifiedPurchase: false
-          },
-          {
-            id: 'rev_' + productId + '_2',
-            productId: productId,
-            name: 'Rahul Verma',
-            city: 'Indore',
-            rating: 4,
-            comment: 'Very good fabric and finish. Cash on delivery was seamless. Great value for money!',
-            date: '5 days ago',
-            verifiedPurchase: false
-          }
-        ];
-      }
+      let productReviews = allReviews.filter(r => r && r.productId === productId);
 
-      // Check remote Firestore for new customer reviews
+      // Check remote Firestore for authentic customer reviews
       if (fbFirestore && !feed.getAttribute('data-syncing-' + productId)) {
         feed.setAttribute('data-syncing-' + productId, 'true');
         fbFirestore.collection('reviews').where('productId', '==', productId).get().then(snapshot => {
@@ -6074,7 +6231,10 @@
             let remoteList = [];
             snapshot.forEach(doc => {
               const d = doc.data();
-              if (d && d.id) remoteList.push(d);
+              if (d && (d.id || doc.id)) {
+                if (!d.id) d.id = doc.id;
+                remoteList.push(d);
+              }
             });
             if (remoteList.length > 0) {
               const currentAll = getStoredReviews();
@@ -6088,6 +6248,20 @@
               });
               if (updated) {
                 saveStoredReviews(currentAll);
+                // Also update catalog rating in cache so Home page matches
+                const matchingReviews = currentAll.filter(item => item && item.productId === productId);
+                if (matchingReviews.length > 0) {
+                  const sum = matchingReviews.reduce((acc, it) => acc + (Number(it.rating) || 5), 0);
+                  const freshAvg = Number((sum / matchingReviews.length).toFixed(1));
+                  const catalog = getStoredCatalog();
+                  const targetP = catalog.find(p => p.id === productId);
+                  if (targetP) {
+                    targetP.rating = freshAvg;
+                    targetP.reviewCount = matchingReviews.length;
+                    targetP.ratingCount = matchingReviews.length;
+                    try { localStorage.setItem('buyero_catalog', JSON.stringify(catalog)); } catch(e) {}
+                  }
+                }
                 if (activeDetailProduct && activeDetailProduct.id === productId) {
                   loadProductDetailReviews(productId);
                 }
@@ -6099,19 +6273,28 @@
         });
       }
 
-      // Calculate rating metrics
+      // Calculate rating metrics without fake default data
       const totalRatings = productReviews.length;
-      const avgScore = totalRatings > 0 
-        ? (productReviews.reduce((sum, r) => sum + (r.rating || 5), 0) / totalRatings).toFixed(1)
-        : '4.8';
+      let avgScore = '5.0';
+      if (totalRatings > 0) {
+        avgScore = (productReviews.reduce((sum, r) => sum + (Number(r.rating) || 5), 0) / totalRatings).toFixed(1);
+      } else if (activeDetailProduct && !isNaN(Number(activeDetailProduct.rating)) && Number(activeDetailProduct.rating) > 0) {
+        avgScore = Number(activeDetailProduct.rating).toFixed(1);
+      }
 
       if (avgRatingEl) avgRatingEl.textContent = avgScore;
-      if (reviewsCountEl) reviewsCountEl.textContent = `${totalRatings} Rating${totalRatings > 1 ? 's' : ''}`;
+      if (reviewsCountEl) reviewsCountEl.textContent = totalRatings > 0 ? `${totalRatings} Verified Rating${totalRatings > 1 ? 's' : ''}` : '0 Ratings';
+
+      // Update PDP hero rating and Home page sync
+      const pdetailRatingVal = document.getElementById('pdetail-rating-val');
+      if (pdetailRatingVal) pdetailRatingVal.textContent = avgScore;
+      const pdetailRatingCount = document.getElementById('pdetail-rating-count');
+      if (pdetailRatingCount) pdetailRatingCount.textContent = totalRatings > 0 ? `(${totalRatings} Ratings)` : '(No Ratings Yet)';
 
       // Update Star Distribution Breakdown Bars
       const counts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
       productReviews.forEach(r => {
-        const star = Math.max(1, Math.min(5, Math.round(r.rating || 5)));
+        const star = Math.max(1, Math.min(5, Math.round(Number(r.rating) || 5)));
         counts[star] = (counts[star] || 0) + 1;
       });
 
@@ -6129,10 +6312,24 @@
         verifiedNotice.classList.toggle('hidden', !isVerified);
       }
 
-      // Render feed
+      // Render authentic reviews feed or clean empty state
+      if (productReviews.length === 0) {
+        feed.innerHTML = `
+          <div class="py-6 px-4 text-center rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+            <div class="w-10 h-10 mx-auto rounded-full bg-amber-50 text-amber-500 flex items-center justify-center text-lg">
+              <i class="fa-regular fa-star"></i>
+            </div>
+            <p class="text-xs font-bold text-slate-700">No customer reviews yet</p>
+            <p class="text-[11px] text-slate-400 max-w-xs mx-auto">Be the first verified customer to share honest feedback about this product!</p>
+          </div>
+        `;
+        return;
+      }
+
       feed.innerHTML = productReviews.map(r => {
+        const starsCount = Math.max(1, Math.min(5, Math.round(Number(r.rating) || 5)));
         const starsHtml = Array.from({ length: 5 }).map((_, i) => 
-          `<i class="fa-solid fa-star ${i < (r.rating || 5) ? 'text-amber-400' : 'text-slate-200'}"></i>`
+          `<i class="fa-solid fa-star ${i < starsCount ? 'text-amber-400' : 'text-slate-200'}"></i>`
         ).join('');
 
         return `
@@ -6156,7 +6353,7 @@
             </div>
             <div class="flex items-center gap-1 text-[11px] text-amber-400">
               ${starsHtml}
-              <span class="text-slate-600 font-bold ml-1 text-[11px]">${r.rating || 5}.0</span>
+              <span class="text-slate-600 font-bold ml-1 text-[11px]">${starsCount}.0</span>
             </div>
             <p class="text-slate-600 text-xs leading-relaxed">${r.comment || ''}</p>
           </div>
@@ -6183,7 +6380,7 @@
         return;
       }
 
-      // Approval Condition 1: Check if user has a delivered order for this product
+      // Verified buyer check
       const isVerified = isUserVerifiedBuyerForProduct(activeDetailProduct.id);
 
       const newReview = {
@@ -6191,10 +6388,11 @@
         productId: activeDetailProduct.id,
         name: name,
         city: currentUser.city || 'India',
-        rating: selectedReviewStars,
+        rating: Number(selectedReviewStars) || 5,
         comment: comment,
         date: 'Just now',
         verifiedPurchase: isVerified,
+        userId: currentUser.uuid || currentUser.userId || (fbAuth && fbAuth.currentUser ? fbAuth.currentUser.uid : null),
         timestamp: new Date().toISOString()
       };
 
@@ -6202,10 +6400,45 @@
       reviews.unshift(newReview);
       saveStoredReviews(reviews);
 
-      // Persist to Firestore
+      // 1. Persist Review directly to Firebase Firestore
       if (fbFirestore) {
         fbFirestore.collection('reviews').doc(newReview.id).set(newReview).catch(e => {
-          console.warn("[Review Firestore Save]", e);
+          console.warn("[Review Firestore Save Error]", e);
+        });
+      }
+
+      // 2. Recalculate true product rating
+      const currentProdReviews = reviews.filter(r => r && r.productId === activeDetailProduct.id);
+      const totalRatings = currentProdReviews.length;
+      const sumRatings = currentProdReviews.reduce((sum, r) => sum + (Number(r.rating) || 5), 0);
+      const newAvgRating = Number((sumRatings / totalRatings).toFixed(1));
+
+      // Update active product reference
+      activeDetailProduct.rating = newAvgRating;
+      activeDetailProduct.reviewCount = totalRatings;
+      activeDetailProduct.ratingCount = totalRatings;
+
+      // Update in local catalog cache
+      const catalog = getStoredCatalog();
+      const catProd = catalog.find(p => p.id === activeDetailProduct.id);
+      if (catProd) {
+        catProd.rating = newAvgRating;
+        catProd.reviewCount = totalRatings;
+        catProd.ratingCount = totalRatings;
+        try {
+          localStorage.setItem('buyero_catalog', JSON.stringify(catalog));
+        } catch(e) {}
+      }
+
+      // 3. Persist updated rating directly to Firestore 'products' document
+      if (fbFirestore) {
+        fbFirestore.collection('products').doc(activeDetailProduct.id).set({
+          rating: newAvgRating,
+          reviewCount: totalRatings,
+          ratingCount: totalRatings,
+          updatedAt: new Date().toISOString()
+        }, { merge: true }).catch(e => {
+          console.warn("[Product Rating Firestore Save Error]", e);
         });
       }
 
@@ -6213,8 +6446,9 @@
       if (commentInput) commentInput.value = '';
       toggleProductDetailReviewForm();
 
-      // Refresh reviews UI
+      // Refresh reviews & sync Home page catalog display immediately
       loadProductDetailReviews(activeDetailProduct.id);
+      loadCatalog();
 
       alert(isVerified 
         ? "🌟 Thank you! Your Verified Buyer review has been published!" 
@@ -6818,7 +7052,7 @@
       }).join('');
     }
 
-    /* REVIEWS ENGINE */
+    /* REVIEWS ENGINE (QUICK MODAL) */
     function loadProductReviews(productId) {
       const feed = document.getElementById('modal-reviews-feed');
       const countEl = document.getElementById('modal-review-count');
@@ -6826,25 +7060,35 @@
       if (!feed) return;
 
       const allReviews = getStoredReviews();
-      const productReviews = allReviews.filter(r => r.productId === productId);
+      const productReviews = allReviews.filter(r => r && r.productId === productId);
+      const totalRatings = productReviews.length;
 
-      // If no specific reviews, display category generic or latest reviews
-      const displayReviews = productReviews.length > 0 ? productReviews : allReviews.slice(0, 2);
+      let avg = '5.0';
+      if (totalRatings > 0) {
+        avg = (productReviews.reduce((sum, r) => sum + (Number(r.rating) || 5), 0) / totalRatings).toFixed(1);
+      } else if (activeModalProduct && !isNaN(Number(activeModalProduct.rating)) && Number(activeModalProduct.rating) > 0) {
+        avg = Number(activeModalProduct.rating).toFixed(1);
+      }
 
-      const avg = displayReviews.length > 0
-        ? (displayReviews.reduce((sum, r) => sum + r.rating, 0) / displayReviews.length).toFixed(1)
-        : '4.8';
-
-      if (countEl) countEl.textContent = `(${displayReviews.length} verified ratings)`;
+      if (countEl) countEl.textContent = totalRatings > 0 ? `(${totalRatings} verified ratings)` : '(No ratings yet)';
       if (summaryEl) {
         summaryEl.innerHTML = `
           <span class="font-bold text-xs text-slate-900">${avg}</span>
-          <span class="text-amber-400 text-xs">★★★★★</span>
-          <span class="text-[10px] text-slate-400">(${displayReviews.length} reviews)</span>
+          <span class="text-amber-400 text-xs">★</span>
+          <span class="text-[10px] text-slate-400">(${totalRatings > 0 ? `${totalRatings} reviews` : 'No reviews'})</span>
         `;
       }
 
-      feed.innerHTML = displayReviews.map(r => `
+      if (totalRatings === 0) {
+        feed.innerHTML = `
+          <div class="py-4 text-center text-slate-400 text-xs">
+            No customer reviews yet. Be the first to share your rating!
+          </div>
+        `;
+        return;
+      }
+
+      feed.innerHTML = productReviews.map(r => `
         <div class="p-2.5 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-1.5">
@@ -6853,9 +7097,9 @@
               </div>
               <span class="font-bold text-[11px] text-slate-800">${r.name}</span>
               ${r.city ? `<span class="text-[10px] text-slate-400">• ${r.city}</span>` : ''}
-              <span class="text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.2 rounded-full">Verified Buyer</span>
+              ${r.verifiedPurchase ? '<span class="text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.2 rounded-full">Verified Buyer</span>' : ''}
             </div>
-            <div class="text-amber-400 text-xs">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</div>
+            <div class="text-amber-400 text-xs">${'★'.repeat(r.rating || 5)}${'☆'.repeat(5 - (r.rating || 5))}</div>
           </div>
           <p class="text-[11px] text-slate-600 leading-relaxed">${r.comment}</p>
           <span class="text-[9px] text-slate-400 block">${r.date || 'Recent'}</span>
@@ -6902,28 +7146,55 @@
         productId: activeModalProduct.id,
         name: name,
         city: city,
-        rating: selectedReviewStars,
+        rating: Number(selectedReviewStars) || 5,
         comment: comment,
-        date: 'Just now'
+        date: 'Just now',
+        userId: currentUser ? (currentUser.uuid || currentUser.userId) : null,
+        timestamp: new Date().toISOString()
       };
 
       let allReviews = getStoredReviews();
       allReviews.unshift(newReview);
       saveStoredReviews(allReviews);
 
-      // Sync with Firestore if active
+      // Sync with Firestore 'reviews' collection
       if (fbFirestore) {
         try {
-          fbFirestore.collection('product_reviews').add(newReview).catch(() => {});
+          fbFirestore.collection('reviews').doc(newReview.id).set(newReview).catch(() => {});
         } catch (e) {}
+      }
+
+      // Recalculate product rating and update catalog
+      const prodRev = allReviews.filter(r => r && r.productId === activeModalProduct.id);
+      const newScore = Number((prodRev.reduce((sum, r) => sum + (Number(r.rating) || 5), 0) / prodRev.length).toFixed(1));
+      activeModalProduct.rating = newScore;
+      activeModalProduct.reviewCount = prodRev.length;
+      activeModalProduct.ratingCount = prodRev.length;
+
+      const catalog = getStoredCatalog();
+      const catP = catalog.find(p => p.id === activeModalProduct.id);
+      if (catP) {
+        catP.rating = newScore;
+        catP.reviewCount = prodRev.length;
+        catP.ratingCount = prodRev.length;
+        try { localStorage.setItem('buyero_catalog', JSON.stringify(catalog)); } catch(e) {}
+      }
+      if (fbFirestore) {
+        fbFirestore.collection('products').doc(activeModalProduct.id).set({
+          rating: newScore,
+          reviewCount: prodRev.length,
+          ratingCount: prodRev.length,
+          updatedAt: new Date().toISOString()
+        }, { merge: true }).catch(() => {});
       }
 
       // Reset form fields
       document.getElementById('review-user-comment').value = '';
       toggleWriteReviewForm();
 
-      // Refresh reviews on modal
+      // Refresh reviews & catalog
       loadProductReviews(activeModalProduct.id);
+      loadCatalog();
       alert("✅ Thank you! Your verified review has been submitted.");
     }
 
@@ -10297,10 +10568,23 @@
             try { fbAuth.signOut().catch(() => {}); } catch(e) {}
           }
           currentUser = null;
+          // Clear all local session data on logout (Cart & Likes live safely in Firebase Cloud)
           localStorage.removeItem('buyero_user');
+          localStorage.removeItem('buyero_cart');
+          localStorage.removeItem('buyero_liked_products');
+          localStorage.removeItem('buyero_orders');
+          localStorage.removeItem('buyero_saved_addresses');
+          localStorage.removeItem('buyero_user_wallet_coins');
+          localStorage.removeItem('buyero_direct_item');
+
+          // Reset all UI indicators
+          updateCartBadges();
+          updateWishlistBadge();
           renderUserProfile();
+          renderOrdersList();
+          loadCatalog();
           switchClientView('shop');
-          alert("You have been signed out successfully.");
+          alert("Aap safely logout ho gaye hain. Aapka Cart aur Wishlist aapke Firebase cloud account me surakshit save hai.");
         }
       } else {
         openAuthModal();
