@@ -922,8 +922,11 @@
         <!-- Media Display Area -->
         <div id="pdetail-media-container" class="relative w-full aspect-square bg-slate-100 overflow-hidden transition-all duration-300">
           <!-- PHOTO SLIDER VIEW (With Touch Screen Swipe & Indicator Dots) -->
-          <div id="pdetail-photo-view" class="w-full h-full relative cursor-pointer select-none group touch-pan-y">
-            <img id="pdetail-main-img" src="" alt="Product Image" class="w-full h-full object-cover transition-opacity duration-200 pointer-events-none select-none">
+          <div id="pdetail-photo-view" class="w-full h-full relative cursor-grab active:cursor-grabbing select-none group touch-pan-y overflow-hidden">
+            <!-- Interactive Drag Carousel Track -->
+            <div id="pdetail-slider-track" class="w-full h-full flex transition-transform duration-300 ease-out will-change-transform">
+              <img id="pdetail-main-img" src="" alt="Product Image" class="w-full h-full object-cover flex-shrink-0 transition-opacity duration-200 pointer-events-none select-none">
+            </div>
             
             <!-- Top badges on image -->
             <div class="absolute top-3 left-3 flex flex-col gap-1 z-10 pointer-events-none">
@@ -1802,8 +1805,10 @@
         
         <!-- 2. Image Slider with Thumbnails (Supports Swipe Gestures) -->
         <div class="space-y-2">
-          <div id="modal-img-slider-box" class="relative bg-slate-100 rounded-2xl h-64 overflow-hidden border border-slate-200 shadow-inner group select-none cursor-pointer touch-pan-y">
-            <img id="modal-product-img" src="" alt="Product" class="w-full h-full object-cover transition duration-300 pointer-events-none select-none">
+          <div id="modal-img-slider-box" class="relative bg-slate-100 rounded-2xl h-64 overflow-hidden border border-slate-200 shadow-inner group select-none cursor-grab active:cursor-grabbing touch-pan-y">
+            <div id="modal-slider-track" class="w-full h-full flex transition-transform duration-300 ease-out will-change-transform">
+              <img id="modal-product-img" src="" alt="Product" class="w-full h-full object-cover flex-shrink-0 transition duration-300 pointer-events-none select-none">
+            </div>
             <span id="modal-badge" class="absolute bottom-3 left-3 bg-brand-orange text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider shadow pointer-events-none">Best Seller</span>
             
             <!-- Slider navigation buttons -->
@@ -5649,7 +5654,8 @@
       }
     }
 
-    function updateProductDetailImageDisplay() {
+    function updateProductDetailImageDisplay(animate = true) {
+      const track = document.getElementById('pdetail-slider-track');
       const imgEl = document.getElementById('pdetail-main-img');
       const prevBtn = document.getElementById('pdetail-btn-prev');
       const nextBtn = document.getElementById('pdetail-btn-next');
@@ -5657,14 +5663,40 @@
       const thumbStrip = document.getElementById('pdetail-thumbnails-strip');
       const dotsContainer = document.getElementById('pdetail-dots-indicator');
 
-      if (imgEl && activeDetailImages.length > 0) {
+      // 1. Synchronize Slider Track
+      if (track) {
+        const pKey = (activeDetailProduct ? String(activeDetailProduct.id) : '') + '_' + activeDetailImages.length;
+        if (track.dataset.trackKey !== pKey || track.children.length !== (activeDetailImages.length || 1)) {
+          track.dataset.trackKey = pKey;
+          if (activeDetailImages.length > 0) {
+            track.innerHTML = activeDetailImages.map((src, idx) => `
+              <div class="w-full h-full flex-shrink-0 relative overflow-hidden bg-slate-100 flex items-center justify-center select-none">
+                <img src="${src}" alt="Product Image ${idx + 1}" class="w-full h-full object-cover select-none pointer-events-none" ${idx === 0 ? 'id="pdetail-main-img"' : ''} loading="${idx === 0 ? 'eager' : 'lazy'}">
+              </div>
+            `).join('');
+          } else {
+            track.innerHTML = `
+              <div class="w-full h-full flex-shrink-0 relative overflow-hidden bg-slate-100 flex items-center justify-center select-none">
+                <img id="pdetail-main-img" src="" alt="Product Image" class="w-full h-full object-cover select-none pointer-events-none">
+              </div>
+            `;
+          }
+        }
+
+        if (animate) {
+          track.style.transition = 'transform 0.32s cubic-bezier(0.22, 1, 0.36, 1)';
+        } else {
+          track.style.transition = 'none';
+        }
+        track.style.transform = `translate3d(-${currentDetailImageIndex * 100}%, 0px, 0px)`;
+      } else if (imgEl && activeDetailImages.length > 0) {
         imgEl.style.opacity = '0.6';
         imgEl.src = activeDetailImages[currentDetailImageIndex];
         setTimeout(() => { if (imgEl) imgEl.style.opacity = '1'; }, 100);
       }
 
       if (counter) {
-        counter.textContent = `${currentDetailImageIndex + 1}/${activeDetailImages.length}`;
+        counter.textContent = `${currentDetailImageIndex + 1}/${activeDetailImages.length || 1}`;
       }
 
       if (prevBtn) prevBtn.classList.toggle('hidden', activeDetailImages.length <= 1);
@@ -5723,131 +5755,197 @@
     }
 
     /* =========================================================
-       TOUCH & SWIPE GESTURE ENGINE (Screen Swipe ⬅️ ➡️ Navigation)
-       Allows natural swiping on photos without needing to click buttons
+       TOUCH DRAG & SLIDE GESTURE ENGINE (Real-Time Dragging & Elastic Snapping)
+       Follows the finger / pointer with real-time CSS translate3d,
+       providing natural drag feel with elastic edge resistance.
        ========================================================= */
-    function setupSwipeHandler(el, handlers) {
-      if (!el) return;
+    function setupDragSlider(container, getTrackEl, config) {
+      if (!container) return;
+
       let startX = 0;
       let startY = 0;
-      let moveX = 0;
-      let moveY = 0;
-      let isDown = false;
-      let isSwiping = false;
+      let currentX = 0;
+      let isDragging = false;
+      let isHorizontal = false;
       let startTime = 0;
 
       function onStart(x, y) {
-        isDown = true;
-        isSwiping = false;
+        if (!config.canDrag || !config.canDrag()) return;
+        isDragging = true;
+        isHorizontal = false;
         startX = x;
         startY = y;
-        moveX = x;
-        moveY = y;
+        currentX = x;
         startTime = Date.now();
+        const track = typeof getTrackEl === 'function' ? getTrackEl() : getTrackEl;
+        if (track) track.style.transition = 'none';
       }
 
-      function onMove(x, y) {
-        if (!isDown) return;
-        moveX = x;
-        moveY = y;
-        const diffX = moveX - startX;
-        const diffY = moveY - startY;
-        if (Math.abs(diffX) > 15 && Math.abs(diffX) > Math.abs(diffY)) {
-          isSwiping = true;
+      function onMove(x, y, ev) {
+        if (!isDragging) return;
+        currentX = x;
+        const diffX = x - startX;
+        const diffY = y - startY;
+
+        if (!isHorizontal) {
+          if (Math.abs(diffY) > Math.abs(diffX) && Math.abs(diffY) > 8) {
+            // Natural page vertical scroll: cancel slider dragging
+            isDragging = false;
+            const track = typeof getTrackEl === 'function' ? getTrackEl() : getTrackEl;
+            if (track) {
+              track.style.transition = 'transform 0.2s ease-out';
+              track.style.transform = `translate3d(-${config.getIndex() * 100}%, 0px, 0px)`;
+            }
+            return;
+          }
+          if (Math.abs(diffX) > 8) {
+            isHorizontal = true;
+          }
+        }
+
+        if (isHorizontal) {
+          if (ev && ev.cancelable) ev.preventDefault();
+          const total = config.getTotal();
+          const idx = config.getIndex();
+
+          // Elastic rubber-band resistance when pulling at boundary
+          let effectiveDiffX = diffX;
+          if ((idx === 0 && diffX > 0) || (idx === total - 1 && diffX < 0)) {
+            effectiveDiffX = diffX * 0.32;
+          }
+
+          const track = typeof getTrackEl === 'function' ? getTrackEl() : getTrackEl;
+          if (track) {
+            track.style.transform = `translate3d(calc(-${idx * 100}% + ${effectiveDiffX}px), 0px, 0px)`;
+          }
         }
       }
 
       function onEnd() {
-        if (!isDown) return;
-        isDown = false;
-        const diffX = moveX - startX;
-        const diffY = moveY - startY;
-        const duration = Date.now() - startTime;
-        const threshold = 35; // minimum swipe distance in pixels
+        if (!isDragging) return;
+        isDragging = false;
 
-        if (Math.abs(diffX) > threshold && Math.abs(diffX) > Math.abs(diffY)) {
-          if (diffX < 0) {
-            // Swipe Left -> Next Image
-            if (typeof handlers.onSwipeLeft === 'function') handlers.onSwipeLeft();
-          } else {
-            // Swipe Right -> Previous Image
-            if (typeof handlers.onSwipeRight === 'function') handlers.onSwipeRight();
+        const diffX = currentX - startX;
+        const duration = Date.now() - startTime;
+        const total = config.getTotal();
+        const containerWidth = container.offsetWidth || 360;
+        const threshold = Math.min(containerWidth * 0.18, 55);
+        const velocity = Math.abs(diffX) / Math.max(duration, 1);
+
+        if (!isHorizontal) {
+          // Tap without horizontal dragging
+          if (Math.abs(diffX) < 10 && duration < 350) {
+            if (typeof config.onTap === 'function') config.onTap();
           }
-        } else if (!isSwiping && Math.abs(diffX) < 12 && Math.abs(diffY) < 12 && duration < 400) {
-          // Tap / Click without swipe
-          if (typeof handlers.onTap === 'function') handlers.onTap();
+          config.onUpdate(config.getIndex(), true);
+          return;
         }
+
+        let targetIndex = config.getIndex();
+
+        if (diffX < -threshold || (diffX < -25 && velocity > 0.32)) {
+          // Dragged left -> Next slide
+          if (targetIndex < total - 1) {
+            targetIndex++;
+          }
+        } else if (diffX > threshold || (diffX > 25 && velocity > 0.32)) {
+          // Dragged right -> Previous slide
+          if (targetIndex > 0) {
+            targetIndex--;
+          }
+        }
+
+        config.setIndex(targetIndex);
+        config.onUpdate(targetIndex, true);
       }
 
       // Touch events (Mobile touchscreens)
-      el.addEventListener('touchstart', (e) => {
+      container.addEventListener('touchstart', (e) => {
         if (e.touches && e.touches.length === 1) {
           onStart(e.touches[0].clientX, e.touches[0].clientY);
         }
       }, { passive: true });
 
-      el.addEventListener('touchmove', (e) => {
+      container.addEventListener('touchmove', (e) => {
         if (e.touches && e.touches.length === 1) {
-          onMove(e.touches[0].clientX, e.touches[0].clientY);
+          onMove(e.touches[0].clientX, e.touches[0].clientY, e);
         }
+      }, { passive: false });
+
+      container.addEventListener('touchend', () => {
+        onEnd();
       }, { passive: true });
 
-      el.addEventListener('touchend', () => {
+      container.addEventListener('touchcancel', () => {
         onEnd();
       }, { passive: true });
 
       // Mouse drag events (Desktop preview & cursor swipes)
-      el.addEventListener('mousedown', (e) => {
+      container.addEventListener('mousedown', (e) => {
         onStart(e.clientX, e.clientY);
       });
-      el.addEventListener('mousemove', (e) => {
-        onMove(e.clientX, e.clientY);
+      window.addEventListener('mousemove', (e) => {
+        if (isDragging) onMove(e.clientX, e.clientY, e);
       });
-      el.addEventListener('mouseup', () => {
-        onEnd();
-      });
-      el.addEventListener('mouseleave', () => {
-        if (isDown) onEnd();
+      window.addEventListener('mouseup', () => {
+        if (isDragging) onEnd();
       });
     }
 
+    function setupSwipeHandler(el, handlers) {
+      if (!el) return;
+      let startX = 0, startY = 0, currentX = 0, currentY = 0, isDown = false, isSwiping = false, startTime = 0;
+      function onStart(x, y) {
+        isDown = true; isSwiping = false; startX = x; startY = y; currentX = x; currentY = y; startTime = Date.now();
+      }
+      function onMove(x, y) {
+        if (!isDown) return; currentX = x; currentY = y;
+        if (Math.abs(currentX - startX) > 15 && Math.abs(currentX - startX) > Math.abs(currentY - startY)) isSwiping = true;
+      }
+      function onEnd() {
+        if (!isDown) return; isDown = false;
+        const diffX = currentX - startX, diffY = currentY - startY, duration = Date.now() - startTime;
+        if (Math.abs(diffX) > 35 && Math.abs(diffX) > Math.abs(diffY)) {
+          if (diffX < 0 && typeof handlers.onSwipeLeft === 'function') handlers.onSwipeLeft();
+          else if (diffX > 0 && typeof handlers.onSwipeRight === 'function') handlers.onSwipeRight();
+        } else if (!isSwiping && Math.abs(diffX) < 12 && Math.abs(diffY) < 12 && duration < 400) {
+          if (typeof handlers.onTap === 'function') handlers.onTap();
+        }
+      }
+      el.addEventListener('touchstart', (e) => { if (e.touches && e.touches.length === 1) onStart(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
+      el.addEventListener('touchmove', (e) => { if (e.touches && e.touches.length === 1) onMove(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
+      el.addEventListener('touchend', onEnd, { passive: true });
+      el.addEventListener('mousedown', (e) => onStart(e.clientX, e.clientY));
+      window.addEventListener('mousemove', (e) => { if (isDown) onMove(e.clientX, e.clientY); });
+      window.addEventListener('mouseup', () => { if (isDown) onEnd(); });
+    }
+
     function initProductImageSwipeGestures() {
-      // 1. PDP Main Photo Container
+      // 1. PDP Main Photo Container with Live Drag Tracking
       const pdetailPhotoView = document.getElementById('pdetail-photo-view');
-      if (pdetailPhotoView && !pdetailPhotoView.dataset.swipeAttached) {
-        pdetailPhotoView.dataset.swipeAttached = 'true';
-        setupSwipeHandler(pdetailPhotoView, {
-          onSwipeLeft: () => {
-            if (activeDetailImages.length > 1) {
-              nextProductDetailImage();
-            }
-          },
-          onSwipeRight: () => {
-            if (activeDetailImages.length > 1) {
-              prevProductDetailImage();
-            }
-          },
-          onTap: () => {
-            openImageLightbox(currentDetailImageIndex);
-          }
+      if (pdetailPhotoView && !pdetailPhotoView.dataset.dragAttached) {
+        pdetailPhotoView.dataset.dragAttached = 'true';
+        setupDragSlider(pdetailPhotoView, () => document.getElementById('pdetail-slider-track'), {
+          getTotal: () => activeDetailImages.length,
+          getIndex: () => currentDetailImageIndex,
+          setIndex: (idx) => { currentDetailImageIndex = idx; },
+          canDrag: () => activeDetailImages.length > 1,
+          onTap: () => openImageLightbox(currentDetailImageIndex),
+          onUpdate: () => updateProductDetailImageDisplay(true)
         });
       }
 
       // 2. Quick View Modal Image Slider Box
       const modalImgBox = document.getElementById('modal-img-slider-box');
-      if (modalImgBox && !modalImgBox.dataset.swipeAttached) {
-        modalImgBox.dataset.swipeAttached = 'true';
-        setupSwipeHandler(modalImgBox, {
-          onSwipeLeft: () => {
-            if (activeModalImages.length > 1) {
-              nextProductImage();
-            }
-          },
-          onSwipeRight: () => {
-            if (activeModalImages.length > 1) {
-              prevProductImage();
-            }
-          }
+      if (modalImgBox && !modalImgBox.dataset.dragAttached) {
+        modalImgBox.dataset.dragAttached = 'true';
+        setupDragSlider(modalImgBox, () => document.getElementById('modal-slider-track'), {
+          getTotal: () => activeModalImages.length,
+          getIndex: () => currentModalImageIndex,
+          setIndex: (idx) => { currentModalImageIndex = idx; },
+          canDrag: () => activeModalImages.length > 1,
+          onTap: null,
+          onUpdate: () => updateModalImageDisplay(true)
         });
       }
 
@@ -6880,13 +6978,39 @@
       openProductPage(pId);
     }
 
-    function updateModalImageDisplay() {
+    function updateModalImageDisplay(animate = true) {
+      const track = document.getElementById('modal-slider-track');
       const imgEl = document.getElementById('modal-product-img');
       const prevBtn = document.getElementById('btn-prev-img');
       const nextBtn = document.getElementById('btn-next-img');
       const thumbStrip = document.getElementById('modal-thumbnails-strip');
 
-      if (imgEl && activeModalImages.length > 0) {
+      if (track) {
+        const mKey = activeModalImages.length + '_' + (activeModalImages[0] || '');
+        if (track.dataset.trackKey !== mKey || track.children.length !== (activeModalImages.length || 1)) {
+          track.dataset.trackKey = mKey;
+          if (activeModalImages.length > 0) {
+            track.innerHTML = activeModalImages.map((src, idx) => `
+              <div class="w-full h-full flex-shrink-0 relative overflow-hidden bg-slate-100 flex items-center justify-center select-none">
+                <img src="${src}" alt="Product Image ${idx + 1}" class="w-full h-full object-cover select-none pointer-events-none" ${idx === 0 ? 'id="modal-product-img"' : ''}>
+              </div>
+            `).join('');
+          } else {
+            track.innerHTML = `
+              <div class="w-full h-full flex-shrink-0 relative overflow-hidden bg-slate-100 flex items-center justify-center select-none">
+                <img id="modal-product-img" src="" alt="Product" class="w-full h-full object-cover select-none pointer-events-none">
+              </div>
+            `;
+          }
+        }
+
+        if (animate) {
+          track.style.transition = 'transform 0.32s cubic-bezier(0.22, 1, 0.36, 1)';
+        } else {
+          track.style.transition = 'none';
+        }
+        track.style.transform = `translate3d(-${currentModalImageIndex * 100}%, 0px, 0px)`;
+      } else if (imgEl && activeModalImages.length > 0) {
         imgEl.src = activeModalImages[currentModalImageIndex];
       }
 

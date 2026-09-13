@@ -3617,44 +3617,34 @@
           console.warn("[Admin Firestore Orders Listener]", err);
         });
 
-        // Also listen to users collection for customer directory
+        // Also listen to users collection for real-time customer directory sync
         fbFirestore.collection('users').onSnapshot((snap) => {
-          if (!snap || snap.empty) return;
-          let localUsers = getStoredUsers();
-          let usersChanged = false;
+          if (!snap) return;
+          const remoteUsers = [];
           snap.forEach((doc) => {
             const remoteU = doc.data();
-            if (!remoteU) return;
-            const remoteEmail = (remoteU.email || '').toLowerCase().trim();
-            const remoteUuid = remoteU.uuid || remoteU.userId;
-            const detId = remoteEmail ? ('usr_' + remoteEmail.replace(/[^a-z0-9]/g, '_')) : null;
-
-            const idx = localUsers.findIndex(u => {
-              const uEmail = (u.email || '').toLowerCase().trim();
-              const uUuid = u.uuid || u.userId;
-              if (remoteEmail && uEmail && remoteEmail === uEmail) return true;
-              if (remoteUuid && uUuid && remoteUuid === uUuid) return true;
-              if (detId && uUuid && detId === uUuid) return true;
-              return false;
-            });
-
-            if (idx >= 0) {
-              localUsers[idx] = Object.assign({}, localUsers[idx], remoteU, {
-                uuid: detId || remoteUuid || localUsers[idx].uuid,
-                userId: detId || remoteUuid || localUsers[idx].userId
-              });
-              usersChanged = true;
-            } else if (remoteEmail || remoteUuid) {
-              localUsers.push(Object.assign({}, remoteU, {
-                uuid: detId || remoteUuid,
-                userId: detId || remoteUuid
-              }));
-              usersChanged = true;
+            if (remoteU) {
+              remoteUsers.push(Object.assign({ uid: doc.id }, remoteU));
             }
           });
-          if (usersChanged) {
-            localStorage.setItem('buyero_registered_users', JSON.stringify(localUsers));
-            calculateAnalysisMetrics();
+          const orders = getStoredOrders();
+          const localUsers = getStoredUsers();
+          cachedAdminUsers = consolidateAdminUsers(remoteUsers, orders, localUsers);
+          localStorage.setItem('buyero_registered_users', JSON.stringify(cachedAdminUsers));
+
+          // Synchronize Live Analysis User Metric & Nav Badge
+          const elUsers = document.getElementById('stat-total-users');
+          if (elUsers) elUsers.textContent = cachedAdminUsers.length;
+
+          const badge = document.getElementById('nav-users-badge');
+          if (badge) {
+            badge.textContent = cachedAdminUsers.length;
+            badge.classList.toggle('hidden', cachedAdminUsers.length === 0);
+          }
+
+          const viewUsers = document.getElementById('view-users');
+          if (viewUsers && !viewUsers.classList.contains('hidden')) {
+            renderFilteredUsers();
           }
         }, (err) => {
           console.warn("[Admin Firestore Users Listener]", err);
@@ -4466,7 +4456,12 @@
       if (elRealizedCount) elRealizedCount.textContent = `${completedCount} Completed (7-Day Done)`;
       if (elProfit) elProfit.textContent = '₹' + realizedProfit.toLocaleString('en-IN');
       if (elProfitMargin) elProfitMargin.textContent = `${marginPercent}% Realized Margin`;
-      if (elUsers) elUsers.textContent = users.length;
+      if (elUsers) {
+        const uCount = (cachedAdminUsers && cachedAdminUsers.length > 0)
+          ? cachedAdminUsers.length
+          : (typeof consolidateAdminUsers === 'function' ? consolidateAdminUsers([], orders, users).length : users.length);
+        elUsers.textContent = uCount;
+      }
       if (elVisits) elVisits.textContent = visits;
 
       // Pending badge on order bottom tab
@@ -6899,6 +6894,208 @@ FINANCIAL BREAKDOWN:
     let userSearchQuery = '';
     let cachedAdminUsers = [];
 
+    function normalizeUserPhone(p) {
+      if (!p) return '';
+      const digits = String(p).replace(/\D/g, '');
+      if (digits.length >= 10) {
+        return digits.slice(-10);
+      }
+      return digits;
+    }
+
+    function normalizeUserEmail(e) {
+      if (!e || typeof e !== 'string') return '';
+      return e.trim().toLowerCase();
+    }
+
+    /* Unified User Consolidation Engine:
+       Deduplicates users across Firestore 'users' collection, local storage, and past orders.
+       Guarantees 1 single record per real person matching by UID, phone number, or email. */
+    function consolidateAdminUsers(remoteUsers = [], orders = [], localUsers = []) {
+      const consolidated = [];
+
+      function findMatch(record) {
+        const uids = [record.uid, record.uuid, record.userId].filter(Boolean).map(String);
+        const normPhone = normalizeUserPhone(record.phone || record.phoneNumber);
+        const normEmail = normalizeUserEmail(record.email || record.customerEmail);
+
+        return consolidated.find(c => {
+          // 1. UID or Alias match
+          if (uids.length > 0) {
+            for (let uid of uids) {
+              if (c.uids.has(uid) || c.uid === uid) return true;
+            }
+          }
+          // 2. Normalized 10-digit phone match
+          if (normPhone && normPhone.length === 10 && c.normPhone && c.normPhone === normPhone) {
+            return true;
+          }
+          // 3. Normalized email match
+          if (normEmail && c.normEmail && c.normEmail === normEmail) {
+            return true;
+          }
+          return false;
+        });
+      }
+
+      function mergeRecord(target, rec, isOrder = false) {
+        const uids = [rec.uid, rec.uuid, rec.userId].filter(Boolean).map(String);
+        uids.forEach(id => target.uids.add(id));
+
+        // Prefer real Auth UID (non-guest, non-usr_)
+        const realUid = uids.find(id => id && !id.startsWith('usr_') && id !== 'usr_guest');
+        if (realUid && (!target.uid || target.uid.startsWith('usr_'))) {
+          target.uid = realUid;
+        } else if (!target.uid && uids[0]) {
+          target.uid = uids[0];
+        }
+
+        const normPhone = normalizeUserPhone(rec.phone || rec.phoneNumber);
+        if (normPhone && !target.normPhone) {
+          target.normPhone = normPhone;
+          target.phone = normPhone;
+        }
+
+        const normEmail = normalizeUserEmail(rec.email || rec.customerEmail);
+        if (normEmail && !target.normEmail) {
+          target.normEmail = normEmail;
+          target.email = rec.email || rec.customerEmail;
+        }
+
+        const candName = rec.name || rec.displayName || rec.customerName;
+        if (candName && typeof candName === 'string') {
+          const trimmed = candName.trim();
+          if (trimmed && trimmed.toLowerCase() !== 'customer' && trimmed.toLowerCase() !== 'anonymous') {
+            if (!target.name || target.name === 'Customer' || target.name.length < trimmed.length) {
+              target.name = trimmed;
+            }
+          }
+        }
+
+        const candPhoto = rec.photoURL || rec.photo;
+        if (candPhoto && typeof candPhoto === 'string' && candPhoto.trim() && !target.photoURL) {
+          target.photoURL = candPhoto.trim();
+        }
+
+        if (rec.walletBalance !== undefined || rec.coins !== undefined) {
+          const bal = Number(rec.walletBalance !== undefined ? rec.walletBalance : rec.coins) || 0;
+          if (bal > target.walletBalance) {
+            target.walletBalance = bal;
+          }
+        }
+
+        // Merge addresses without duplicates
+        const addrs = [];
+        if (rec.addresses && Array.isArray(rec.addresses)) addrs.push(...rec.addresses);
+        if (rec.savedAddresses && Array.isArray(rec.savedAddresses)) addrs.push(...rec.savedAddresses);
+        if (rec.address) addrs.push(rec.address);
+        addrs.forEach(a => {
+          if (!a) return;
+          const str = typeof a === 'string' ? a.trim() : (a.street || a.fullAddress || JSON.stringify(a)).trim();
+          if (str && !target.savedAddresses.some(x => (typeof x === 'string' ? x : (x.street || x.fullAddress || JSON.stringify(x))).trim() === str)) {
+            target.savedAddresses.push(a);
+          }
+        });
+
+        const candTime = rec.createdAt || rec.timestamp;
+        if (candTime) {
+          if (!target.createdAt || new Date(candTime) < new Date(target.createdAt)) {
+            target.createdAt = candTime;
+          }
+        }
+
+        // Attach order without duplicates
+        if (isOrder && rec.orderId) {
+          if (!target.orders.some(o => o.orderId === rec.orderId)) {
+            target.orders.push(rec);
+          }
+        }
+      }
+
+      // 1. Process Remote Firestore Users
+      remoteUsers.forEach(ru => {
+        if (!ru) return;
+        let existing = findMatch(ru);
+        if (!existing) {
+          existing = {
+            uid: ru.uid || '',
+            uids: new Set([ru.uid].filter(Boolean)),
+            name: ru.name || ru.displayName || 'Customer',
+            normPhone: normalizeUserPhone(ru.phone || ru.phoneNumber),
+            phone: normalizeUserPhone(ru.phone || ru.phoneNumber),
+            normEmail: normalizeUserEmail(ru.email),
+            email: ru.email || '',
+            photoURL: ru.photoURL || ru.photo || '',
+            walletBalance: Number(ru.walletBalance !== undefined ? ru.walletBalance : (ru.coins !== undefined ? ru.coins : 50)) || 50,
+            savedAddresses: [],
+            createdAt: ru.createdAt || '',
+            orders: []
+          };
+          consolidated.push(existing);
+        }
+        mergeRecord(existing, ru, false);
+      });
+
+      // 2. Process Local Storage Registered Users
+      localUsers.forEach(lu => {
+        if (!lu) return;
+        let existing = findMatch(lu);
+        if (!existing) {
+          existing = {
+            uid: lu.uuid || lu.userId || '',
+            uids: new Set([lu.uuid, lu.userId].filter(Boolean)),
+            name: lu.name || 'Customer',
+            normPhone: normalizeUserPhone(lu.phone || lu.phoneNumber),
+            phone: normalizeUserPhone(lu.phone || lu.phoneNumber),
+            normEmail: normalizeUserEmail(lu.email),
+            email: lu.email || '',
+            photoURL: lu.photoURL || '',
+            walletBalance: Number(lu.walletBalance !== undefined ? lu.walletBalance : 50) || 50,
+            savedAddresses: [],
+            createdAt: lu.createdAt || '',
+            orders: []
+          };
+          consolidated.push(existing);
+        }
+        mergeRecord(existing, lu, false);
+      });
+
+      // 3. Process Orders
+      orders.forEach(ord => {
+        if (!ord) return;
+        let existing = findMatch(ord);
+        if (!existing) {
+          const normP = normalizeUserPhone(ord.phone);
+          const normE = normalizeUserEmail(ord.customerEmail);
+          existing = {
+            uid: ord.userId || (normP ? `usr_${normP}` : `usr_${Math.random().toString(36).slice(2, 8)}`),
+            uids: new Set([ord.userId].filter(Boolean)),
+            name: ord.customerName || 'Customer',
+            normPhone: normP,
+            phone: normP,
+            normEmail: normE,
+            email: ord.customerEmail || '',
+            photoURL: '',
+            walletBalance: 50,
+            savedAddresses: [],
+            createdAt: ord.timestamp || '',
+            orders: []
+          };
+          consolidated.push(existing);
+        }
+        mergeRecord(existing, ord, true);
+      });
+
+      return consolidated.map(u => {
+        u.orders.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+        if (!u.uid) {
+          u.uid = u.normPhone ? `usr_${u.normPhone}` : (u.normEmail ? `usr_${u.normEmail.replace(/[^a-z0-9]/g, '_')}` : `usr_${Math.random().toString(36).slice(2, 8)}`);
+        }
+        u.aliases = Array.from(u.uids || []);
+        return u;
+      });
+    }
+
     async function fetchAdminUsersFromFirestore() {
       if (!fbFirestore) return [];
       try {
@@ -6906,7 +7103,7 @@ FINANCIAL BREAKDOWN:
         const list = [];
         snap.forEach(doc => {
           const d = doc.data();
-          list.push(Object.assign({ uid: doc.id }, d));
+          if (d) list.push(Object.assign({ uid: doc.id }, d));
         });
         return list;
       } catch(e) {
@@ -6919,101 +7116,19 @@ FINANCIAL BREAKDOWN:
       const container = document.getElementById('admin-users-list-container');
       if (!container) return;
 
-      container.innerHTML = '<div class="py-8 text-center text-slate-400 text-xs"><i class="fa-solid fa-spinner fa-spin mr-1 text-brand-navy"></i> Loading customer directory...</div>';
+      container.innerHTML = '<div class="py-8 text-center text-slate-400 text-xs"><i class="fa-solid fa-spinner fa-spin mr-1 text-brand-navy"></i> Loading customer directory from Firebase...</div>';
 
       const remoteUsers = await fetchAdminUsersFromFirestore();
       const orders = getStoredOrders();
-      const userMap = new Map();
+      const localUsers = getStoredUsers();
 
-      // Index remote users first
-      remoteUsers.forEach(u => {
-        const key = u.uid || u.phone || u.email;
-        if (key) {
-          userMap.set(key, {
-            uid: u.uid || '',
-            name: u.name || u.displayName || 'Customer',
-            phone: u.phone || u.phoneNumber || '',
-            email: u.email || '',
-            photoURL: u.photoURL || u.photo || '',
-            walletBalance: u.walletBalance !== undefined ? u.walletBalance : (u.coins !== undefined ? u.coins : 50),
-            savedAddresses: u.addresses || (u.address ? [u.address] : []),
-            createdAt: u.createdAt || '',
-            orders: []
-          });
-        }
-      });
+      cachedAdminUsers = consolidateAdminUsers(remoteUsers, orders, localUsers);
+      localStorage.setItem('buyero_registered_users', JSON.stringify(cachedAdminUsers));
 
-      // Also read local registered users if any
-      try {
-        const localReg = JSON.parse(localStorage.getItem('buyero_registered_users') || '[]');
-        localReg.forEach(u => {
-          const key = u.uuid || u.userId || u.phone || u.email;
-          if (key) {
-            let existing = userMap.get(key);
-            if (existing) {
-              if (!existing.photoURL && u.photoURL) existing.photoURL = u.photoURL;
-            } else {
-              userMap.set(key, {
-                uid: u.uuid || u.userId || '',
-                name: u.name || 'Customer',
-                phone: u.phone || '',
-                email: u.email || '',
-                photoURL: u.photoURL || '',
-                walletBalance: 50,
-                savedAddresses: u.address ? [u.address] : [],
-                createdAt: u.createdAt || '',
-                orders: []
-              });
-            }
-          }
-        });
-      } catch (e) {}
+      // Synchronize Live Analysis User Metric & Nav Badge
+      const elUsers = document.getElementById('stat-total-users');
+      if (elUsers) elUsers.textContent = cachedAdminUsers.length;
 
-      // Enrich or add from existing orders
-      orders.forEach(o => {
-        const key = o.userId || o.phone || o.customerEmail || o.customerName;
-        if (!key) return;
-        let entry = userMap.get(key);
-        if (!entry && o.phone) {
-          for (let val of userMap.values()) {
-            if (val.phone && val.phone === o.phone) {
-              entry = val;
-              break;
-            }
-          }
-        }
-
-        if (!entry) {
-          entry = {
-            uid: o.userId || `usr_${o.phone || Math.random().toString(36).slice(2, 7)}`,
-            name: o.customerName || 'Customer',
-            phone: o.phone || '',
-            email: o.customerEmail || '',
-            walletBalance: 50,
-            savedAddresses: o.address ? [o.address] : [],
-            createdAt: o.timestamp || '',
-            orders: []
-          };
-          userMap.set(key, entry);
-        }
-
-        entry.orders.push(o);
-        if (!entry.phone && o.phone) entry.phone = o.phone;
-        if (!entry.email && o.customerEmail) entry.email = o.customerEmail;
-        if ((!entry.name || entry.name === 'Customer') && o.customerName) entry.name = o.customerName;
-        if (o.address && !entry.savedAddresses.some(a => (typeof a === 'string' ? a : a.street || '') === o.address)) {
-          entry.savedAddresses.push(o.address);
-        }
-      });
-
-      cachedAdminUsers = Array.from(userMap.values()).map(u => {
-        if (Array.isArray(u.orders)) {
-          u.orders.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
-        }
-        return u;
-      });
-
-      // Update badge
       const badge = document.getElementById('nav-users-badge');
       if (badge) {
         badge.textContent = cachedAdminUsers.length;
@@ -7153,8 +7268,26 @@ FINANCIAL BREAKDOWN:
     /* Deep Customer Profile Modal */
     function openCustomerProfileModal(phone, name, address, uid, email) {
       const allOrders = getStoredOrders();
-      const customerOrders = allOrders
-        .filter(o => (phone && o.phone === phone) || (uid && o.userId === uid) || (email && o.customerEmail === email))
+      const normP = normalizeUserPhone(phone);
+      const normE = normalizeUserEmail(email);
+
+      // Find user from consolidated directory
+      const matchedUser = cachedAdminUsers.find(u => {
+        if (uid && (u.uid === uid || (u.aliases && u.aliases.includes(uid)))) return true;
+        if (normP && u.normPhone === normP) return true;
+        if (normE && u.normEmail === normE) return true;
+        return false;
+      });
+
+      const customerOrders = matchedUser ? matchedUser.orders : allOrders
+        .filter(o => {
+          const oP = normalizeUserPhone(o.phone);
+          const oE = normalizeUserEmail(o.customerEmail);
+          if (uid && o.userId === uid) return true;
+          if (normP && oP === normP) return true;
+          if (normE && oE === normE) return true;
+          return false;
+        })
         .sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
       
       const avatarEl = document.getElementById('modal-cust-avatar');
@@ -7169,11 +7302,13 @@ FINANCIAL BREAKDOWN:
       const ordersSummaryEl = document.getElementById('modal-cust-orders-summary');
       const ordersListEl = document.getElementById('modal-cust-orders-list');
 
-      const displayName = name || customerOrders[0]?.customerName || 'Customer';
-      const displayPhone = phone || customerOrders[0]?.phone || '';
-      const displayEmail = email || customerOrders[0]?.customerEmail || 'No email registered';
-      const displayUid = uid || customerOrders[0]?.userId || 'usr_guest';
-      const displayAddr = address || customerOrders[0]?.address || 'No saved address recorded';
+      const displayName = matchedUser?.name || name || customerOrders[0]?.customerName || 'Customer';
+      const displayPhone = matchedUser?.phone || phone || customerOrders[0]?.phone || '';
+      const displayEmail = matchedUser?.email || email || customerOrders[0]?.customerEmail || 'No email registered';
+      const displayUid = matchedUser?.uid || uid || customerOrders[0]?.userId || 'usr_guest';
+      const displayAddr = (matchedUser?.savedAddresses && matchedUser.savedAddresses[0])
+        ? (typeof matchedUser.savedAddresses[0] === 'string' ? matchedUser.savedAddresses[0] : (matchedUser.savedAddresses[0].street || matchedUser.savedAddresses[0].fullAddress || 'Saved Address'))
+        : (address || customerOrders[0]?.address || 'No saved address recorded');
       const displayPin = customerOrders[0]?.pincode || '-';
 
       const totalSpent = customerOrders.reduce((sum, o) => {
@@ -7181,8 +7316,6 @@ FINANCIAL BREAKDOWN:
         return sum + amt;
       }, 0);
 
-      // Find user photo in cached users or orders
-      const matchedUser = cachedAdminUsers.find(u => (phone && u.phone === phone) || (uid && u.uid === uid) || (email && u.email === email));
       const userPhoto = matchedUser?.photoURL || customerOrders[0]?.photoURL || '';
 
       if (avatarEl) {
