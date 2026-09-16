@@ -653,25 +653,35 @@
           </div>
         </button>
 
-        <!-- Contact Support & Return Rules -->
-        <div class="grid grid-cols-2 gap-2.5">
-          <button onclick="switchClientView('support')" class="p-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl shadow-sm flex items-center gap-2.5 transition text-left">
+        <!-- Contact Support, WhatsApp & Return Rules -->
+        <div class="grid grid-cols-3 gap-2">
+          <button onclick="switchClientView('support')" class="p-2.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl shadow-sm flex flex-col items-center justify-center text-center gap-1.5 transition">
             <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm">
               <i class="fa-solid fa-headset"></i>
             </div>
             <div>
-              <h5 class="font-bold text-xs text-slate-900">Buyero Care</h5>
-              <p class="text-[10px] text-slate-500">Live chat & Helpdesk</p>
+              <h5 class="font-bold text-[11px] text-slate-900">Buyero Care</h5>
+              <p class="text-[9px] text-slate-500">Live Chat</p>
             </div>
           </button>
 
-          <button onclick="openReturnRulesModal()" class="p-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl shadow-sm flex items-center gap-2.5 transition text-left">
+          <a href="https://wa.me/919174573889?text=Namaste%20Buyero%20Support%2C%20mujhe%20sahayata%20chahiye" target="_blank" class="p-2.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl shadow-sm flex flex-col items-center justify-center text-center gap-1.5 transition">
+            <div class="w-8 h-8 rounded-lg bg-emerald-50 text-[#25D366] flex items-center justify-center text-base">
+              <i class="fa-brands fa-whatsapp"></i>
+            </div>
+            <div>
+              <h5 class="font-bold text-[11px] text-slate-900">WhatsApp</h5>
+              <p class="text-[9px] text-slate-500">Direct Chat</p>
+            </div>
+          </a>
+
+          <button onclick="openReturnRulesModal()" class="p-2.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl shadow-sm flex flex-col items-center justify-center text-center gap-1.5 transition">
             <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-sm">
               <i class="fa-solid fa-rotate-left"></i>
             </div>
             <div>
-              <h5 class="font-bold text-xs text-slate-900">Return Policy</h5>
-              <p class="text-[10px] text-slate-500">7-Day doorstep pickup</p>
+              <h5 class="font-bold text-[11px] text-slate-900">Return Policy</h5>
+              <p class="text-[9px] text-slate-500">7-Day Return</p>
             </div>
           </button>
         </div>
@@ -727,8 +737,16 @@
             </div>
           </div>
 
-          <!-- Actions: Refresh messages only (No calling features) -->
+          <!-- Actions: WhatsApp quick button & Refresh messages -->
           <div class="flex items-center gap-1.5 flex-shrink-0">
+            <a 
+              href="https://wa.me/919174573889?text=Namaste%20Buyero%20Support%2C%20mujhe%20sahayata%20chahiye" 
+              target="_blank"
+              class="px-2.5 py-1 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold rounded-xl text-[10.5px] flex items-center gap-1 shadow-xs transition active:scale-95"
+              title="Chat on WhatsApp"
+            >
+              <i class="fa-brands fa-whatsapp text-xs"></i> WhatsApp
+            </a>
             <button 
               onclick="refreshClientChatMessages(this)" 
               class="w-8 h-8 rounded-full hover:bg-white/10 active:scale-95 flex items-center justify-center text-slate-300 hover:text-white transition" 
@@ -774,11 +792,17 @@
         </form>
       </div>
 
-      <!-- 4. Direct Executive Call Button -->
-      <a href="tel:9174573889" class="w-full py-3 bg-brand-navy hover:bg-brand-deep text-white font-bold rounded-2xl text-xs flex items-center justify-center gap-2 shadow transition active:scale-98">
-        <i class="fa-solid fa-phone text-brand-orange"></i>
-        <span>Call Buyero Care (+91 9174573889)</span>
-      </a>
+      <!-- 4. Direct Executive Call & WhatsApp Buttons -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <a href="https://wa.me/919174573889?text=Namaste%20Buyero%20Support%2C%20mujhe%20sahayata%20chahiye" target="_blank" class="w-full py-3 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold rounded-2xl text-xs flex items-center justify-center gap-2 shadow-sm transition active:scale-98">
+          <i class="fa-brands fa-whatsapp text-base"></i>
+          <span>Chat on WhatsApp (+91 9174573889)</span>
+        </a>
+        <a href="tel:9174573889" class="w-full py-3 bg-brand-navy hover:bg-brand-deep text-white font-bold rounded-2xl text-xs flex items-center justify-center gap-2 shadow transition active:scale-98">
+          <i class="fa-solid fa-phone text-brand-orange"></i>
+          <span>Call Buyero Care (+91 9174573889)</span>
+        </a>
+      </div>
 
       <!-- 5. Order Specific Help Dropdown & Urgent Ticket -->
       <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
@@ -3367,6 +3391,34 @@
           else messages.push(incoming);
           saveSupportMessages(messages);
           try { loadClientChatMessages(); } catch (e) {}
+        }
+      } else if (event.data && event.data.type === 'WALLET_COINS_UPDATED_FROM_ADMIN') {
+        const myUids = [
+          currentUser?.uid,
+          currentUser?.uuid,
+          currentUser?.userId,
+          currentUser?.authUid,
+          fbAuth?.currentUser?.uid,
+          localStorage.getItem('buyero_active_user_uid')
+        ].filter(Boolean).map(String);
+        const myPhone = normalizeUserPhone(currentUser?.phone || currentUser?.phoneNumber || localStorage.getItem('buyero_active_user_phone'));
+        const myEmail = normalizeUserEmail(currentUser?.email || (fbAuth?.currentUser ? fbAuth.currentUser.email : null));
+        
+        const isTarget = (event.data.uids && Array.isArray(event.data.uids) && event.data.uids.some(id => myUids.includes(String(id)))) ||
+                         (event.data.phone && myPhone && event.data.phone === myPhone) ||
+                         (event.data.email && myEmail && event.data.email === myEmail);
+
+        if (isTarget && event.data.coins !== undefined) {
+          const freshCoins = Math.max(0, Number(event.data.coins));
+          if (currentUser) {
+            currentUser.coins = freshCoins;
+            currentUser.walletCoins = freshCoins;
+            currentUser.walletBalance = freshCoins;
+            localStorage.setItem('buyero_user', JSON.stringify(currentUser));
+          }
+          localStorage.setItem('buyero_user_coins', String(freshCoins));
+          try { renderUserProfile(); } catch(e) {}
+          try { if (typeof renderCheckoutPriceBreakdown === 'function') renderCheckoutPriceBreakdown(); } catch(e) {}
         }
       } else if (event.data && event.data.type === 'SUPPORT_MESSAGE_EDITED') {
         let messages = getStoredSupportMessages();

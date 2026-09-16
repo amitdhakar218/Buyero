@@ -1423,7 +1423,12 @@
           </div>
           <div class="min-w-0 flex-1">
             <h4 class="font-bold text-sm text-slate-900 truncate" id="modal-cust-name">Customer Name</h4>
-            <p class="text-xs text-slate-600 truncate" id="modal-cust-phone">+91 9876543210</p>
+            <div class="flex items-center gap-2 flex-wrap">
+              <p class="text-xs text-slate-600 truncate" id="modal-cust-phone">+91 9876543210</p>
+              <a id="modal-cust-whatsapp-btn" href="#" target="_blank" class="hidden px-2.5 py-0.5 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold rounded-lg text-[10.5px] items-center gap-1 shadow-2xs transition">
+                <i class="fa-brands fa-whatsapp text-xs"></i> WhatsApp
+              </a>
+            </div>
             <p class="text-[11px] text-slate-500 truncate" id="modal-cust-email">customer@gmail.com</p>
             <span class="text-[9px] font-mono text-slate-400 truncate block mt-0.5" id="modal-cust-uid">UID: usr_12345</span>
           </div>
@@ -6939,8 +6944,11 @@ FINANCIAL BREAKDOWN:
       const consolidated = [];
 
       function findMatch(record) {
-        const uids = [record.uid, record.uuid, record.userId].filter(Boolean).map(String);
-        const normPhone = normalizeUserPhone(record.phone || record.phoneNumber);
+        const uids = [record.uid, record.uuid, record.userId, record.authUid].filter(Boolean).map(String);
+        if (record.aliases && Array.isArray(record.aliases)) {
+          record.aliases.forEach(a => { if (a) uids.push(String(a)); });
+        }
+        const normPhone = normalizeUserPhone(record.phone || record.phoneNumber || record.custPhone);
         const normEmail = normalizeUserEmail(record.email || record.customerEmail);
 
         return consolidated.find(c => {
@@ -6962,8 +6970,8 @@ FINANCIAL BREAKDOWN:
         });
       }
 
-      function mergeRecord(target, rec, isOrder = false) {
-        const uids = [rec.uid, rec.uuid, rec.userId].filter(Boolean).map(String);
+      function mergeRecord(target, rec, isOrder = false, isRemote = false) {
+        const uids = [rec.uid, rec.uuid, rec.userId, rec.authUid].filter(Boolean).map(String);
         uids.forEach(id => target.uids.add(id));
 
         // Prefer real Auth UID (non-guest, non-usr_)
@@ -6974,7 +6982,7 @@ FINANCIAL BREAKDOWN:
           target.uid = uids[0];
         }
 
-        const normPhone = normalizeUserPhone(rec.phone || rec.phoneNumber);
+        const normPhone = normalizeUserPhone(rec.phone || rec.phoneNumber || rec.custPhone);
         if (normPhone && !target.normPhone) {
           target.normPhone = normPhone;
           target.phone = normPhone;
@@ -7001,11 +7009,19 @@ FINANCIAL BREAKDOWN:
           target.photoURL = candPhoto.trim();
         }
 
-        if (rec.coins !== undefined || rec.walletCoins !== undefined || rec.walletBalance !== undefined) {
-          const rawVal = rec.coins !== undefined ? rec.coins : (rec.walletCoins !== undefined ? rec.walletCoins : rec.walletBalance);
-          const bal = Number(rawVal);
-          if (!isNaN(bal)) {
-            target.walletBalance = Math.max(0, bal);
+        // COINS & WALLET BALANCE: Remote Firestore is the authoritative cloud truth
+        const rawVal = rec.coins !== undefined ? rec.coins : (rec.walletCoins !== undefined ? rec.walletCoins : rec.walletBalance);
+        if (rawVal !== undefined && !isNaN(Number(rawVal))) {
+          const bal = Math.max(0, Number(rawVal));
+          if (isRemote) {
+            target.walletBalance = bal;
+            target.coins = bal;
+            target.walletCoins = bal;
+            target.hasRemoteCoins = true;
+          } else if (!target.hasRemoteCoins) {
+            target.walletBalance = bal;
+            target.coins = bal;
+            target.walletCoins = bal;
           }
         }
 
@@ -7037,52 +7053,69 @@ FINANCIAL BREAKDOWN:
         }
       }
 
-      // 1. Process Remote Firestore Users
+      // 1. Process Remote Firestore Users (Authoritative Source of Truth)
       remoteUsers.forEach(ru => {
         if (!ru) return;
         let existing = findMatch(ru);
+        const rRawCoins = ru.coins !== undefined ? ru.coins : (ru.walletCoins !== undefined ? ru.walletCoins : ru.walletBalance);
+        const rCoins = (rRawCoins !== undefined && !isNaN(Number(rRawCoins))) ? Math.max(0, Number(rRawCoins)) : 0;
+
         if (!existing) {
           existing = {
-            uid: ru.uid || '',
-            uids: new Set([ru.uid].filter(Boolean)),
+            uid: ru.uid || ru.uuid || ru.userId || '',
+            uids: new Set([ru.uid, ru.uuid, ru.userId, ru.authUid].filter(Boolean)),
             name: ru.name || ru.displayName || 'Customer',
             normPhone: normalizeUserPhone(ru.phone || ru.phoneNumber),
             phone: normalizeUserPhone(ru.phone || ru.phoneNumber),
             normEmail: normalizeUserEmail(ru.email),
             email: ru.email || '',
             photoURL: ru.photoURL || ru.photo || '',
-            walletBalance: Number(ru.coins !== undefined ? ru.coins : (ru.walletCoins !== undefined ? ru.walletCoins : (ru.walletBalance !== undefined ? ru.walletBalance : 10))) || 10,
+            walletBalance: rCoins,
+            coins: rCoins,
+            walletCoins: rCoins,
+            hasRemoteCoins: true,
             savedAddresses: [],
             createdAt: ru.createdAt || '',
             orders: []
           };
           consolidated.push(existing);
+        } else {
+          existing.walletBalance = rCoins;
+          existing.coins = rCoins;
+          existing.walletCoins = rCoins;
+          existing.hasRemoteCoins = true;
         }
-        mergeRecord(existing, ru, false);
+        mergeRecord(existing, ru, false, true);
       });
 
       // 2. Process Local Storage Registered Users
       localUsers.forEach(lu => {
         if (!lu) return;
         let existing = findMatch(lu);
+        const lRawCoins = lu.coins !== undefined ? lu.coins : (lu.walletCoins !== undefined ? lu.walletCoins : lu.walletBalance);
+        const lCoins = (lRawCoins !== undefined && !isNaN(Number(lRawCoins))) ? Math.max(0, Number(lRawCoins)) : 0;
+
         if (!existing) {
           existing = {
-            uid: lu.uuid || lu.userId || '',
-            uids: new Set([lu.uuid, lu.userId].filter(Boolean)),
+            uid: lu.uuid || lu.userId || lu.uid || '',
+            uids: new Set([lu.uuid, lu.userId, lu.uid].filter(Boolean)),
             name: lu.name || 'Customer',
             normPhone: normalizeUserPhone(lu.phone || lu.phoneNumber),
             phone: normalizeUserPhone(lu.phone || lu.phoneNumber),
             normEmail: normalizeUserEmail(lu.email),
             email: lu.email || '',
             photoURL: lu.photoURL || '',
-            walletBalance: Number(lu.coins !== undefined ? lu.coins : (lu.walletCoins !== undefined ? lu.walletCoins : (lu.walletBalance !== undefined ? lu.walletBalance : 10))) || 10,
+            walletBalance: lCoins,
+            coins: lCoins,
+            walletCoins: lCoins,
+            hasRemoteCoins: false,
             savedAddresses: [],
             createdAt: lu.createdAt || '',
             orders: []
           };
           consolidated.push(existing);
         }
-        mergeRecord(existing, lu, false);
+        mergeRecord(existing, lu, false, false);
       });
 
       // 3. Process Orders
@@ -7101,14 +7134,17 @@ FINANCIAL BREAKDOWN:
             normEmail: normE,
             email: ord.customerEmail || '',
             photoURL: '',
-            walletBalance: 10,
+            walletBalance: 0,
+            coins: 0,
+            walletCoins: 0,
+            hasRemoteCoins: false,
             savedAddresses: [],
             createdAt: ord.timestamp || '',
             orders: []
           };
           consolidated.push(existing);
         }
-        mergeRecord(existing, ord, true);
+        mergeRecord(existing, ord, true, false);
       });
 
       return consolidated.map(u => {
@@ -7259,7 +7295,7 @@ FINANCIAL BREAKDOWN:
               </div>
               <div>
                 <span class="text-slate-400 block text-[9px]">Coins</span>
-                <strong class="text-amber-700 font-poppins">${u.walletBalance || 50} 🪙</strong>
+                <strong class="text-amber-700 font-poppins">${Number(u.walletBalance !== undefined ? u.walletBalance : (u.coins !== undefined ? u.coins : 0))} 🪙</strong>
               </div>
               <div>
                 <span class="text-slate-400 block text-[9px]">Latest Status</span>
@@ -7268,21 +7304,29 @@ FINANCIAL BREAKDOWN:
             </div>
 
             <!-- Action buttons -->
-            <div class="flex items-center gap-2 pt-1">
+            <div class="flex items-center gap-1.5 pt-1">
               <button 
                 onclick="openCustomerProfileModal('${safePhone}', '${safeName}', '${safeAddr}', '${safeUid}', '${safeEmail}')" 
-                class="flex-1 py-1.5 px-3 bg-brand-navy hover:bg-brand-deep text-white font-bold rounded-xl text-[11px] transition flex items-center justify-center gap-1.5 active:scale-98"
+                class="flex-1 py-1.5 px-2.5 bg-brand-navy hover:bg-brand-deep text-white font-bold rounded-xl text-[11px] transition flex items-center justify-center gap-1.5 active:scale-98"
               >
-                <i class="fa-solid fa-address-card"></i> View Full Profile
+                <i class="fa-solid fa-address-card"></i> View Profile
               </button>
               ${u.phone ? `
                 <button 
                   onclick="openAdminChatWithUser('${safeUid || ('usr_' + safePhone)}', '${safeName}', '${safePhone}')" 
-                  class="py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-[11px] transition flex items-center gap-1.5 shadow-xs"
+                  class="py-1.5 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-[11px] transition flex items-center gap-1 shadow-xs active:scale-95 flex-shrink-0"
                   title="Open Live Chat with Customer"
                 >
                   <i class="fa-solid fa-comments"></i> Chat
                 </button>
+                <a 
+                  href="https://wa.me/91${u.phone}?text=${encodeURIComponent('Namaste ' + (u.name || 'Customer') + ', Buyero Stores customer support desk se sampark kar rahe hain.')}" 
+                  target="_blank"
+                  class="py-1.5 px-2.5 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold rounded-xl text-[11px] transition flex items-center gap-1 shadow-xs active:scale-95 flex-shrink-0"
+                  title="Open direct WhatsApp with Customer (+91 ${u.phone})"
+                >
+                  <i class="fa-brands fa-whatsapp text-sm"></i> WhatsApp
+                </a>
               ` : ''}
             </div>
           </div>
@@ -7408,6 +7452,61 @@ FINANCIAL BREAKDOWN:
 
       const modal = document.getElementById('modal-customer-profile');
       if (modal) modal.classList.remove('hidden');
+
+      // WhatsApp quick contact link in profile modal
+      const waBtn = document.getElementById('modal-cust-whatsapp-btn');
+      if (waBtn) {
+        if (displayPhone) {
+          waBtn.href = `https://wa.me/91${displayPhone}?text=${encodeURIComponent('Namaste ' + (displayName || 'Customer') + ', Buyero Stores customer support se sampark kar rahe hain.')}`;
+          waBtn.classList.remove('hidden');
+          waBtn.classList.add('inline-flex');
+        } else {
+          waBtn.classList.add('hidden');
+          waBtn.classList.remove('inline-flex');
+        }
+      }
+
+      // Live Firestore verification: ensure latest coin count from cloud is loaded instantly
+      if (fbFirestore && (displayUid || displayPhone || displayEmail)) {
+        (async () => {
+          try {
+            let liveDoc = null;
+            if (displayUid && !displayUid.startsWith('usr_guest')) {
+              const s = await fbFirestore.collection('users').doc(displayUid).get();
+              if (s.exists) liveDoc = s.data();
+            }
+            if (!liveDoc && displayEmail && displayEmail.includes('@')) {
+              const q = await fbFirestore.collection('users').where('email', '==', displayEmail.toLowerCase().trim()).limit(1).get();
+              if (!q.empty) liveDoc = q.docs[0].data();
+            }
+            if (!liveDoc && displayPhone) {
+              const q = await fbFirestore.collection('users').where('phone', '==', displayPhone).limit(1).get();
+              if (!q.empty) liveDoc = q.docs[0].data();
+            }
+            if (liveDoc) {
+              const rawL = liveDoc.coins !== undefined ? liveDoc.coins : (liveDoc.walletCoins !== undefined ? liveDoc.walletCoins : liveDoc.walletBalance);
+              if (rawL !== undefined && !isNaN(Number(rawL))) {
+                const liveCoins = Math.max(0, Number(rawL));
+                const wEl = document.getElementById('modal-cust-wallet');
+                const bEl = document.getElementById('modal-cust-coins-badge');
+                const inEl = document.getElementById('input-modal-cust-coins');
+                if (wEl) wEl.textContent = `${liveCoins} Coins`;
+                if (bEl) bEl.textContent = `${liveCoins} Coins`;
+                if (inEl && document.activeElement !== inEl) inEl.value = liveCoins;
+                if (matchedUser) {
+                  matchedUser.walletBalance = liveCoins;
+                  matchedUser.coins = liveCoins;
+                  matchedUser.walletCoins = liveCoins;
+                  matchedUser.hasRemoteCoins = true;
+                }
+                if (window.activeAdminModalCustomer) {
+                  window.activeAdminModalCustomer.coins = liveCoins;
+                }
+              }
+            }
+          } catch(e) {}
+        })();
+      }
     }
 
     async function updateCustomerCoinsFromAdminModal() {
@@ -7427,8 +7526,24 @@ FINANCIAL BREAKDOWN:
       const targetUids = new Set(window.activeAdminModalCustomer.uids || []);
       if (window.activeAdminModalCustomer.uid) targetUids.add(window.activeAdminModalCustomer.uid);
 
+      const custPhone = normalizeUserPhone(window.activeAdminModalCustomer.phone);
+      const custEmail = normalizeUserEmail(window.activeAdminModalCustomer.email);
+
       // Write authoritative balance to Firebase Firestore across all documents for this customer
       if (fbFirestore) {
+        if (custPhone) {
+          try {
+            const pq = await fbFirestore.collection('users').where('phone', '==', custPhone).get();
+            pq.forEach(d => targetUids.add(d.id));
+          } catch(e) {}
+        }
+        if (custEmail && custEmail.includes('@')) {
+          try {
+            const eq = await fbFirestore.collection('users').where('email', '==', custEmail).get();
+            eq.forEach(d => targetUids.add(d.id));
+          } catch(e) {}
+        }
+
         for (const docId of targetUids) {
           try {
             await fbFirestore.collection('users').doc(docId).set({
@@ -7437,6 +7552,14 @@ FINANCIAL BREAKDOWN:
               walletBalance: newCoins,
               walletUpdatedAt: new Date().toISOString()
             }, { merge: true });
+
+            await fbFirestore.collection('users').doc(docId).collection('coin_transactions').add({
+              type: 'ADMIN_MANUAL_UPDATE',
+              amount: newCoins,
+              previousCoins: window.activeAdminModalCustomer.coins || 0,
+              note: 'Coins adjusted by Admin Desk',
+              timestamp: new Date().toISOString()
+            }).catch(() => {});
           } catch (e) {
             console.warn("[Admin updateCustomerCoins Error]", e);
           }
@@ -7448,11 +7571,19 @@ FINANCIAL BREAKDOWN:
       // Update in cachedAdminUsers
       if (typeof cachedAdminUsers !== 'undefined') {
         cachedAdminUsers.forEach(u => {
-          if (targetUids.has(u.uid) || (u.aliases && u.aliases.some(a => targetUids.has(a)))) {
+          if (
+            targetUids.has(u.uid) ||
+            (u.aliases && u.aliases.some(a => targetUids.has(a))) ||
+            (custPhone && u.normPhone === custPhone) ||
+            (custEmail && u.normEmail === custEmail)
+          ) {
             u.walletBalance = newCoins;
             u.coins = newCoins;
+            u.walletCoins = newCoins;
+            u.hasRemoteCoins = true;
           }
         });
+        localStorage.setItem('buyero_registered_users', JSON.stringify(cachedAdminUsers));
       }
 
       // Update UI elements
@@ -7466,17 +7597,20 @@ FINANCIAL BREAKDOWN:
         syncChannel.postMessage({
           type: 'WALLET_COINS_UPDATED_FROM_ADMIN',
           uids: Array.from(targetUids),
+          phone: custPhone,
+          email: custEmail,
           coins: newCoins
         });
       } catch (e) {}
 
       showAdminToast(`Updated user coins to ${newCoins} in Firebase!`, 'SUCCESS');
-      loadAdminUsersList();
+      renderFilteredUsers();
     }
 
     function closeCustomerProfileModal() {
       const modal = document.getElementById('modal-customer-profile');
       if (modal) modal.classList.add('hidden');
+      renderFilteredUsers();
     }
 
     function viewActiveCustomerProfileFromChat() {
