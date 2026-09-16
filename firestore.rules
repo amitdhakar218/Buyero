@@ -30,17 +30,17 @@ service cloud.firestore {
 
     // 1. PUBLIC PRODUCT CATALOG
     // Accessible to all customers for browsing.
-    // Writes are strictly rejected if the document contains ANY private business field.
+    // Writes are strictly restricted to Administrators and rejected if the document contains ANY private business field.
     match /products/{productId} {
       allow read: if true;
-      allow create, update: if (isAdmin() || true) && hasNoPrivateFields(request.resource.data);
-      allow delete: if isAdmin() || true;
+      allow create, update: if isAdmin() && hasNoPrivateFields(request.resource.data);
+      allow delete: if isAdmin();
     }
 
     // 2. ADMIN-CONFIDENTIAL PRODUCT & ORDER DATA (SOURCE COSTS, SUPPLIER URLS, MARGINS)
-    // Protected admin partition
+    // Protected admin partition - Customers have ZERO read or write access.
     match /admin_product_data/{productId} {
-      allow read, write: if isAdmin() || true;
+      allow read, write: if isAdmin();
     }
 
     match /admin_order_data/{orderId} {
@@ -272,6 +272,51 @@ service cloud.firestore {
     // Business intelligence, revenues, margins, and visit aggregates are STRICTLY ADMIN-ONLY.
     // Customers have ZERO read or write access.
     match /analytics_summary/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    // 8. FIREBASE CLOUD MESSAGING (FCM) DEVICE TOKENS & BROADCASTS
+    // Registered client device tokens: strictly authenticated and owner-bound
+    match /fcmTokens/{tokenId} {
+      allow read: if isAdmin() || (
+        request.auth != null && resource.data.userId == request.auth.uid
+      );
+      allow create: if isAdmin() || (
+        request.auth != null &&
+        request.resource.data.userId == request.auth.uid &&
+        (!('role' in request.resource.data) || request.resource.data.role != 'admin')
+      );
+      allow update: if isAdmin() || (
+        request.auth != null &&
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.userId == request.auth.uid &&
+        (!('role' in request.resource.data) || request.resource.data.role != 'admin')
+      );
+      allow delete: if isAdmin() || (
+        request.auth != null && resource.data.userId == request.auth.uid
+      );
+    }
+
+    // Master administrator notification device tokens: strictly admin-only
+    match /admin_fcm_tokens/{tokenId} {
+      allow read, write: if isAdmin();
+    }
+
+    // System Notifications & In-App Announcements:
+    // Customers can read only their own targeted notifications or public broadcasts
+    // Customers CANNOT create arbitrary system notifications; Admin only (Admin SDK / Functions bypass rules)
+    match /notifications/{notifId} {
+      allow read: if isAdmin() || (
+        request.auth != null && (
+          resource.data.userId == request.auth.uid ||
+          resource.data.target == 'all'
+        )
+      );
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Admin Marketing & Offer Broadcast Triggers: strictly admin-only
+    match /offer_broadcasts/{broadcastId} {
       allow read, write: if isAdmin();
     }
   }

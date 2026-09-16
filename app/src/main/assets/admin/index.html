@@ -44,6 +44,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js"></script>
 
   <style>
     body {
@@ -256,6 +257,27 @@
 
       <!-- Right Controls: Notification Bell, Store Link, Lock -->
       <div class="flex items-center gap-2">
+        <!-- Broadcast Offer Push Button -->
+        <button 
+          onclick="openSendOfferModal()" 
+          class="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold rounded-xl text-xs transition shadow-xs active:scale-95"
+          title="Send Offer Notification To All Users"
+        >
+          <i class="fa-solid fa-bullhorn text-xs"></i>
+          <span class="hidden sm:inline">Send Offer</span>
+        </button>
+
+        <!-- Admin FCM Push Status / Enabler -->
+        <button
+          onclick="initFCMAdmin(true)"
+          id="btn-admin-fcm-status"
+          class="relative p-2 text-slate-600 hover:text-brand-navy rounded-xl hover:bg-slate-100 transition"
+          title="Enable/Status of Device Push Alerts"
+        >
+          <i class="fa-solid fa-tower-broadcast text-slate-600 text-base"></i>
+          <span id="admin-fcm-dot" class="absolute top-1 right-1 w-2 h-2 bg-slate-400 rounded-full"></span>
+        </button>
+
         <!-- Notification Bell with Dynamic Counter Badge -->
         <button 
           onclick="openActivityHubModal()" 
@@ -1053,8 +1075,18 @@
                 </div>
               </div>
 
-              <!-- Action Bar (Customer Profile & Refresh, NO CALL BUTTONS) -->
+              <!-- Action Bar (Customer Profile, WhatsApp & Refresh) -->
               <div class="flex items-center gap-1.5">
+                <a 
+                  id="btn-chat-whatsapp" 
+                  href="#" 
+                  target="_blank" 
+                  class="hidden px-2.5 py-1 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-lg text-[10px] font-bold transition items-center gap-1 shadow-xs"
+                  title="Direct WhatsApp with this customer"
+                >
+                  <i class="fa-brands fa-whatsapp text-xs"></i>
+                  <span>WhatsApp</span>
+                </a>
                 <button 
                   id="btn-chat-view-profile"
                   onclick="viewActiveCustomerProfileFromChat()" 
@@ -1401,6 +1433,137 @@
   </div>
 
   <!-- ========================================================= -->
+  <!-- FLOATING ADMIN PUSH ALERT BANNER                          -->
+  <!-- ========================================================= -->
+  <div id="admin-push-banner" class="hidden fixed top-3 right-4 z-50 max-w-sm w-[92%] bg-slate-950/95 text-white p-3.5 rounded-2xl shadow-2xl border border-slate-700/80 backdrop-blur-md transition-all duration-300">
+    <div class="flex items-start gap-3">
+      <div class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center flex-shrink-0 text-sm mt-0.5 border border-amber-500/30">
+        <i class="fa-solid fa-bell"></i>
+      </div>
+      <div class="flex-1 min-w-0 cursor-pointer" onclick="handleAdminBannerClick()">
+        <h4 id="admin-banner-title" class="font-bold text-xs text-white leading-tight">Admin Alert</h4>
+        <p id="admin-banner-body" class="text-[11px] text-slate-300 line-clamp-2 mt-0.5">Details here...</p>
+      </div>
+      <button onclick="dismissAdminPushBanner()" class="text-slate-400 hover:text-white p-1 text-xs -mr-1">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL: SEND OFFER NOTIFICATION TO ALL USERS (FCM)          -->
+  <!-- ========================================================= -->
+  <div id="modal-send-offer-broadcast" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3">
+    <div class="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-100 overflow-hidden">
+      <!-- Modal Header -->
+      <div class="p-4 bg-gradient-to-r from-brand-navy via-brand-deep to-indigo-950 text-white flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30">
+            <i class="fa-solid fa-bullhorn text-sm"></i>
+          </div>
+          <div>
+            <h3 class="font-poppins font-bold text-sm leading-tight">Send Offer Notification</h3>
+            <p class="text-[10px] text-slate-300">Firebase Cloud Messaging Broadcast to All Customers</p>
+          </div>
+        </div>
+        <button onclick="closeSendOfferModal()" class="text-slate-300 hover:text-white p-1">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+      </div>
+
+      <!-- Live Devices Count & Info -->
+      <div class="p-3.5 bg-amber-50/80 border-b border-amber-100 flex items-center justify-between text-xs">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></span>
+          <span class="font-semibold text-slate-700">Registered Devices:</span>
+          <span id="broadcast-recipient-count" class="font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full text-[11px]">Counting...</span>
+        </div>
+        <button type="button" onclick="refreshBroadcastDeviceCount()" class="text-brand-navy hover:underline text-[11px] font-bold flex items-center gap-1">
+          <i class="fa-solid fa-rotate-right text-[10px]"></i> Refresh
+        </button>
+      </div>
+
+      <!-- Broadcast Form Body -->
+      <form id="form-send-offer-broadcast" onsubmit="handleSendOfferBroadcastSubmit(event)" class="flex-1 overflow-y-auto p-4 space-y-3 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Offer Title <span class="text-rose-500">*</span></label>
+          <input 
+            type="text" 
+            id="broadcast-title" 
+            required 
+            placeholder="e.g. 🔥 Weekend Mega Sale! Flat 40% OFF" 
+            class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-navy text-xs font-semibold"
+          />
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Notification Message <span class="text-rose-500">*</span></label>
+          <textarea 
+            id="broadcast-message" 
+            required 
+            rows="3" 
+            placeholder="e.g. Use your Buyero coins & grab premium items at lowest price. Click to shop now!" 
+            class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-navy text-xs resize-none"
+          ></textarea>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Offer Banner Image URL (Optional)</label>
+          <input 
+            type="url" 
+            id="broadcast-image-url" 
+            placeholder="https://images.unsplash.com/... (optional banner)" 
+            class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-navy text-xs"
+          />
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Target Page Link</label>
+          <input 
+            type="text" 
+            id="broadcast-target-url" 
+            value="/client/index.html" 
+            class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-navy text-xs font-mono text-[11px]"
+          />
+        </div>
+
+        <!-- Result / Status Box -->
+        <div id="broadcast-result-box" class="hidden p-3 rounded-xl text-xs font-medium"></div>
+
+        <!-- Submit Button -->
+        <div class="pt-2 flex items-center gap-2">
+          <button 
+            type="button" 
+            onclick="closeSendOfferModal()" 
+            class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition"
+          >
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            id="btn-submit-broadcast" 
+            class="flex-1 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold rounded-xl text-xs transition shadow flex items-center justify-center gap-1.5 active:scale-95"
+          >
+            <i class="fa-solid fa-paper-plane text-xs"></i>
+            <span id="btn-submit-broadcast-label">Send Push To All</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- Recent Broadcasts List -->
+      <div class="border-t border-slate-100 p-3 bg-slate-50">
+        <div class="flex items-center justify-between text-[11px] font-bold text-slate-500 mb-1.5">
+          <span>Recent Broadcasts</span>
+          <span id="recent-broadcast-count">0 recorded</span>
+        </div>
+        <div id="recent-broadcasts-container" class="max-h-24 overflow-y-auto space-y-1.5 text-[11px]">
+          <!-- List of past offer broadcasts -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
   <!-- MODAL: DEEP CUSTOMER PROFILE VIEW                         -->
   <!-- ========================================================= -->
   <div id="modal-customer-profile" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3">
@@ -1425,9 +1588,14 @@
             <h4 class="font-bold text-sm text-slate-900 truncate" id="modal-cust-name">Customer Name</h4>
             <div class="flex items-center gap-2 flex-wrap">
               <p class="text-xs text-slate-600 truncate" id="modal-cust-phone">+91 9876543210</p>
-              <a id="modal-cust-whatsapp-btn" href="#" target="_blank" class="hidden px-2.5 py-0.5 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold rounded-lg text-[10.5px] items-center gap-1 shadow-2xs transition">
-                <i class="fa-brands fa-whatsapp text-xs"></i> WhatsApp
-              </a>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <a id="modal-cust-whatsapp-btn" href="#" target="_blank" class="hidden px-2.5 py-0.5 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold rounded-lg text-[10.5px] items-center gap-1 shadow-2xs transition">
+                  <i class="fa-brands fa-whatsapp text-xs"></i> WhatsApp
+                </a>
+                <button id="modal-cust-chat-btn" onclick="openChatFromProfileModal()" type="button" class="hidden px-2.5 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-[10.5px] items-center gap-1 shadow-2xs transition">
+                  <i class="fa-solid fa-comments text-xs"></i> Chat
+                </button>
+              </div>
             </div>
             <p class="text-[11px] text-slate-500 truncate" id="modal-cust-email">customer@gmail.com</p>
             <span class="text-[9px] font-mono text-slate-400 truncate block mt-0.5" id="modal-cust-uid">UID: usr_12345</span>
@@ -2624,6 +2792,41 @@
             renderActiveThreadMessages();
           }
         }
+      } else if (event.data && event.data.type === 'WALLET_COINS_UPDATED_FROM_CLIENT') {
+        const uids = new Set((event.data.uids || []).map(String));
+        const normP = normalizeUserPhone(event.data.phone);
+        const normE = normalizeUserEmail(event.data.email);
+        const coins = Math.max(0, Number(event.data.coins || 0));
+
+        if (typeof cachedAdminUsers !== 'undefined' && cachedAdminUsers.length > 0) {
+          cachedAdminUsers.forEach(u => {
+            const isMatch = (u.uid && uids.has(u.uid)) ||
+                            (u.aliases && u.aliases.some(a => uids.has(a))) ||
+                            (normP && (u.normPhone === normP || u.phone === normP)) ||
+                            (normE && (u.normEmail === normE || u.email === normE));
+            if (isMatch) {
+              u.walletBalance = coins;
+              u.coins = coins;
+              u.walletCoins = coins;
+              u.hasRemoteCoins = true;
+            }
+          });
+          localStorage.setItem('buyero_registered_users', JSON.stringify(cachedAdminUsers));
+          const viewUsers = document.getElementById('view-users');
+          if (viewUsers && !viewUsers.classList.contains('hidden')) {
+            renderFilteredUsers();
+          }
+
+          if (window.activeAdminModalCustomer) {
+            const wEl = document.getElementById('modal-cust-wallet');
+            const bEl = document.getElementById('modal-cust-coins-badge');
+            const inEl = document.getElementById('input-modal-cust-coins');
+            if (wEl) wEl.textContent = `${coins} Coins`;
+            if (bEl) bEl.textContent = `${coins} Coins`;
+            if (inEl && document.activeElement !== inEl) inEl.value = coins;
+            window.activeAdminModalCustomer.coins = coins;
+          }
+        }
       }
     };
 
@@ -3646,8 +3849,22 @@
           console.warn("[Admin Firestore Orders Listener]", err);
         });
 
-        // Also listen to users collection for real-time customer directory sync
-        fbFirestore.collection('users').onSnapshot((snap) => {
+        // Start users collection real-time sync
+        listenToFirestoreUsersRealtime();
+      } catch (e) {
+        console.warn("[Admin Firestore Listener Error]", e);
+      }
+    }
+
+    let unsubscribeAdminUsersRealtime = null;
+    function listenToFirestoreUsersRealtime() {
+      if (!fbFirestore) return;
+      if (unsubscribeAdminUsersRealtime) {
+        try { unsubscribeAdminUsersRealtime(); } catch(e) {}
+        unsubscribeAdminUsersRealtime = null;
+      }
+      try {
+        unsubscribeAdminUsersRealtime = fbFirestore.collection('users').onSnapshot((snap) => {
           if (!snap) return;
           const remoteUsers = [];
           snap.forEach((doc) => {
@@ -3675,8 +3892,30 @@
           if (viewUsers && !viewUsers.classList.contains('hidden')) {
             renderFilteredUsers();
           }
+
+          // Live sync coins to open Customer Profile Modal if currently viewing
+          if (window.activeAdminModalCustomer) {
+            const actPhone = normalizeUserPhone(window.activeAdminModalCustomer.phone);
+            const actEmail = normalizeUserEmail(window.activeAdminModalCustomer.email);
+            const matched = cachedAdminUsers.find(u => 
+              (window.activeAdminModalCustomer.uid && (u.uid === window.activeAdminModalCustomer.uid || (u.aliases && u.aliases.includes(window.activeAdminModalCustomer.uid)))) ||
+              (actPhone && (u.normPhone === actPhone || u.phone === actPhone)) ||
+              (actEmail && (u.normEmail === actEmail || u.email === actEmail))
+            );
+            if (matched) {
+              const liveCoins = Number(matched.coins !== undefined ? matched.coins : (matched.walletBalance !== undefined ? matched.walletBalance : 0));
+              const wEl = document.getElementById('modal-cust-wallet');
+              const bEl = document.getElementById('modal-cust-coins-badge');
+              const inEl = document.getElementById('input-modal-cust-coins');
+              if (wEl) wEl.textContent = `${liveCoins} Coins`;
+              if (bEl) bEl.textContent = `${liveCoins} Coins`;
+              if (inEl && document.activeElement !== inEl) inEl.value = liveCoins;
+              window.activeAdminModalCustomer.coins = liveCoins;
+            }
+          }
         }, (err) => {
           console.warn("[Admin Firestore Users Listener]", err);
+          setTimeout(listenToFirestoreUsersRealtime, 4000);
         });
       } catch (e) {
         console.warn("[Admin Firestore Listener Error]", e);
@@ -6955,15 +7194,16 @@ FINANCIAL BREAKDOWN:
           // 1. UID or Alias match
           if (uids.length > 0) {
             for (let uid of uids) {
-              if (c.uids.has(uid) || c.uid === uid) return true;
+              if (c.uids && (c.uids.has(uid) || c.uid === uid)) return true;
+              if (c.aliases && c.aliases.includes(uid)) return true;
             }
           }
           // 2. Normalized 10-digit phone match
-          if (normPhone && normPhone.length === 10 && c.normPhone && c.normPhone === normPhone) {
+          if (normPhone && normPhone.length === 10 && (c.normPhone === normPhone || c.phone === normPhone)) {
             return true;
           }
           // 3. Normalized email match
-          if (normEmail && c.normEmail && c.normEmail === normEmail) {
+          if (normEmail && (c.normEmail === normEmail || c.email === normEmail)) {
             return true;
           }
           return false;
@@ -7014,10 +7254,15 @@ FINANCIAL BREAKDOWN:
         if (rawVal !== undefined && !isNaN(Number(rawVal))) {
           const bal = Math.max(0, Number(rawVal));
           if (isRemote) {
-            target.walletBalance = bal;
-            target.coins = bal;
-            target.walletCoins = bal;
-            target.hasRemoteCoins = true;
+            const rTime = rec.walletUpdatedAt ? new Date(rec.walletUpdatedAt).getTime() : 0;
+            const tTime = target.walletUpdatedAt ? new Date(target.walletUpdatedAt).getTime() : 0;
+            if (!target.hasRemoteCoins || rTime > tTime || (rTime === tTime && bal >= (target.coins || 0))) {
+              target.walletBalance = bal;
+              target.coins = bal;
+              target.walletCoins = bal;
+              target.hasRemoteCoins = true;
+              if (rec.walletUpdatedAt) target.walletUpdatedAt = rec.walletUpdatedAt;
+            }
           } else if (!target.hasRemoteCoins) {
             target.walletBalance = bal;
             target.coins = bal;
@@ -7147,7 +7392,31 @@ FINANCIAL BREAKDOWN:
         mergeRecord(existing, ord, true, false);
       });
 
-      return consolidated.map(u => {
+      // Secondary collapse pass: merge any records that became linked via subsequent data
+      const finalConsolidated = [];
+      consolidated.forEach(item => {
+        const itemUids = Array.from(item.uids || []);
+        const itemP = item.normPhone;
+        const itemE = item.normEmail;
+
+        const match = finalConsolidated.find(c => {
+          if (itemUids.some(id => c.uids.has(id) || c.uid === id)) return true;
+          if (itemP && itemP.length === 10 && (c.normPhone === itemP || c.phone === itemP)) return true;
+          if (itemE && (c.normEmail === itemE || c.email === itemE)) return true;
+          return false;
+        });
+
+        if (match) {
+          mergeRecord(match, item, false, item.hasRemoteCoins);
+          (item.orders || []).forEach(o => {
+            if (!match.orders.some(x => x.orderId === o.orderId)) match.orders.push(o);
+          });
+        } else {
+          finalConsolidated.push(item);
+        }
+      });
+
+      return finalConsolidated.map(u => {
         u.orders.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
         if (!u.uid) {
           u.uid = u.normPhone ? `usr_${u.normPhone}` : (u.normEmail ? `usr_${u.normEmail.replace(/[^a-z0-9]/g, '_')}` : `usr_${Math.random().toString(36).slice(2, 8)}`);
@@ -7471,9 +7740,16 @@ FINANCIAL BREAKDOWN:
         (async () => {
           try {
             let liveDoc = null;
-            if (displayUid && !displayUid.startsWith('usr_guest')) {
-              const s = await fbFirestore.collection('users').doc(displayUid).get();
-              if (s.exists) liveDoc = s.data();
+            const candidateUids = Array.from(matchedUser?.uids || []);
+            if (displayUid && !candidateUids.includes(displayUid)) candidateUids.unshift(displayUid);
+            for (let cId of candidateUids) {
+              if (cId && !cId.startsWith('usr_guest')) {
+                const s = await fbFirestore.collection('users').doc(cId).get();
+                if (s.exists) {
+                  liveDoc = s.data();
+                  break;
+                }
+              }
             }
             if (!liveDoc && displayEmail && displayEmail.includes('@')) {
               const q = await fbFirestore.collection('users').where('email', '==', displayEmail.toLowerCase().trim()).limit(1).get();
@@ -8956,6 +9232,418 @@ FINANCIAL BREAKDOWN:
     } else {
       bindAdminChatListeners();
     }
+
+    /* =========================================================================
+       FIREBASE CLOUD MESSAGING (FCM) ADMIN ENGINE & BROADCAST SYSTEM
+       VAPID Sender ID: 133729371654
+       ========================================================================= */
+    const BUYERO_FCM_VAPID_KEY = "BH5ujHWr6E8cqsuW-bYCOEQS1odE9tUGtDGM7UeBlwqDM9ONH2jUZeJxWIOWKNIvFo1Bt-1krpv90evBj71YlHc";
+    let adminFCMToken = null;
+    let adminActiveBannerUrl = null;
+    let adminBannerDismissTimer = null;
+
+    function isAdminFCMSupported() {
+      return (
+        typeof window !== 'undefined' &&
+        'serviceWorker' in navigator &&
+        'PushManager' in window &&
+        'Notification' in window &&
+        typeof firebase !== 'undefined' &&
+        typeof firebase.messaging === 'function'
+      );
+    }
+
+    function updateAdminFCMStatusUI(status) {
+      const dot = document.getElementById('admin-fcm-dot');
+      const btn = document.getElementById('btn-admin-fcm-status');
+      if (!dot || !btn) return;
+
+      if (!isAdminFCMSupported()) {
+        dot.className = "absolute top-1 right-1 w-2 h-2 bg-slate-300 rounded-full";
+        btn.title = "Push notifications unsupported in this browser";
+        return;
+      }
+
+      if (status === 'granted' || Notification.permission === 'granted') {
+        dot.className = "absolute top-1 right-1 w-2 h-2 bg-emerald-500 rounded-full shadow-xs";
+        btn.title = "Admin Push Alerts Active (Live)";
+      } else if (Notification.permission === 'denied') {
+        dot.className = "absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full";
+        btn.title = "Push Alerts Blocked (Click to check browser settings)";
+      } else {
+        dot.className = "absolute top-1 right-1 w-2 h-2 bg-amber-400 rounded-full animate-pulse";
+        btn.title = "Click to enable Admin Push Alerts for new orders and messages";
+      }
+    }
+
+    async function initFCMAdmin(userInitiated = false) {
+      if (!isAdminFCMSupported()) {
+        console.warn("[Buyero FCM Admin] Push not supported in this browser.");
+        updateAdminFCMStatusUI('unsupported');
+        return null;
+      }
+
+      try {
+        let perm = Notification.permission;
+        if (userInitiated && perm !== 'granted') {
+          perm = await Notification.requestPermission();
+        }
+
+        updateAdminFCMStatusUI(perm);
+        if (perm !== 'granted') {
+          if (userInitiated && perm === 'denied') {
+            alert("Notification permission is blocked. Please allow notifications in your browser site settings to receive order and chat alerts.");
+          }
+          return null;
+        }
+
+        // Register Service Worker
+        let swReg = null;
+        try {
+          swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' });
+          console.log("[Buyero FCM Admin] SW registered:", swReg.scope);
+        } catch (swErr) {
+          console.warn("[Buyero FCM Admin] Root SW failed, trying relative fallback...", swErr);
+          try {
+            swReg = await navigator.serviceWorker.register('firebase-messaging-sw.js');
+          } catch (e2) {
+            console.error("[Buyero FCM Admin] Failed to register service worker:", e2);
+            return null;
+          }
+        }
+
+        await navigator.serviceWorker.ready;
+
+        const messaging = firebase.messaging();
+        const token = await messaging.getToken({
+          vapidKey: BUYERO_FCM_VAPID_KEY,
+          serviceWorkerRegistration: swReg
+        });
+
+        if (token) {
+          adminFCMToken = token;
+          localStorage.setItem('buyero_admin_fcm_token', token);
+          console.log("[Buyero FCM Admin] Token registered successfully:", token.substring(0, 15) + '...');
+
+          // Save token to Firestore collections
+          await persistAdminFCMToken(token);
+
+          // Listen for foreground push notifications
+          messaging.onMessage((payload) => {
+            console.log('[Buyero FCM Admin Foreground Alert]', payload);
+            const title = payload.notification?.title || payload.data?.title || 'Admin Alert';
+            const body = payload.notification?.body || payload.data?.body || 'New administrative event received.';
+            const targetUrl = payload.fcmOptions?.link || payload.data?.url || payload.data?.link || '/admin/index.html';
+
+            showAdminPushBanner(title, body, targetUrl);
+            playAdminAlertSound();
+
+            // Record into activity logs
+            const isOrder = title.includes('Order') || (payload.data && payload.data.type === 'NEW_ORDER');
+            const isChat = title.includes('Message') || title.includes('Chat');
+            logActivityEvent(isOrder ? 'ORDER' : (isChat ? 'CHAT' : 'SYSTEM'), `${title}: ${body}`);
+            updateNotificationBadge();
+
+            // Refresh order list if new order
+            if (isOrder) {
+              const refreshBtn = document.getElementById('btn-refresh-orders');
+              if (refreshBtn) refreshAdminOrders(refreshBtn);
+            }
+          });
+
+          updateAdminFCMStatusUI('granted');
+          if (userInitiated) {
+            alert("🔔 Admin Push Notifications Activated! You will now receive instant device alerts for new orders and customer chats.");
+          }
+          return token;
+        } else {
+          console.warn("[Buyero FCM Admin] No token available.");
+          updateAdminFCMStatusUI();
+          return null;
+        }
+      } catch (err) {
+        console.warn("[Buyero FCM Admin] Initialization error:", err);
+        updateAdminFCMStatusUI();
+        return null;
+      }
+    }
+
+    async function persistAdminFCMToken(token) {
+      if (!token || !fbFirestore) return;
+      try {
+        const adminEmail = (fbAuth && fbAuth.currentUser && fbAuth.currentUser.email) ? fbAuth.currentUser.email : 'amitdhakar218@gmail.com';
+        const adminUid = (fbAuth && fbAuth.currentUser && fbAuth.currentUser.uid) ? fbAuth.currentUser.uid : 'admin_master';
+
+        // 1. Save to dedicated admin_fcm_tokens collection
+        await fbFirestore.collection('admin_fcm_tokens').doc(token).set({
+          token: token,
+          adminUid: adminUid,
+          adminEmail: adminEmail,
+          role: 'admin',
+          platform: 'web',
+          userAgent: navigator.userAgent || 'Web Browser',
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+
+        // 2. Also register in fcmTokens collection with role: 'admin'
+        await fbFirestore.collection('fcmTokens').doc(token).set({
+          token: token,
+          userId: adminUid,
+          userEmail: adminEmail,
+          userName: 'Admin Studio',
+          role: 'admin',
+          platform: 'web',
+          userAgent: navigator.userAgent || 'Web Browser',
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+      } catch (err) {
+        console.warn("[persistAdminFCMToken Error]", err);
+      }
+    }
+
+    function showAdminPushBanner(title, body, url = null) {
+      const banner = document.getElementById('admin-push-banner');
+      const titleEl = document.getElementById('admin-banner-title');
+      const bodyEl = document.getElementById('admin-banner-body');
+      if (!banner || !titleEl || !bodyEl) return;
+
+      titleEl.textContent = title;
+      bodyEl.textContent = body;
+      adminActiveBannerUrl = url;
+
+      banner.classList.remove('hidden');
+
+      if (adminBannerDismissTimer) clearTimeout(adminBannerDismissTimer);
+      adminBannerDismissTimer = setTimeout(() => {
+        dismissAdminPushBanner();
+      }, 7000);
+    }
+
+    function dismissAdminPushBanner() {
+      const banner = document.getElementById('admin-push-banner');
+      if (banner) banner.classList.add('hidden');
+      if (adminBannerDismissTimer) {
+        clearTimeout(adminBannerDismissTimer);
+        adminBannerDismissTimer = null;
+      }
+    }
+
+    function handleAdminBannerClick() {
+      dismissAdminPushBanner();
+      if (adminActiveBannerUrl && adminActiveBannerUrl.includes('client')) {
+        window.open(adminActiveBannerUrl, '_blank');
+      } else {
+        openActivityHubModal();
+      }
+    }
+
+    function playAdminAlertSound() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(440, audioCtx.currentTime); // A4
+        osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.2); // A5
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.55);
+      } catch (e) {}
+    }
+
+    /* =========================================================================
+       ADMIN: SEND OFFER NOTIFICATION TO ALL USERS (FEATURE 8)
+       ========================================================================= */
+    function openSendOfferModal() {
+      const modal = document.getElementById('modal-send-offer-broadcast');
+      if (modal) modal.classList.remove('hidden');
+      refreshBroadcastDeviceCount();
+      loadRecentOfferBroadcasts();
+      const resBox = document.getElementById('broadcast-result-box');
+      if (resBox) resBox.classList.add('hidden');
+    }
+
+    function closeSendOfferModal() {
+      const modal = document.getElementById('modal-send-offer-broadcast');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    async function refreshBroadcastDeviceCount() {
+      const countEl = document.getElementById('broadcast-recipient-count');
+      if (!countEl) return;
+      countEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Counting...`;
+
+      try {
+        if (fbFirestore) {
+          const snap = await fbFirestore.collection('fcmTokens').get();
+          let count = 0;
+          snap.forEach(doc => {
+            const data = doc.data();
+            if (data && data.role !== 'admin') count++;
+          });
+          countEl.textContent = `${count} Customer Device(s) Ready`;
+        } else {
+          countEl.textContent = `Offline Mode`;
+        }
+      } catch (e) {
+        console.warn("[refreshBroadcastDeviceCount error]", e);
+        countEl.textContent = `Ready`;
+      }
+    }
+
+    async function handleSendOfferBroadcastSubmit(e) {
+      e.preventDefault();
+      const titleInput = document.getElementById('broadcast-title');
+      const msgInput = document.getElementById('broadcast-message');
+      const imgInput = document.getElementById('broadcast-image-url');
+      const urlInput = document.getElementById('broadcast-target-url');
+      const submitBtn = document.getElementById('btn-submit-broadcast');
+      const btnLabel = document.getElementById('btn-submit-broadcast-label');
+      const resBox = document.getElementById('broadcast-result-box');
+
+      const title = titleInput ? titleInput.value.trim() : '';
+      const message = msgInput ? msgInput.value.trim() : '';
+      const imageUrl = imgInput ? imgInput.value.trim() : '';
+      const targetUrl = urlInput ? (urlInput.value.trim() || '/client/index.html') : '/client/index.html';
+
+      if (!title || !message) {
+        alert("Please enter both Offer Title and Message.");
+        return;
+      }
+
+      if (submitBtn) submitBtn.disabled = true;
+      if (btnLabel) btnLabel.textContent = "Broadcasting Push...";
+
+      try {
+        let broadcastId = 'bc_' + Date.now();
+        if (fbFirestore) {
+          const docRef = await fbFirestore.collection('offer_broadcasts').add({
+            title: title,
+            message: message,
+            imageUrl: imageUrl || null,
+            url: targetUrl,
+            sender: (fbAuth && fbAuth.currentUser && fbAuth.currentUser.email) ? fbAuth.currentUser.email : 'Admin',
+            status: 'QUEUED',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          broadcastId = docRef.id;
+
+          // Also save in notifications collection for in-app viewing
+          await fbFirestore.collection('notifications').add({
+            title: title,
+            message: message,
+            imageUrl: imageUrl || null,
+            url: targetUrl,
+            target: 'all',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          }).catch(() => {});
+        }
+
+        // Cross-tab broadcast for instant storefront sync
+        try {
+          if (typeof BroadcastChannel !== 'undefined') {
+            const syncChannel = new BroadcastChannel('buyero_sync_channel');
+            syncChannel.postMessage({
+              type: 'OFFER_BROADCAST_TRIGGERED',
+              title: title,
+              message: message,
+              url: targetUrl,
+              imageUrl: imageUrl
+            });
+          }
+        } catch(e) {}
+
+        // Log to activity events
+        logActivityEvent('SYSTEM', `📣 Sent Offer Notification Broadcast: "${title}"`);
+        updateNotificationBadge();
+
+        if (resBox) {
+          resBox.className = "p-3 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 block";
+          resBox.innerHTML = `
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-circle-check text-emerald-600 text-sm"></i>
+              <div>
+                <p class="font-bold">Broadcast Dispatched Successfully!</p>
+                <p class="text-[11px] font-normal text-emerald-700">Firebase Cloud Messaging is sending push notifications to all registered customer devices.</p>
+              </div>
+            </div>
+          `;
+        }
+
+        // Reset form
+        if (titleInput) titleInput.value = '';
+        if (msgInput) msgInput.value = '';
+        if (imgInput) imgInput.value = '';
+
+        loadRecentOfferBroadcasts();
+      } catch (err) {
+        console.error("[handleSendOfferBroadcastSubmit Error]", err);
+        if (resBox) {
+          resBox.className = "p-3 rounded-xl text-xs font-semibold bg-rose-50 text-rose-800 border border-rose-200 block";
+          resBox.innerHTML = `⚠️ Failed to dispatch broadcast: ${err.message || 'Error'}. Please retry.`;
+        }
+      } finally {
+        if (submitBtn) submitBtn.disabled = false;
+        if (btnLabel) btnLabel.textContent = "Send Push To All";
+      }
+    }
+
+    async function loadRecentOfferBroadcasts() {
+      const container = document.getElementById('recent-broadcasts-container');
+      const countEl = document.getElementById('recent-broadcast-count');
+      if (!container) return;
+
+      if (!fbFirestore) {
+        container.innerHTML = `<div class="text-slate-400 text-center py-2">No past broadcasts found.</div>`;
+        return;
+      }
+
+      try {
+        const snap = await fbFirestore.collection('offer_broadcasts')
+          .orderBy('createdAt', 'desc')
+          .limit(5)
+          .get();
+
+        if (snap.empty) {
+          container.innerHTML = `<div class="text-slate-400 text-center py-2">No offer broadcasts recorded yet.</div>`;
+          if (countEl) countEl.textContent = "0 sent";
+          return;
+        }
+
+        if (countEl) countEl.textContent = `${snap.size} recorded`;
+        let html = '';
+        snap.forEach(doc => {
+          const b = doc.data();
+          const dateStr = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().toLocaleDateString('en-IN') : 'Recent') : 'Recent';
+          html += `
+            <div class="p-2 bg-white rounded-xl border border-slate-200 flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <p class="font-bold text-slate-800 truncate">${b.title || 'Offer'}</p>
+                <p class="text-[10px] text-slate-500 truncate">${b.message || ''}</p>
+              </div>
+              <span class="text-[9px] font-semibold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                ${b.status || 'SENT'}
+              </span>
+            </div>
+          `;
+        });
+        container.innerHTML = html;
+      } catch (err) {
+        container.innerHTML = `<div class="text-slate-400 text-center py-2 text-[10px]">Recent history available after first broadcast.</div>`;
+      }
+    }
+
+    // Auto-initialize Admin FCM on page load if permission was previously granted
+    window.addEventListener('load', () => {
+      updateAdminFCMStatusUI();
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+        initFCMAdmin(false);
+      }
+    });
   </script>
 </body>
 </html>

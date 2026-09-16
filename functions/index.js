@@ -392,6 +392,51 @@ exports.onOrderWritten = functions.firestore.document('orders/{orderId}').onWrit
 
   const order = change.after.data();
   const userId = order.userId;
+
+  // 1. FCM Notification: New Order created -> Alert Admin Devices
+  if (!change.before.exists) {
+    try {
+      const adminTokens = await getAdminTokens();
+      if (adminTokens.length > 0) {
+        await sendFCMToTokens(adminTokens, {
+          title: "🛍️ New Order Received!",
+          body: `Order #${order.orderId || orderId} from ${order.customerName || order.userName || 'Customer'} (₹${order.total || order.payableAmount || 0})`,
+          url: "/admin/index.html",
+          data: {
+            type: "NEW_ORDER",
+            orderId: String(order.orderId || orderId)
+          }
+        });
+      }
+    } catch (e) {
+      console.warn("[FCM New Order Alert Error]", e);
+    }
+  }
+
+  // 2. FCM Notification: Order Status Changed -> Alert Customer Device
+  if (change.before.exists && userId) {
+    const prevOrder = change.before.data();
+    if (prevOrder.status !== order.status) {
+      try {
+        const userTokens = await getUserTokens(userId);
+        if (userTokens.length > 0) {
+          await sendFCMToTokens(userTokens, {
+            title: `📦 Order ${order.status}!`,
+            body: `Your order #${order.orderId || orderId} status is now ${order.status}.`,
+            url: "/client/index.html",
+            data: {
+              type: "ORDER_STATUS_UPDATE",
+              orderId: String(order.orderId || orderId),
+              status: String(order.status)
+            }
+          });
+        }
+      } catch (e) {
+        console.warn("[FCM Order Status Alert Error]", e);
+      }
+    }
+  }
+
   if (!userId) return null;
 
   try {
@@ -556,3 +601,289 @@ exports.onOrderWritten = functions.firestore.document('orders/{orderId}').onWrit
 
   return null;
 });
+
+/**
+ * ============================================================================
+ * FIREBASE CLOUD MESSAGING (FCM) NOTIFICATION ENGINE & TRIGGERS
+ * VAPID Sender ID: 133729371654
+ * ============================================================================
+ */
+
+/**
+ * Robust Multicast FCM Dispatcher
+ */
+async function sendFCMToTokens(tokens, { title, body, icon, image, url, data = {} }) {
+  if (!tokens || !Array.isArray(tokens) || tokens.length === 0) return { successCount: 0, failureCount: 0 };
+  const uniqueTokens = [...new Set(tokens.filter(t => t && typeof t === 'string' && t.trim().length > 10))];
+  if (uniqueTokens.length === 0) return { successCount: 0, failureCount: 0 };
+
+  const finalUrl = url || '/';
+  const finalIcon = icon || 'https://buyero-68abd.web.app/assets/icons/icon-192x192.png';
+
+  const messagePayload = {
+    notification: {
+      title: title || 'Buyero Notification',
+      body: body || '',
+      imageUrl: image || undefined
+    },
+    data: {
+      title: title || 'Buyero Notification',
+      body: body || '',
+      url: finalUrl,
+      imageUrl: image || '',
+      ...data
+    },
+    webpush: {
+      notification: {
+        title: title || 'Buyero Notification',
+        body: body || '',
+        icon: finalIcon,
+        image: image || undefined,
+        badge: 'https://buyero-68abd.web.app/assets/icons/icon-192x192.png',
+        vibrate: [200, 100, 200],
+        requireInteraction: false
+      },
+      fcmOptions: {
+        link: finalUrl
+      }
+    },
+    tokens: uniqueTokens
+  };
+
+  try {
+    const response = await admin.messaging().sendEachForMulticast(messagePayload);
+    console.log(`[FCM Engine] Multicast result: ${response.successCount} sent, ${response.failureCount} failed.`);
+
+    // Clean stale or invalid tokens automatically
+    if (response.failureCount > 0) {
+      response.responses.forEach((resp, idx) => {
+        if (!resp.success) {
+          const errCode = resp.error?.code;
+          if (
+            errCode === 'messaging/invalid-registration-token' ||
+            errCode === 'messaging/registration-token-not-registered'
+          ) {
+            const badToken = uniqueTokens[idx];
+            db.collection('fcmTokens').doc(badToken).delete().catch(() => {});
+            db.collection('admin_fcm_tokens').doc(badToken).delete().catch(() => {});
+          }
+        }
+      });
+    }
+
+    return response;
+  } catch (err) {
+    console.error("[FCM Engine Error]", err);
+    return { successCount: 0, failureCount: uniqueTokens.length, error: err.message };
+  }
+}
+
+/**
+ * Fetch all registered Administrator device tokens
+ */
+async function getAdminTokens() {
+  const tokenList = [];
+  try {
+    const adminSnap = await db.collection('admin_fcm_tokens').get();
+    adminSnap.forEach(d => {
+      const t = d.data()?.token || d.id;
+      if (t && typeof t === 'string') tokenList.push(t);
+    });
+
+    const roleSnap = await db.collection('fcmTokens').where('role', '==', 'admin').get();
+    roleSnap.forEach(d => {
+      const t = d.data()?.token || d.id;
+      if (t && typeof t === 'string') tokenList.push(t);
+    });
+  } catch (e) {
+    console.warn("[getAdminTokens error]", e);
+  }
+  return [...new Set(tokenList)];
+}
+
+/**
+ * Fetch all device tokens for a specific customer
+ */
+async function getUserTokens(userId) {
+  if (!userId) return [];
+  const tokenList = [];
+  try {
+    // 1. Check user profile document
+    const uDoc = await db.collection('users').doc(userId).get();
+    if (uDoc.exists) {
+      const u = uDoc.data();
+      if (u.fcmToken) tokenList.push(u.fcmToken);
+      if (Array.isArray(u.fcmTokens)) u.fcmTokens.forEach(t => tokenList.push(t));
+    }
+
+    // 2. Check fcmTokens collection
+    const fcmSnap = await db.collection('fcmTokens').where('userId', '==', userId).get();
+    fcmSnap.forEach(d => {
+      const t = d.data()?.token || d.id;
+      if (t) tokenList.push(t);
+    });
+  } catch (e) {
+    console.warn("[getUserTokens error]", e);
+  }
+  return [...new Set(tokenList)];
+}
+
+/**
+ * Fetch all customer device tokens (excluding admins)
+ */
+async function getAllCustomerTokens() {
+  const tokenList = [];
+  try {
+    const snap = await db.collection('fcmTokens').get();
+    snap.forEach(d => {
+      const data = d.data();
+      if (data && data.role !== 'admin') {
+        const t = data.token || d.id;
+        if (t) tokenList.push(t);
+      }
+    });
+  } catch (e) {
+    console.warn("[getAllCustomerTokens error]", e);
+  }
+  return [...new Set(tokenList)];
+}
+
+/**
+ * 6. FCM Trigger: Coin Reward Added -> Notify Customer
+ */
+exports.onCoinTransactionCreated = functions.firestore
+  .document('users/{userId}/coin_transactions/{txId}')
+  .onCreate(async (snap, context) => {
+    const userId = context.params.userId;
+    const tx = snap.data();
+    if (!tx || !tx.amount || tx.amount <= 0) return null;
+
+    try {
+      const tokens = await getUserTokens(userId);
+      if (tokens.length > 0) {
+        await sendFCMToTokens(tokens, {
+          title: "🪙 Buyero Coins Credited!",
+          body: `You received +${tx.amount} Buyero Coins! ${tx.note || (tx.type === 'REFERRAL_REWARD' ? 'Referral reward' : 'Wallet reward')}`,
+          url: "/client/index.html",
+          data: {
+            type: "COIN_REWARD",
+            amount: String(tx.amount),
+            txId: context.params.txId
+          }
+        });
+      }
+    } catch (err) {
+      console.warn("[onCoinTransactionCreated FCM error]", err);
+    }
+    return null;
+  });
+
+/**
+ * 7. FCM Trigger: Chat Message Created -> Notify the opposite party
+ */
+exports.onSupportChatMessageCreated = functions.firestore
+  .document('support_chats/{msgId}')
+  .onCreate(async (snap, context) => {
+    const msg = snap.data();
+    if (!msg) return null;
+
+    try {
+      if (msg.isAdmin === false) {
+        // Customer sent a message -> Notify Admin Devices
+        const adminTokens = await getAdminTokens();
+        if (adminTokens.length > 0) {
+          await sendFCMToTokens(adminTokens, {
+            title: `💬 New Message: ${msg.sender || msg.userName || 'Customer'}`,
+            body: msg.text || 'Customer sent an attachment.',
+            url: "/admin/index.html",
+            data: {
+              type: "CHAT_MESSAGE_ADMIN",
+              chatId: context.params.msgId,
+              userId: msg.userId || ''
+            }
+          });
+        }
+      } else if (msg.isAdmin === true && msg.userId) {
+        // Admin replied -> Notify Customer Device
+        const customerTokens = await getUserTokens(msg.userId);
+        if (customerTokens.length > 0) {
+          await sendFCMToTokens(customerTokens, {
+            title: "💬 Buyero Support Team",
+            body: msg.text || 'You received a new reply from support.',
+            url: "/client/index.html",
+            data: {
+              type: "CHAT_MESSAGE_CUSTOMER",
+              chatId: context.params.msgId
+            }
+          });
+        }
+      }
+    } catch (err) {
+      console.warn("[onSupportChatMessageCreated FCM error]", err);
+    }
+    return null;
+  });
+
+/**
+ * 8. FCM Trigger: Admin Offer Broadcast -> Push to All Customers
+ */
+exports.onOfferBroadcastCreated = functions.firestore
+  .document('offer_broadcasts/{broadcastId}')
+  .onCreate(async (snap, context) => {
+    const broadcast = snap.data();
+    if (!broadcast) return null;
+
+    console.log(`[FCM Broadcast] Processing offer broadcast ${context.params.broadcastId}...`);
+
+    try {
+      const allTokens = await getAllCustomerTokens();
+      if (allTokens.length === 0) {
+        await snap.ref.set({
+          status: 'NO_TOKENS_FOUND',
+          sentCount: 0,
+          processedAt: admin.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        return null;
+      }
+
+      // Chunk tokens into batches of 500 (FCM multicast limit)
+      const chunkSize = 500;
+      let totalSent = 0;
+      let totalFailed = 0;
+
+      for (let i = 0; i < allTokens.length; i += chunkSize) {
+        const chunk = allTokens.slice(i, i + chunkSize);
+        const res = await sendFCMToTokens(chunk, {
+          title: broadcast.title || '🎉 Special Offer from Buyero!',
+          body: broadcast.message || 'Check out our latest deals and discounts.',
+          image: broadcast.imageUrl || undefined,
+          url: broadcast.url || '/client/index.html',
+          data: {
+            type: "OFFER_BROADCAST",
+            broadcastId: context.params.broadcastId
+          }
+        });
+        totalSent += res.successCount || 0;
+        totalFailed += res.failureCount || 0;
+      }
+
+      await snap.ref.set({
+        status: 'COMPLETED',
+        totalRecipients: allTokens.length,
+        sentCount: totalSent,
+        failureCount: totalFailed,
+        processedAt: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+
+      console.log(`[FCM Broadcast] Successfully dispatched to ${totalSent} devices.`);
+    } catch (err) {
+      console.error("[onOfferBroadcastCreated Error]", err);
+      await snap.ref.set({
+        status: 'FAILED',
+        error: err.message,
+        processedAt: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+    }
+    return null;
+  });
+

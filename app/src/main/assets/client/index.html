@@ -26,6 +26,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js"></script>
 
   <script>
     tailwind.config = {
@@ -652,6 +653,25 @@
             <i class="fa-solid fa-chevron-right text-xs text-slate-400 group-hover:translate-x-0.5 transition"></i>
           </div>
         </button>
+
+        <!-- Push Notifications Toggle / Status Card -->
+        <div class="p-3.5 bg-white border border-slate-200 rounded-2xl shadow-sm flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-sm flex-shrink-0">
+              <i class="fa-solid fa-bell"></i>
+            </div>
+            <div>
+              <h4 class="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                <span>Push Notifications</span>
+                <span id="fcm-status-pill" class="text-[9px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">Checking...</span>
+              </h4>
+              <p class="text-[11px] text-slate-500">Order tracking, wallet coins & offer alerts</p>
+            </div>
+          </div>
+          <button onclick="requestClientFCMNotificationPermission()" id="btn-toggle-fcm-notifs" class="px-3 py-1.5 bg-brand-navy hover:bg-brand-deep text-white text-xs font-bold rounded-xl transition shadow-xs active:scale-95 flex items-center gap-1">
+            <i class="fa-regular fa-bell"></i> <span>Enable</span>
+          </button>
+        </div>
 
         <!-- Contact Support, WhatsApp & Return Rules -->
         <div class="grid grid-cols-3 gap-2">
@@ -1575,6 +1595,20 @@
 
   </main>
 
+  <!-- 🟢 FLOATING WHATSAPP SUPPORT BUTTON FOR ALL CUSTOMERS -->
+  <div id="client-floating-whatsapp" class="fixed bottom-20 right-4 z-40 flex items-center">
+    <a 
+      href="https://wa.me/919174573889?text=Namaste%20Buyero%20Support%2C%20mujhe%20sahayata%20chahiye" 
+      target="_blank" 
+      rel="noopener noreferrer"
+      class="flex items-center gap-2 px-3 py-2.5 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold rounded-full shadow-lg hover:shadow-xl transition-all duration-200 active:scale-95 border-2 border-white"
+      title="Chat with Buyero Support on WhatsApp"
+    >
+      <i class="fa-brands fa-whatsapp text-2xl"></i>
+      <span class="text-xs font-poppins font-semibold pr-1">WhatsApp</span>
+    </a>
+  </div>
+
   <!-- ========================================== -->
   <!-- BOTTOM NAVIGATION BAR -->
   <!-- ========================================== -->
@@ -1603,6 +1637,24 @@
       </button>
     </div>
   </nav>
+
+  <!-- ========================================== -->
+  <!-- FLOATING IN-APP PUSH NOTIFICATION BANNER   -->
+  <!-- ========================================== -->
+  <div id="client-push-banner" class="hidden fixed top-3 left-1/2 -translate-x-1/2 z-50 max-w-sm w-[94%] bg-slate-950/95 text-white p-3.5 rounded-2xl shadow-2xl border border-slate-700/80 backdrop-blur-md transition-all duration-300">
+    <div class="flex items-start gap-3">
+      <div class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center flex-shrink-0 text-sm mt-0.5 border border-amber-500/30">
+        <i class="fa-solid fa-bell"></i>
+      </div>
+      <div class="flex-1 min-w-0 cursor-pointer" onclick="handleClientBannerClick()">
+        <h4 id="client-banner-title" class="font-bold text-xs text-white leading-tight">Notification</h4>
+        <p id="client-banner-body" class="text-[11px] text-slate-300 line-clamp-2 mt-0.5">Details here...</p>
+      </div>
+      <button onclick="dismissClientPushBanner()" class="text-slate-400 hover:text-white p-1 text-xs -mr-1">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+  </div>
 
   <!-- ========================================== -->
   <!-- CART SLIDING DRAWER -->
@@ -10209,6 +10261,9 @@
         ensureUserReferralCode();
         listenToUserWalletRealtime(resolvedUserId);
 
+        // Initialize Firebase Cloud Messaging token for authenticated user
+        initFCMClient(false);
+
         renderUserProfile();
         renderOrdersList();
         closeAuthModal();
@@ -10528,6 +10583,9 @@
         renderOrdersList();
         closeAuthModal();
 
+        // Initialize Firebase Cloud Messaging token for newly registered user
+        initFCMClient(false);
+
         // Celebration Confetti
         try {
           if (typeof confetti === 'function') {
@@ -10730,6 +10788,19 @@
           });
         });
       }
+
+      // Broadcast coin update to Admin panel in real-time
+      try {
+        if (typeof syncChannel !== 'undefined' && syncChannel) {
+          syncChannel.postMessage({
+            type: 'WALLET_COINS_UPDATED_FROM_CLIENT',
+            uids: Array.from(uidsToUpdate),
+            phone: currentUser?.phone || currentUser?.phoneNumber,
+            email: currentUser?.email,
+            coins: sanitizedCoins
+          });
+        }
+      } catch(e) {}
     }
 
     function saveUserCoins(coins) {
@@ -12313,6 +12384,264 @@
     } else {
       bindClientChatListeners();
     }
+
+    /* =========================================================================
+       FIREBASE CLOUD MESSAGING (FCM) CLIENT ENGINE
+       VAPID Sender ID: 133729371654
+       ========================================================================= */
+    const BUYERO_FCM_VAPID_KEY = "BH5ujHWr6E8cqsuW-bYCOEQS1odE9tUGtDGM7UeBlwqDM9ONH2jUZeJxWIOWKNIvFo1Bt-1krpv90evBj71YlHc";
+    let clientFCMToken = null;
+    let clientActiveBannerUrl = null;
+    let clientBannerDismissTimer = null;
+
+    function isFCMSupportedInBrowser() {
+      return (
+        typeof window !== 'undefined' &&
+        'serviceWorker' in navigator &&
+        'PushManager' in window &&
+        'Notification' in window &&
+        typeof firebase !== 'undefined' &&
+        typeof firebase.messaging === 'function'
+      );
+    }
+
+    function updateFCMStatusUI() {
+      const pill = document.getElementById('fcm-status-pill');
+      const btn = document.getElementById('btn-toggle-fcm-notifs');
+      if (!pill || !btn) return;
+
+      if (!isFCMSupportedInBrowser()) {
+        pill.textContent = "Unsupported";
+        pill.className = "text-[9px] font-bold bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full";
+        btn.disabled = true;
+        btn.innerHTML = `<span>Unavailable</span>`;
+        return;
+      }
+
+      const perm = Notification.permission;
+      if (perm === 'granted') {
+        pill.textContent = "Active";
+        pill.className = "text-[9px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full";
+        btn.className = "px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold rounded-xl transition cursor-default flex items-center gap-1";
+        btn.innerHTML = `<i class="fa-solid fa-check text-xs"></i> <span>Enabled</span>`;
+        btn.disabled = false;
+      } else if (perm === 'denied') {
+        pill.textContent = "Blocked";
+        pill.className = "text-[9px] font-bold bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full";
+        btn.className = "px-3 py-1.5 bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold rounded-xl transition flex items-center gap-1";
+        btn.innerHTML = `<i class="fa-solid fa-bell-slash text-xs"></i> <span>Blocked</span>`;
+        btn.disabled = false;
+      } else {
+        pill.textContent = "Off";
+        pill.className = "text-[9px] font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full";
+        btn.className = "px-3 py-1.5 bg-brand-navy hover:bg-brand-deep text-white text-xs font-bold rounded-xl transition shadow-xs active:scale-95 flex items-center gap-1";
+        btn.innerHTML = `<i class="fa-regular fa-bell text-xs"></i> <span>Enable</span>`;
+        btn.disabled = false;
+      }
+    }
+
+    async function initFCMClient(userInitiated = false) {
+      if (!isFCMSupportedInBrowser()) {
+        console.warn("[Buyero FCM Client] FCM push is not supported in this browser or environment.");
+        updateFCMStatusUI();
+        return null;
+      }
+
+      try {
+        let permission = Notification.permission;
+        if (userInitiated && permission !== 'granted') {
+          permission = await Notification.requestPermission();
+        }
+
+        updateFCMStatusUI();
+        if (permission !== 'granted') {
+          if (userInitiated && permission === 'denied') {
+            alert("Notification permission is blocked in browser settings. Please enable notifications in your browser address bar.");
+          }
+          return null;
+        }
+
+        // Register Service Worker with fallback paths
+        let swRegistration = null;
+        try {
+          swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' });
+          console.log("[Buyero FCM Client] ServiceWorker registered successfully:", swRegistration.scope);
+        } catch (swErr) {
+          console.warn("[Buyero FCM Client] Root SW registration failed, attempting relative fallback...", swErr);
+          try {
+            swRegistration = await navigator.serviceWorker.register('firebase-messaging-sw.js');
+          } catch (fallbackErr) {
+            console.error("[Buyero FCM Client] Failed to register service worker:", fallbackErr);
+            return null;
+          }
+        }
+
+        // Wait for service worker to become ready
+        await navigator.serviceWorker.ready;
+
+        const messaging = firebase.messaging();
+
+        // Retrieve device registration token
+        const currentToken = await messaging.getToken({
+          vapidKey: BUYERO_FCM_VAPID_KEY,
+          serviceWorkerRegistration: swRegistration
+        });
+
+        if (currentToken) {
+          clientFCMToken = currentToken;
+          localStorage.setItem('buyero_fcm_token', currentToken);
+          console.log("[Buyero FCM Client] Token successfully obtained:", currentToken.substring(0, 15) + '...');
+
+          // Save token to Firestore
+          await persistClientFCMToken(currentToken);
+
+          // Handle foreground push messages
+          messaging.onMessage((payload) => {
+            console.log('[Buyero FCM Foreground Message]', payload);
+            const title = payload.notification?.title || payload.data?.title || 'Buyero Notification';
+            const body = payload.notification?.body || payload.data?.body || 'New update available.';
+            const targetUrl = payload.fcmOptions?.link || payload.data?.url || payload.data?.link || '/';
+            showClientPushBanner(title, body, targetUrl);
+
+            // Play light notification chime
+            playChimeSound();
+
+            // If order update or coin reward, trigger refresh
+            if (payload.data?.type === 'ORDER_STATUS_UPDATE') {
+              if (currentUser) fetchCloudOrdersForUser(currentUser);
+            }
+            if (payload.data?.type === 'COIN_REWARD') {
+              if (currentUser && currentUser.uuid) listenToUserWalletRealtime(currentUser.uuid);
+            }
+          });
+
+          updateFCMStatusUI();
+          return currentToken;
+        } else {
+          console.warn("[Buyero FCM Client] No registration token available. Request permission to generate one.");
+          updateFCMStatusUI();
+          return null;
+        }
+      } catch (err) {
+        console.warn("[Buyero FCM Client] Initialization error:", err);
+        updateFCMStatusUI();
+        return null;
+      }
+    }
+
+    async function persistClientFCMToken(token) {
+      if (!token || !fbFirestore) return;
+      try {
+        const activeUserId = currentUser ? (currentUser.uuid || currentUser.userId || currentUser.authUid || null) : null;
+        const activeEmail = currentUser ? currentUser.email : null;
+        const activePhone = currentUser ? currentUser.phone : null;
+        const activeName = currentUser ? currentUser.name : 'Customer';
+
+        // 1. Save to global fcmTokens collection
+        await fbFirestore.collection('fcmTokens').doc(token).set({
+          token: token,
+          userId: activeUserId || 'guest',
+          userEmail: activeEmail || '',
+          userPhone: activePhone || '',
+          userName: activeName || 'Customer',
+          role: 'customer',
+          platform: 'web',
+          userAgent: navigator.userAgent || 'Web Browser',
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+
+        // 2. If user is logged in, attach token directly to their user record
+        if (activeUserId) {
+          await fbFirestore.collection('users').doc(activeUserId).set({
+            fcmToken: token,
+            fcmTokens: firebase.firestore.FieldValue.arrayUnion(token),
+            fcmLastActive: firebase.firestore.FieldValue.serverTimestamp()
+          }, { merge: true }).catch(err => {
+            console.warn("[persistClientFCMToken user doc error]", err);
+          });
+        }
+      } catch (err) {
+        console.warn("[persistClientFCMToken Error]", err);
+      }
+    }
+
+    async function requestClientFCMNotificationPermission() {
+      const token = await initFCMClient(true);
+      if (token) {
+        showToast("🔔 Push notifications activated successfully!");
+      }
+    }
+
+    function showClientPushBanner(title, body, url = null) {
+      const banner = document.getElementById('client-push-banner');
+      const titleEl = document.getElementById('client-banner-title');
+      const bodyEl = document.getElementById('client-banner-body');
+      if (!banner || !titleEl || !bodyEl) return;
+
+      titleEl.textContent = title;
+      bodyEl.textContent = body;
+      clientActiveBannerUrl = url;
+
+      banner.classList.remove('hidden');
+
+      if (clientBannerDismissTimer) clearTimeout(clientBannerDismissTimer);
+      clientBannerDismissTimer = setTimeout(() => {
+        dismissClientPushBanner();
+      }, 7000);
+    }
+
+    function dismissClientPushBanner() {
+      const banner = document.getElementById('client-push-banner');
+      if (banner) banner.classList.add('hidden');
+      if (clientBannerDismissTimer) {
+        clearTimeout(clientBannerDismissTimer);
+        clientBannerDismissTimer = null;
+      }
+    }
+
+    function handleClientBannerClick() {
+      dismissClientPushBanner();
+      if (clientActiveBannerUrl) {
+        if (clientActiveBannerUrl.includes('order')) {
+          switchClientView('orders');
+        } else if (clientActiveBannerUrl.includes('support') || clientActiveBannerUrl.includes('chat')) {
+          switchClientView('support');
+        } else if (clientActiveBannerUrl.startsWith('http') || clientActiveBannerUrl.startsWith('/')) {
+          window.location.href = clientActiveBannerUrl;
+        } else {
+          switchClientView('shop');
+        }
+      } else {
+        switchClientView('orders');
+      }
+    }
+
+    function playChimeSound() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.1); // A5
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.45);
+      } catch (e) {
+        // AudioContext blocked or silent
+      }
+    }
+
+    // Auto-check FCM on startup and when user enters view
+    window.addEventListener('load', () => {
+      updateFCMStatusUI();
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+        initFCMClient(false);
+      }
+    });
   </script>
 </body>
 </html>
