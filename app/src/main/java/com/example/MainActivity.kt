@@ -322,6 +322,16 @@ fun BuyeroHostScreen() {
                     override fun shouldOverrideUrlLoading(view: WebView?, request: android.webkit.WebResourceRequest?): Boolean {
                       return false
                     }
+
+                    override fun onRenderProcessGone(
+                      view: WebView?,
+                      detail: android.webkit.RenderProcessGoneDetail?
+                    ): Boolean {
+                      try {
+                        popupDialog.dismiss()
+                      } catch (_: Exception) {}
+                      return true
+                    }
                   }
                 }
                 popupDialog.setContentView(newWebView)
@@ -378,6 +388,26 @@ fun BuyeroHostScreen() {
               override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
                 isLoading = false
+              }
+
+              override fun onReceivedError(
+                view: WebView?,
+                request: android.webkit.WebResourceRequest?,
+                error: android.webkit.WebResourceError?
+              ) {
+                super.onReceivedError(view, request, error)
+                isLoading = false
+              }
+
+              override fun onRenderProcessGone(
+                view: WebView?,
+                detail: android.webkit.RenderProcessGoneDetail?
+              ): Boolean {
+                try {
+                  view?.destroy()
+                  webViewInstance = null
+                } catch (_: Exception) {}
+                return true
               }
             }
 
