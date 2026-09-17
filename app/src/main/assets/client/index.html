@@ -3,7 +3,72 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Buyero - Client Store</title>
+  <title>Buyero - Online Shopping Store | Lowest Factory Prices & COD</title>
+  <meta name="description" content="Shop online at Buyero for fashion, footwear, electronics and trending products at lowest factory prices. Enjoy Cash on Delivery (COD), 7-day easy returns, and fast delivery." />
+  <meta name="keywords" content="Buyero, Buyero online shopping, Buyero login, Buyero store, shopping app, online shopping India, COD shopping" />
+  <link rel="canonical" href="https://buyero-68abd.web.app/" />
+
+  <!-- App & Search Engine Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/favicon.svg" />
+  <meta name="theme-color" content="#152458" />
+
+  <!-- Open Graph / Social & Google Sharing Metadata -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Buyero" />
+  <meta property="og:title" content="Buyero - Online Shopping Store" />
+  <meta property="og:description" content="Discover best quality fashion, lifestyle and trending products at factory prices on Buyero. Cash on Delivery available." />
+  <meta property="og:url" content="https://buyero-68abd.web.app/" />
+  <meta property="og:image" content="https://buyero-68abd.web.app/favicon.svg" />
+
+  <!-- Schema.org JSON-LD Structured Data for Google Rich Snippets & Sitelinks -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://buyero-68abd.web.app/#organization",
+        "name": "Buyero",
+        "url": "https://buyero-68abd.web.app/",
+        "logo": "https://buyero-68abd.web.app/favicon.svg",
+        "description": "Buyero Online Shopping Store offering lowest factory prices and Cash on Delivery across India."
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://buyero-68abd.web.app/#website",
+        "url": "https://buyero-68abd.web.app/",
+        "name": "Buyero",
+        "publisher": {
+          "@id": "https://buyero-68abd.web.app/#organization"
+        },
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://buyero-68abd.web.app/?search={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      },
+      {
+        "@type": "SiteNavigationElement",
+        "name": "Buyero Login",
+        "description": "Sign in or register to your Buyero customer account",
+        "url": "https://buyero-68abd.web.app/#login"
+      },
+      {
+        "@type": "SiteNavigationElement",
+        "name": "Track Orders",
+        "description": "Track your Buyero delivery and order status live",
+        "url": "https://buyero-68abd.web.app/#orders"
+      },
+      {
+        "@type": "SiteNavigationElement",
+        "name": "Wishlist",
+        "description": "View saved items in your Buyero wishlist",
+        "url": "https://buyero-68abd.web.app/#wishlist"
+      }
+    ]
+  }
+  </script>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -3269,13 +3334,16 @@
       if (parent) {
         imgEl.style.display = 'none';
         const fallback = document.createElement('div');
-        fallback.className = 'w-full h-full min-h-[140px] flex flex-col items-center justify-center bg-gradient-to-br from-orange-50 via-slate-50 to-indigo-50 text-center p-3 select-none';
+        fallback.className = 'w-full h-full min-h-[140px] flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-center p-3 select-none';
         fallback.innerHTML = `
-          <div class="relative flex items-center justify-center w-11 h-11 rounded-2xl bg-white shadow-xs mb-1.5 border border-orange-100">
-            <i class="fa-solid fa-bag-shopping text-lg text-orange-500 animate-pulse"></i>
+          <div class="relative flex items-center justify-center w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-xs shadow-md mb-2 border border-white/20 transform hover:scale-105 transition" style="animation: bounceIn 1.4s ease-in-out infinite alternate;">
+            <svg class="w-8 h-8" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <g><polygon points="12,46 22,41 22,90 12,88" fill="#13a388" /><polygon points="22,41 56,43 56,92 22,90" fill="#20d5a3" /><path d="M 28,42 C 28,26 48,26 48,42" stroke="#68ffd8" stroke-width="3.5" stroke-linecap="round" fill="none" /></g>
+              <g><path d="M 47,58 C 47,44 65,44 65,58" stroke="#ffaec3" stroke-width="3.5" stroke-linecap="round" fill="none" /><polygon points="38,62 48,58 48,99 38,96" fill="#d84f7b" /><polygon points="48,58 78,57 78,96 48,99" fill="#ff8ba0" /></g>
+            </svg>
           </div>
-          <span class="font-black text-xs tracking-wider uppercase text-slate-800 animate-pulse">Buyero</span>
-          <span class="text-[9px] text-slate-400">Photo Unavailable</span>
+          <span class="font-poppins font-bold text-sm tracking-tight text-white">Buyer<span style="color:#f77f33;">o</span></span>
+          <span class="text-[9px] text-slate-400 font-medium mt-0.5 tracking-wide">Photo Updating...</span>
         `;
         parent.appendChild(fallback);
       }

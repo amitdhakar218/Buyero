@@ -3792,26 +3792,23 @@
     function renderBuyeroImage(url, alt = '', className = '', imgAttrs = '') {
       const clean = cleanImageUrl(url || '');
       const safeAlt = (alt || 'Product Image').replace(/"/g, '&quot;');
-      if (!clean) {
-        return `
-          <div class="buyero-brand-placeholder">
-            <div class="w-8 h-8 rounded-xl bg-white/90 shadow-sm border border-orange-200 flex items-center justify-center text-brand-orange buyero-brand-icon-anim mb-1">
-              <i class="fa-solid fa-bag-shopping text-xs"></i>
-            </div>
-            <span class="font-poppins font-black text-[9px] tracking-wider text-slate-800 uppercase">BUYERO</span>
-            <span class="text-[7px] text-slate-400 font-medium">Quality Assured</span>
+      const brandPlaceholder = `
+        <div class="buyero-brand-placeholder flex flex-col items-center justify-center p-2 text-center select-none">
+          <div class="w-8 h-8 rounded-xl bg-white/90 shadow-sm border border-slate-200 flex items-center justify-center buyero-brand-icon-anim mb-1" style="animation: bounceIn 1.2s ease-in-out infinite alternate;">
+            <svg class="w-6 h-6" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <g><polygon points="12,46 22,41 22,90 12,88" fill="#13a388" /><polygon points="22,41 56,43 56,92 22,90" fill="#20d5a3" /><path d="M 28,42 C 28,26 48,26 48,42" stroke="#68ffd8" stroke-width="3.5" stroke-linecap="round" fill="none" /></g>
+              <g><path d="M 47,58 C 47,44 65,44 65,58" stroke="#ffaec3" stroke-width="3.5" stroke-linecap="round" fill="none" /><polygon points="38,62 48,58 48,99 38,96" fill="#d84f7b" /><polygon points="48,58 78,57 78,96 48,99" fill="#ff8ba0" /></g>
+            </svg>
           </div>
-        `;
+          <span class="font-poppins font-bold text-[10px] tracking-tight text-slate-800">Buyer<span style="color:#f77f33;">o</span></span>
+        </div>
+      `;
+      if (!clean) {
+        return brandPlaceholder;
       }
       return `
         <div class="relative w-full h-full overflow-hidden bg-slate-50 flex items-center justify-center select-none buyero-img-container">
-          <div class="buyero-brand-placeholder">
-            <div class="w-8 h-8 rounded-xl bg-white/90 shadow-sm border border-orange-200 flex items-center justify-center text-brand-orange buyero-brand-icon-anim mb-1">
-              <i class="fa-solid fa-bag-shopping text-xs"></i>
-            </div>
-            <span class="font-poppins font-black text-[9px] tracking-wider text-slate-800 uppercase">BUYERO</span>
-            <span class="text-[7px] text-slate-400 font-medium">Verified Quality</span>
-          </div>
+          ${brandPlaceholder}
           <img 
             src="${clean}" 
             alt="${safeAlt}" 
@@ -4060,17 +4057,29 @@
             }, 600);
           } else {
             progressBox?.classList.add('hidden');
-            let friendlyError = "Imgur upload failed. Please try again or use Direct URL.";
+            let friendlyError = `Imgur upload failed (HTTP ${xhr.status}).`;
             if (xhr.status === 429) {
-              friendlyError = "Imgur Free Tier की सीमा समाप्त हो गई है (429 Rate Limit)। कृपया थोड़ी देर प्रतीक्षा करें या Direct Image URL (विकल्प A) का उपयोग करें।";
+              friendlyError = "Imgur Free Tier quota limit reached (429 Rate Limit). कृपया थोड़ी देर प्रतीक्षा करें या Direct Image URL (विकल्प A) का उपयोग करें।";
             } else if (xhr.status === 403 || xhr.status === 401) {
-              friendlyError = "अमान्य Imgur Client ID! कृपया API Settings (⚙️) में अपना Client ID जांचें। (Invalid Client ID)";
+              friendlyError = "अमान्य Imgur Client ID (HTTP " + xhr.status + ")! कृपया ऊपर 'API Settings (⚙️)' खोलें और अपना सही Imgur Client ID दर्ज करें।";
             } else if (responseData && responseData.data && responseData.data.error) {
-              friendlyError = responseData.data.error;
+              friendlyError = "Imgur Error: " + responseData.data.error;
             }
 
             if (errorBox && errorText) {
-              errorText.textContent = friendlyError;
+              errorText.innerHTML = `
+                <div class="space-y-1.5 text-left">
+                  <p class="font-bold text-rose-700">${friendlyError}</p>
+                  <div class="flex items-center gap-2 pt-0.5">
+                    <button type="button" onclick="openImgurSettingsModal()" class="px-2.5 py-1 bg-white text-rose-700 font-bold rounded-lg border border-rose-300 text-[10px] hover:bg-rose-50 transition shadow-2xs">
+                      <i class="fa-solid fa-gear"></i> Open API Settings
+                    </button>
+                    <button type="button" onclick="switchImageSourceTab('url', '${formType}')" class="px-2.5 py-1 bg-white text-slate-700 font-bold rounded-lg border border-slate-300 text-[10px] hover:bg-slate-50 transition shadow-2xs">
+                      <i class="fa-solid fa-link"></i> Use Direct URL
+                    </button>
+                  </div>
+                </div>
+              `;
               errorBox.classList.remove('hidden');
             }
             showToastNotification(friendlyError, "error");
@@ -4080,12 +4089,24 @@
 
         xhr.onerror = function() {
           progressBox?.classList.add('hidden');
-          const errorMsg = "नेटवर्क त्रुटि: Imgur से कनेक्ट नहीं हो सका। कृपया इंटरनेट कनेक्शन जांचें या Direct URL का उपयोग करें।";
+          const errorMsg = "Imgur सर्वर से सीधा कनेक्शन नहीं हो सका (Status 0/CORS)। कारण: अमान्य Client ID या नेटवर्क/ब्राउज़र द्वारा Imgur API ब्लॉक होना। कृपया API Settings (⚙️) में अपना Client ID दर्ज करें या Direct Image URL (विकल्प A) का उपयोग करें।";
           if (errorBox && errorText) {
-            errorText.textContent = errorMsg;
+            errorText.innerHTML = `
+              <div class="space-y-1.5 text-left">
+                <p class="font-bold text-rose-700">${errorMsg}</p>
+                <div class="flex items-center gap-2 pt-0.5">
+                  <button type="button" onclick="openImgurSettingsModal()" class="px-2.5 py-1 bg-white text-rose-700 font-bold rounded-lg border border-rose-300 text-[10px] hover:bg-rose-50 transition shadow-2xs">
+                    <i class="fa-solid fa-gear"></i> Open API Settings
+                  </button>
+                  <button type="button" onclick="switchImageSourceTab('url', '${formType}')" class="px-2.5 py-1 bg-white text-slate-700 font-bold rounded-lg border border-slate-300 text-[10px] hover:bg-slate-50 transition shadow-2xs">
+                    <i class="fa-solid fa-link"></i> Use Direct URL
+                  </button>
+                </div>
+              </div>
+            `;
             errorBox.classList.remove('hidden');
           }
-          showToastNotification(errorMsg, "error");
+          showToastNotification("Imgur API से कनेक्ट नहीं हो सका। कृपया API Settings चेक करें।", "error");
           event.target.value = '';
         };
 
@@ -4132,80 +4153,102 @@
         const isCover = idx === 0;
         const cleanUrl = cleanImageUrl(url);
         return `
-          <div class="flex items-center gap-2.5 p-2 rounded-2xl transition border ${isCover ? 'bg-orange-50/50 border-brand-orange shadow-2xs' : 'bg-white border-slate-200 hover:border-slate-300'}">
-            <!-- Thumbnail Box with Buyero Brand Shimmer -->
-            <div class="w-12 h-12 rounded-xl overflow-hidden border ${isCover ? 'border-brand-orange' : 'border-slate-200'} bg-white flex-shrink-0 relative">
-              ${renderBuyeroImage(cleanUrl, `Product Image ${idx + 1}`, 'w-full h-full object-cover')}
-            </div>
-
-            <!-- Details -->
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-1.5 flex-wrap">
-                ${isCover ? `
-                  <span class="px-1.5 py-0.5 bg-brand-orange text-white rounded text-[8px] font-black uppercase tracking-wider flex items-center gap-0.5">
-                    <i class="fa-solid fa-star text-[7px]"></i> PRIMARY COVER
-                  </span>
-                ` : `
-                  <span class="px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] font-bold">
-                    #${idx + 1} Gallery
-                  </span>
-                `}
+          <div class="p-2.5 rounded-2xl transition border ${isCover ? 'bg-orange-50/60 border-brand-orange shadow-2xs' : 'bg-white border-slate-200 hover:border-slate-300'} space-y-2">
+            <div class="flex items-center gap-2.5">
+              <!-- Thumbnail Box with Buyero Brand Shimmer -->
+              <div class="w-12 h-12 rounded-xl overflow-hidden border ${isCover ? 'border-brand-orange' : 'border-slate-200'} bg-white flex-shrink-0 relative">
+                ${renderBuyeroImage(cleanUrl, `Product Image ${idx + 1}`, 'w-full h-full object-cover')}
               </div>
-              <p class="text-[10px] font-mono text-slate-500 truncate mt-0.5" title="${cleanUrl}">${cleanUrl}</p>
+
+              <!-- Details -->
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  ${isCover ? `
+                    <span class="px-1.5 py-0.5 bg-brand-orange text-white rounded text-[8px] font-black uppercase tracking-wider flex items-center gap-0.5">
+                      <i class="fa-solid fa-star text-[7px]"></i> PRIMARY COVER
+                    </span>
+                  ` : `
+                    <span class="px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] font-bold">
+                      #${idx + 1} Gallery
+                    </span>
+                  `}
+                </div>
+              </div>
+
+              <!-- Action Controls -->
+              <div class="flex items-center gap-1 flex-shrink-0">
+                ${!isCover ? `
+                  <button 
+                    type="button" 
+                    onclick="setProductImagePrimary(${idx}, '${formType}')" 
+                    class="px-2 py-1 bg-orange-100 hover:bg-orange-200 text-brand-orange text-[10px] font-bold rounded-lg transition active:scale-95 flex items-center gap-1"
+                    title="Make this Primary Cover"
+                  >
+                    <i class="fa-solid fa-star text-[8px]"></i>
+                    <span class="hidden sm:inline">Cover</span>
+                  </button>
+                ` : ''}
+
+                ${idx > 0 ? `
+                  <button 
+                    type="button" 
+                    onclick="moveProductImage(${idx}, -1, '${formType}')" 
+                    class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition active:scale-90"
+                    title="Move Up"
+                  >
+                    <i class="fa-solid fa-arrow-up text-[10px]"></i>
+                  </button>
+                ` : ''}
+
+                ${idx < list.length - 1 ? `
+                  <button 
+                    type="button" 
+                    onclick="moveProductImage(${idx}, 1, '${formType}')" 
+                    class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition active:scale-90"
+                    title="Move Down"
+                  >
+                    <i class="fa-solid fa-arrow-down text-[10px]"></i>
+                  </button>
+                ` : ''}
+
+                <button 
+                  type="button" 
+                  onclick="removeProductImage(${idx}, '${formType}')" 
+                  class="w-7 h-7 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 flex items-center justify-center transition active:scale-90"
+                  title="Delete image"
+                >
+                  <i class="fa-solid fa-trash text-[10px]"></i>
+                </button>
+              </div>
             </div>
 
-            <!-- Action Controls -->
-            <div class="flex items-center gap-1 flex-shrink-0">
-              ${!isCover ? `
-                <button 
-                  type="button" 
-                  onclick="setProductImagePrimary(${idx}, '${formType}')" 
-                  class="px-2 py-1 bg-orange-100 hover:bg-orange-200 text-brand-orange text-[10px] font-bold rounded-lg transition active:scale-95 flex items-center gap-1"
-                  title="Make this Primary Cover"
-                >
-                  <i class="fa-solid fa-star text-[8px]"></i>
-                  <span class="hidden sm:inline">Cover</span>
-                </button>
-              ` : ''}
-
-              ${idx > 0 ? `
-                <button 
-                  type="button" 
-                  onclick="moveProductImage(${idx}, -1, '${formType}')" 
-                  class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition active:scale-90"
-                  title="Move Up"
-                >
-                  <i class="fa-solid fa-arrow-up text-[10px]"></i>
-                </button>
-              ` : ''}
-
-              ${idx < list.length - 1 ? `
-                <button 
-                  type="button" 
-                  onclick="moveProductImage(${idx}, 1, '${formType}')" 
-                  class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition active:scale-90"
-                  title="Move Down"
-                >
-                  <i class="fa-solid fa-arrow-down text-[10px]"></i>
-                </button>
-              ` : ''}
-
+            <!-- EXPLICIT DIRECT IMAGE LINK BAR (हर इमेज का लिंक यहीं पर) -->
+            <div class="flex items-center gap-1.5 bg-slate-100/90 rounded-xl px-2 py-1 border border-slate-200">
+              <i class="fa-solid fa-link text-[10px] text-slate-400"></i>
+              <input 
+                type="text" 
+                readonly 
+                value="${cleanUrl}" 
+                onclick="this.select()" 
+                class="flex-1 bg-transparent text-[10px] font-mono text-slate-700 outline-none select-all overflow-ellipsis cursor-pointer" 
+                title="Click to select link"
+              />
+              <a 
+                href="${cleanUrl}" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                class="px-1.5 py-0.5 text-[9px] font-bold text-slate-500 hover:text-slate-800 bg-white hover:bg-slate-200 rounded border border-slate-200 flex items-center gap-1 transition"
+                title="Open image in new tab"
+              >
+                <i class="fa-solid fa-arrow-up-right-from-square text-[8px]"></i> View
+              </a>
               <button 
                 type="button" 
                 onclick="copyProductImageUrl('${cleanUrl.replace(/'/g, "\\'")}')" 
-                class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition active:scale-90"
-                title="Copy URL"
+                class="px-2 py-0.5 text-[9px] font-bold text-brand-orange bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded flex items-center gap-1 transition active:scale-95"
+                title="Copy direct image link"
               >
-                <i class="fa-regular fa-copy text-[10px]"></i>
-              </button>
-
-              <button 
-                type="button" 
-                onclick="removeProductImage(${idx}, '${formType}')" 
-                class="w-7 h-7 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 flex items-center justify-center transition active:scale-90"
-                title="Delete image"
-              >
-                <i class="fa-solid fa-trash text-[10px]"></i>
+                <i class="fa-regular fa-copy text-[8px]"></i> Copy Link
               </button>
             </div>
           </div>

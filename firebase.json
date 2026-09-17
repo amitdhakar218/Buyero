@@ -38,6 +38,14 @@
         "destination": "/sitemap.xml"
       },
       {
+        "source": "/robots.txt",
+        "destination": "/robots.txt"
+      },
+      {
+        "source": "/favicon.svg",
+        "destination": "/favicon.svg"
+      },
+      {
         "source": "/admin/**",
         "destination": "/admin/index.html"
       },
