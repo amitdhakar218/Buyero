@@ -124,6 +124,46 @@
       0% { transform: scale(1); opacity: 0.8; }
       100% { transform: scale(1.7); opacity: 0; }
     }
+
+    /* --- BUYERO ANIMATED BRAND PLACEHOLDER & SHIMMER --- */
+    @keyframes buyeroPulseGlow {
+      0%, 100% { transform: scale(1); opacity: 0.92; }
+      50% { transform: scale(1.06); opacity: 1; filter: drop-shadow(0 4px 10px rgba(247, 127, 51, 0.4)); }
+    }
+    @keyframes buyeroShimmerSweep {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+    .buyero-brand-placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #fff7ed 0%, #f8fafc 50%, #ffedd5 100%);
+      overflow: hidden;
+      user-select: none;
+      z-index: 5;
+      transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
+    }
+    .buyero-brand-placeholder::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.7) 50%, transparent 100%);
+      transform: translateX(-100%);
+      animation: buyeroShimmerSweep 1.8s infinite;
+      pointer-events: none;
+    }
+    .buyero-brand-placeholder.loaded {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .buyero-brand-icon-anim {
+      animation: buyeroPulseGlow 2s infinite ease-in-out;
+    }
   </style>
 </head>
 <body class="min-h-screen text-slate-800">
@@ -702,65 +742,179 @@
             </div>
           </div>
 
-          <!-- Product Media Section (Multi-Image & Video Support) -->
-          <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+          <!-- ========================================================= -->
+          <!-- BUYERO IMAGE MANAGEMENT SYSTEM (OPTION A & OPTION B)         -->
+          <!-- ========================================================= -->
+          <div class="p-4 bg-slate-50 border border-slate-200 rounded-3xl space-y-3.5 shadow-2xs">
+            <!-- Header with Quick Action and Settings -->
             <div class="flex items-center justify-between">
-              <label class="font-bold text-slate-800 text-xs flex items-center gap-1.5">
-                <i class="fa-solid fa-photo-film text-brand-orange"></i>
-                <span>Product Media (Images & Video)</span>
-              </label>
-              <span class="text-[10px] font-bold text-slate-500">Live Preview & Safe Delete</span>
-            </div>
-
-            <!-- Main / Primary Image URL -->
-            <div>
-              <div class="flex items-center justify-between mb-1">
-                <label class="block font-bold text-slate-700 text-[11px]">Primary Image (Main Cover) *</label>
-                <span class="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-md">Main</span>
-              </div>
               <div class="flex items-center gap-2">
-                <input 
-                  type="url" 
-                  id="inp-prod-image" 
-                  required 
-                  placeholder="https://... main image URL"
-                  oninput="onAddPrimaryImageChange()"
-                  class="flex-1 px-3 py-1.5 border border-slate-300 rounded-xl outline-none focus:border-brand-navy bg-white text-xs" 
-                />
-                <div id="inp-prod-primary-thumb-preview" class="w-9 h-9 rounded-lg border border-slate-300 overflow-hidden bg-slate-100 flex-shrink-0 flex items-center justify-center">
-                  <i class="fa-solid fa-image text-slate-400 text-xs"></i>
+                <div class="w-7 h-7 rounded-xl bg-orange-100 text-brand-orange flex items-center justify-center text-xs">
+                  <i class="fa-solid fa-images"></i>
+                </div>
+                <div>
+                  <h4 class="font-poppins font-bold text-xs text-slate-800">Product Images (फोटो मैनेजमेंट)</h4>
+                  <p class="text-[10px] text-slate-500">Add via Direct URL or Upload to Imgur</p>
                 </div>
               </div>
+              <div class="flex items-center gap-1.5">
+                <button 
+                  type="button" 
+                  onclick="openImgurSettingsModal()" 
+                  class="px-2 py-1 bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 rounded-xl text-[10px] font-bold flex items-center gap-1 transition shadow-2xs active:scale-95" 
+                  title="Imgur API Configuration"
+                >
+                  <i class="fa-solid fa-gear text-brand-orange"></i>
+                  <span>API Settings</span>
+                </button>
+              </div>
             </div>
 
-            <!-- Extra Images (Dynamic Multi-Image List with Confirmation Delete) -->
-            <div>
-              <div class="flex items-center justify-between mb-1.5">
-                <div>
-                  <label class="block font-bold text-slate-700 text-[11px]">Additional Product Images (Gallery)</label>
-                  <p class="text-[10px] text-slate-500">जितनी चाहें उतनी फोटो जोड़ें (Add as many images as you need)</p>
+            <!-- Hidden Primary Image Input for backward-compatible form validation -->
+            <input type="hidden" id="inp-prod-image" required value="" />
+
+            <!-- Option Switcher Tabs (Option A vs Option B) -->
+            <div class="grid grid-cols-2 gap-2 bg-slate-200/80 p-1 rounded-2xl">
+              <button 
+                type="button" 
+                id="btn-tab-add-img-url" 
+                onclick="switchImageSourceTab('url', 'add')" 
+                class="py-2 px-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-xs bg-white text-slate-900 border border-slate-200/80"
+              >
+                <i class="fa-solid fa-link text-brand-navy"></i>
+                <span>Direct URL (विकल्प A)</span>
+              </button>
+              <button 
+                type="button" 
+                id="btn-tab-add-img-imgur" 
+                onclick="switchImageSourceTab('imgur', 'add')" 
+                class="py-2 px-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900"
+              >
+                <i class="fa-solid fa-cloud-arrow-up text-brand-orange"></i>
+                <span>Imgur Upload (विकल्प B)</span>
+              </button>
+            </div>
+
+            <!-- OPTION A: DIRECT IMAGE URL PANEL -->
+            <div id="panel-add-img-url" class="space-y-2.5 bg-white p-3 rounded-2xl border border-slate-200/90 shadow-2xs">
+              <div>
+                <label class="block font-bold text-slate-700 text-[11px] mb-1">
+                  Image Direct Web Link (इमेज URL)
+                </label>
+                <div class="flex items-center gap-1.5">
+                  <div class="relative flex-1">
+                    <input 
+                      type="url" 
+                      id="inp-add-direct-url" 
+                      placeholder="https://... (JPG, PNG, WEBP, Imgur link)"
+                      oninput="onDirectUrlInputChange('add')"
+                      class="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-xl outline-none focus:border-brand-navy bg-slate-50/50 text-xs font-mono"
+                    />
+                    <i class="fa-solid fa-link absolute left-2.5 top-2.5 text-slate-400 text-xs pointer-events-none"></i>
+                  </div>
+                  <button 
+                    type="button" 
+                    onclick="pasteToDirectUrlInput('add')" 
+                    class="px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition flex items-center gap-1 flex-shrink-0 active:scale-95" 
+                    title="Paste from clipboard"
+                  >
+                    <i class="fa-regular fa-clipboard"></i>
+                    <span>Paste</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Real-time Direct URL Validation & Preview Card -->
+              <div id="preview-box-add-url" class="hidden p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center gap-3">
+                <div class="w-12 h-12 rounded-lg border border-slate-200 overflow-hidden bg-white flex-shrink-0 flex items-center justify-center relative">
+                  <img id="preview-thumb-add-url" src="" alt="Preview" class="w-full h-full object-cover hidden" />
+                  <div id="preview-placeholder-add-url" class="flex flex-col items-center justify-center text-slate-400 text-[10px]">
+                    <i class="fa-solid fa-spinner fa-spin text-brand-orange text-sm"></i>
+                  </div>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div id="preview-status-add-url" class="text-[11px] font-bold text-slate-700 truncate">Checking image...</div>
+                  <p class="text-[9px] text-slate-400">Image will be added to product photos</p>
                 </div>
                 <button 
                   type="button" 
-                  onclick="addExtraImageInput()" 
-                  class="px-2.5 py-1 bg-orange-100 hover:bg-orange-200 text-brand-orange font-bold text-[10px] rounded-lg transition flex items-center gap-1 active:scale-95 shadow-2xs"
+                  id="btn-confirm-add-url"
+                  onclick="confirmAddDirectUrlImage('add')" 
+                  class="px-3 py-1.5 bg-brand-navy hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition shadow-xs flex items-center gap-1 active:scale-95 flex-shrink-0"
                 >
-                  <i class="fa-solid fa-plus text-[9px]"></i> Add Image Link
+                  <i class="fa-solid fa-plus text-[10px]"></i> Add
                 </button>
               </div>
-
-              <!-- Dynamic extra image rows go here -->
-              <div id="extra-images-container" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
             </div>
 
-            <!-- Live Media Strip (All Loaded Images & Video) -->
-            <div>
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-[10px] font-bold text-slate-600">All Images Preview Strip:</span>
-                <span id="add-media-count-badge" class="text-[9px] font-bold text-slate-500">0 images</span>
+            <!-- OPTION B: IMGUR UPLOAD PANEL -->
+            <div id="panel-add-img-imgur" class="hidden space-y-2.5 bg-white p-3 rounded-2xl border border-slate-200/90 shadow-2xs">
+              <!-- Hidden Native File Input -->
+              <input 
+                type="file" 
+                id="inp-file-add-imgur" 
+                accept="image/jpeg,image/png,image/webp,image/gif" 
+                class="hidden" 
+                onchange="handleImgurFileSelected(event, 'add')" 
+              />
+
+              <!-- Tap to Select Mobile Friendly Drop Area -->
+              <div 
+                onclick="triggerImgurFileInput('add')" 
+                class="border-2 border-dashed border-orange-200 hover:border-brand-orange bg-orange-50/40 hover:bg-orange-50/80 rounded-2xl p-4 text-center cursor-pointer transition flex flex-col items-center justify-center gap-2 group active:scale-98"
+              >
+                <div class="w-12 h-12 rounded-2xl bg-white shadow-xs border border-orange-200/80 text-brand-orange flex items-center justify-center text-xl group-hover:scale-110 transition">
+                  <i class="fa-solid fa-cloud-arrow-up"></i>
+                </div>
+                <div>
+                  <p class="font-bold text-xs text-slate-900">Choose Photo from Gallery / Files</p>
+                  <p class="text-[10px] text-slate-500 mt-0.5">JPG, PNG, WEBP, GIF (Max: 10MB) • Uploads to Imgur</p>
+                </div>
+                <span class="px-3 py-1 bg-brand-orange text-white text-[10px] font-bold rounded-xl shadow-xs">
+                  <i class="fa-solid fa-image mr-1"></i> Select Photo (फोटो चुनें)
+                </span>
               </div>
-              <div id="add-media-gallery-strip" class="flex items-center gap-2 overflow-x-auto py-1.5 px-2 bg-white rounded-xl border border-slate-200 min-h-[58px]">
-                <span class="text-slate-400 text-[11px] italic">No images loaded yet</span>
+
+              <!-- Uploading Progress State Box -->
+              <div id="imgur-progress-box-add" class="hidden p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                <div class="flex items-center justify-between text-[11px]">
+                  <span id="imgur-filename-add" class="font-bold text-slate-700 truncate max-w-[200px]">Uploading...</span>
+                  <span id="imgur-pct-add" class="font-mono font-bold text-brand-orange">0%</span>
+                </div>
+                <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                  <div id="imgur-progress-bar-add" class="bg-brand-orange h-2 rounded-full transition-all duration-300" style="width: 0%;"></div>
+                </div>
+                <p id="imgur-status-message-add" class="text-[10px] text-slate-500 flex items-center gap-1.5">
+                  <i class="fa-solid fa-spinner fa-spin text-brand-orange"></i>
+                  <span>Uploading to Imgur cloud storage...</span>
+                </p>
+              </div>
+
+              <!-- Upload Error Notification Alert -->
+              <div id="imgur-error-box-add" class="hidden p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-start gap-2">
+                <i class="fa-solid fa-triangle-exclamation text-rose-500 mt-0.5 flex-shrink-0"></i>
+                <div class="flex-1">
+                  <span id="imgur-error-text-add" class="font-bold">Upload Failed</span>
+                </div>
+                <button type="button" onclick="document.getElementById('imgur-error-box-add').classList.add('hidden')" class="text-rose-400 hover:text-rose-700">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- MANAGED PRODUCT IMAGES GALLERY & REORDER LIST -->
+            <div class="space-y-2 pt-1">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-1.5">
+                  <label class="font-bold text-slate-700 text-[11px]">Product Gallery (अपलोड की गई फोटो)</label>
+                  <span id="prod-images-count-add" class="px-2 py-0.2 bg-slate-200 text-slate-700 font-bold rounded-full text-[10px]">0</span>
+                </div>
+                <span class="text-[9px] font-bold text-brand-orange">#1 is Primary Cover</span>
+              </div>
+
+              <!-- Dynamic Product Images Container -->
+              <div id="product-images-grid-add" class="space-y-2 max-h-60 overflow-y-auto pr-1">
+                <!-- Dynamically populated -->
               </div>
             </div>
 
@@ -1890,62 +2044,179 @@
           </div>
         </div>
 
-        <!-- Product Media Section (Multi-Image & Video Support) -->
-        <div class="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+        <!-- ========================================================= -->
+        <!-- BUYERO IMAGE MANAGEMENT SYSTEM (EDIT PRODUCT MODAL)          -->
+        <!-- ========================================================= -->
+        <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-3xl space-y-3 shadow-2xs">
+          <!-- Header with Quick Action and Settings -->
           <div class="flex items-center justify-between">
-            <label class="font-bold text-slate-800 text-xs flex items-center gap-1.5">
-              <i class="fa-solid fa-photo-film text-brand-orange"></i>
-              <span>Product Media (Images & Video)</span>
-            </label>
-            <span class="text-[10px] font-bold text-slate-500">Live Preview & Delete</span>
-          </div>
-
-          <!-- Main / Primary Image URL -->
-          <div>
-            <div class="flex items-center justify-between mb-1">
-              <label class="block font-bold text-slate-700 text-[11px]">Primary Image (Main Cover) *</label>
-              <span class="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-md">Main</span>
-            </div>
             <div class="flex items-center gap-2">
-              <input 
-                type="url" 
-                id="edit-prod-image" 
-                required 
-                placeholder="https://... main image URL"
-                oninput="onEditPrimaryImageChange()"
-                class="flex-1 px-3 py-1.5 border border-slate-300 rounded-xl outline-none focus:border-brand-navy bg-white text-xs" 
-              />
-              <div id="edit-prod-primary-thumb-preview" class="w-9 h-9 rounded-lg border border-slate-300 overflow-hidden bg-slate-100 flex-shrink-0 flex items-center justify-center">
-                <i class="fa-solid fa-image text-slate-400 text-xs"></i>
+              <div class="w-7 h-7 rounded-xl bg-orange-100 text-brand-orange flex items-center justify-center text-xs">
+                <i class="fa-solid fa-images"></i>
+              </div>
+              <div>
+                <h4 class="font-poppins font-bold text-xs text-slate-800">Product Images (फोटो मैनेजमेंट)</h4>
+                <p class="text-[10px] text-slate-500">Edit via Direct URL or Imgur Upload</p>
               </div>
             </div>
-          </div>
-
-          <!-- Extra Images (Dynamic Multi-Image List with Delete) -->
-          <div>
-            <div class="flex items-center justify-between mb-1.5">
-              <label class="block font-bold text-slate-700 text-[11px]">Additional Product Images (Gallery)</label>
+            <div class="flex items-center gap-1.5">
               <button 
                 type="button" 
-                onclick="addEditExtraImageInput()" 
-                class="px-2.5 py-1 bg-orange-100 hover:bg-orange-200 text-brand-orange font-bold text-[10px] rounded-lg transition flex items-center gap-1 active:scale-95 shadow-2xs"
+                onclick="openImgurSettingsModal()" 
+                class="px-2 py-1 bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 rounded-xl text-[10px] font-bold flex items-center gap-1 transition shadow-2xs active:scale-95" 
+                title="Imgur API Configuration"
               >
-                <i class="fa-solid fa-plus text-[9px]"></i> Add Image Link
+                <i class="fa-solid fa-gear text-brand-orange"></i>
+                <span>API Settings</span>
               </button>
             </div>
-
-            <!-- Dynamic extra image rows go here -->
-            <div id="edit-extra-images-container" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
           </div>
 
-          <!-- Live Media Strip (All Loaded Images & Video) -->
-          <div>
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-[10px] font-bold text-slate-600">All Images Preview Strip:</span>
-              <span id="edit-media-count-badge" class="text-[9px] font-bold text-slate-500">0 images</span>
+          <!-- Hidden Primary Image Input for backward-compatible form validation -->
+          <input type="hidden" id="edit-prod-image" required value="" />
+
+          <!-- Option Switcher Tabs (Option A vs Option B) -->
+          <div class="grid grid-cols-2 gap-2 bg-slate-200/80 p-1 rounded-2xl">
+            <button 
+              type="button" 
+              id="btn-tab-edit-img-url" 
+              onclick="switchImageSourceTab('url', 'edit')" 
+              class="py-2 px-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-xs bg-white text-slate-900 border border-slate-200/80"
+            >
+              <i class="fa-solid fa-link text-brand-navy"></i>
+              <span>Direct URL (विकल्प A)</span>
+            </button>
+            <button 
+              type="button" 
+              id="btn-tab-edit-img-imgur" 
+              onclick="switchImageSourceTab('imgur', 'edit')" 
+              class="py-2 px-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900"
+            >
+              <i class="fa-solid fa-cloud-arrow-up text-brand-orange"></i>
+              <span>Imgur Upload (विकल्प B)</span>
+            </button>
+          </div>
+
+          <!-- OPTION A: DIRECT IMAGE URL PANEL -->
+          <div id="panel-edit-img-url" class="space-y-2.5 bg-white p-3 rounded-2xl border border-slate-200/90 shadow-2xs">
+            <div>
+              <label class="block font-bold text-slate-700 text-[11px] mb-1">
+                Add Image via Direct Web Link (इमेज URL)
+              </label>
+              <div class="flex items-center gap-1.5">
+                <div class="relative flex-1">
+                  <input 
+                    type="url" 
+                    id="inp-edit-direct-url" 
+                    placeholder="https://... (JPG, PNG, WEBP, Imgur link)"
+                    oninput="onDirectUrlInputChange('edit')"
+                    class="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-xl outline-none focus:border-brand-navy bg-slate-50/50 text-xs font-mono"
+                  />
+                  <i class="fa-solid fa-link absolute left-2.5 top-2.5 text-slate-400 text-xs pointer-events-none"></i>
+                </div>
+                <button 
+                  type="button" 
+                  onclick="pasteToDirectUrlInput('edit')" 
+                  class="px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition flex items-center gap-1 flex-shrink-0 active:scale-95" 
+                  title="Paste from clipboard"
+                >
+                  <i class="fa-regular fa-clipboard"></i>
+                  <span>Paste</span>
+                </button>
+              </div>
             </div>
-            <div id="edit-media-gallery-strip" class="flex items-center gap-2 overflow-x-auto py-1.5 px-2 bg-white rounded-xl border border-slate-200 min-h-[58px]">
-              <span class="text-slate-400 text-[11px] italic">No images loaded yet</span>
+
+            <!-- Real-time Direct URL Validation & Preview Card -->
+            <div id="preview-box-edit-url" class="hidden p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center gap-3">
+              <div class="w-12 h-12 rounded-lg border border-slate-200 overflow-hidden bg-white flex-shrink-0 flex items-center justify-center relative">
+                <img id="preview-thumb-edit-url" src="" alt="Preview" class="w-full h-full object-cover hidden" />
+                <div id="preview-placeholder-edit-url" class="flex flex-col items-center justify-center text-slate-400 text-[10px]">
+                  <i class="fa-solid fa-spinner fa-spin text-brand-orange text-sm"></i>
+                </div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div id="preview-status-edit-url" class="text-[11px] font-bold text-slate-700 truncate">Checking image...</div>
+                <p class="text-[9px] text-slate-400">Image will be added to product gallery</p>
+              </div>
+              <button 
+                type="button" 
+                id="btn-confirm-edit-url"
+                onclick="confirmAddDirectUrlImage('edit')" 
+                class="px-3 py-1.5 bg-brand-navy hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition shadow-xs flex items-center gap-1 active:scale-95 flex-shrink-0"
+              >
+                <i class="fa-solid fa-plus text-[10px]"></i> Add
+              </button>
+            </div>
+          </div>
+
+          <!-- OPTION B: IMGUR UPLOAD PANEL -->
+          <div id="panel-edit-img-imgur" class="hidden space-y-2.5 bg-white p-3 rounded-2xl border border-slate-200/90 shadow-2xs">
+            <!-- Hidden Native File Input -->
+            <input 
+              type="file" 
+              id="inp-file-edit-imgur" 
+              accept="image/jpeg,image/png,image/webp,image/gif" 
+              class="hidden" 
+              onchange="handleImgurFileSelected(event, 'edit')" 
+            />
+
+            <!-- Tap to Select Mobile Friendly Drop Area -->
+            <div 
+              onclick="triggerImgurFileInput('edit')" 
+              class="border-2 border-dashed border-orange-200 hover:border-brand-orange bg-orange-50/40 hover:bg-orange-50/80 rounded-2xl p-4 text-center cursor-pointer transition flex flex-col items-center justify-center gap-2 group active:scale-98"
+            >
+              <div class="w-12 h-12 rounded-2xl bg-white shadow-xs border border-orange-200/80 text-brand-orange flex items-center justify-center text-xl group-hover:scale-110 transition">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+              </div>
+              <div>
+                <p class="font-bold text-xs text-slate-900">Choose Photo from Gallery / Files</p>
+                <p class="text-[10px] text-slate-500 mt-0.5">JPG, PNG, WEBP, GIF (Max: 10MB) • Uploads to Imgur</p>
+              </div>
+              <span class="px-3 py-1 bg-brand-orange text-white text-[10px] font-bold rounded-xl shadow-xs">
+                <i class="fa-solid fa-image mr-1"></i> Select Photo (फोटो चुनें)
+              </span>
+            </div>
+
+            <!-- Uploading Progress State Box -->
+            <div id="imgur-progress-box-edit" class="hidden p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+              <div class="flex items-center justify-between text-[11px]">
+                <span id="imgur-filename-edit" class="font-bold text-slate-700 truncate max-w-[200px]">Uploading...</span>
+                <span id="imgur-pct-edit" class="font-mono font-bold text-brand-orange">0%</span>
+              </div>
+              <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                <div id="imgur-progress-bar-edit" class="bg-brand-orange h-2 rounded-full transition-all duration-300" style="width: 0%;"></div>
+              </div>
+              <p id="imgur-status-message-edit" class="text-[10px] text-slate-500 flex items-center gap-1.5">
+                <i class="fa-solid fa-spinner fa-spin text-brand-orange"></i>
+                <span>Uploading to Imgur cloud storage...</span>
+              </p>
+            </div>
+
+            <!-- Upload Error Notification Alert -->
+            <div id="imgur-error-box-edit" class="hidden p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-start gap-2">
+              <i class="fa-solid fa-triangle-exclamation text-rose-500 mt-0.5 flex-shrink-0"></i>
+              <div class="flex-1">
+                <span id="imgur-error-text-edit" class="font-bold">Upload Failed</span>
+              </div>
+              <button type="button" onclick="document.getElementById('imgur-error-box-edit').classList.add('hidden')" class="text-rose-400 hover:text-rose-700">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- MANAGED PRODUCT IMAGES GALLERY & REORDER LIST -->
+          <div class="space-y-2 pt-1">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-1.5">
+                <label class="font-bold text-slate-700 text-[11px]">Product Gallery (अपलोड की गई फोटो)</label>
+                <span id="prod-images-count-edit" class="px-2 py-0.2 bg-slate-200 text-slate-700 font-bold rounded-full text-[10px]">0</span>
+              </div>
+              <span class="text-[9px] font-bold text-brand-orange">#1 is Primary Cover</span>
+            </div>
+
+            <!-- Dynamic Product Images Container -->
+            <div id="product-images-grid-edit" class="space-y-2 max-h-60 overflow-y-auto pr-1">
+              <!-- Dynamically populated -->
             </div>
           </div>
 
@@ -1990,6 +2261,85 @@
           <button type="submit" id="btn-edit-prod-submit" class="flex-1 py-2 bg-brand-navy text-white font-bold rounded-xl shadow hover:bg-brand-deep transition flex items-center justify-center gap-1">Save Changes</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL: IMGUR API CONFIGURATION (ADMIN SETTINGS)            -->
+  <!-- ========================================================= -->
+  <div id="modal-imgur-settings" class="hidden fixed inset-0 z-[99990] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 select-none">
+    <div class="bg-white text-slate-900 rounded-3xl max-w-sm w-full shadow-2xl border border-slate-100 overflow-hidden transform transition-all duration-200 p-5 space-y-4 animate-in fade-in zoom-in-95">
+      <!-- Header -->
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-2xl bg-orange-50 text-brand-orange border border-orange-200/80 flex items-center justify-center text-base">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+          </div>
+          <div>
+            <h3 class="font-poppins font-bold text-sm text-slate-900">Imgur API Settings</h3>
+            <p class="text-[10px] text-slate-500">इमेज अपलोड और API क्रेडेंशियल</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeImgurSettingsModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark text-xs"></i>
+        </button>
+      </div>
+
+      <!-- Settings Content -->
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 text-[11px] mb-1">
+            Imgur Client ID
+          </label>
+          <input 
+            type="text" 
+            id="inp-settings-imgur-client-id" 
+            placeholder="e.g. 9f8b46ce59c1c4e" 
+            class="w-full px-3 py-2 border border-slate-300 rounded-xl outline-none focus:border-brand-navy font-mono text-xs bg-slate-50/60"
+          />
+          <p class="text-[10px] text-slate-400 mt-1">
+            यह Client ID केवल आपके डिवाइस पर सुरक्षित रूप से सुरक्षित (LocalStorage / Cloud) रहेगा।
+          </p>
+        </div>
+
+        <!-- How to get key explanation banner -->
+        <div class="p-3 bg-amber-50/70 border border-amber-200/80 rounded-2xl space-y-1.5 text-[11px] text-amber-900">
+          <div class="font-bold flex items-center gap-1.5 text-amber-800">
+            <i class="fa-solid fa-circle-info text-xs"></i>
+            <span>Imgur Free Client ID कैसे प्राप्त करें?</span>
+          </div>
+          <ol class="list-decimal list-inside space-y-0.5 text-[10px] text-amber-950/80 pl-1">
+            <li><a href="https://api.imgur.com/oauth2/addclient" target="_blank" class="underline font-bold text-amber-900">api.imgur.com/oauth2/addclient</a> खोलें।</li>
+            <li>Application name में <b>Buyero</b> लिखें।</li>
+            <li>Authorization type में <b>"OAuth 2 authorization without a callback URL"</b> चुनें।</li>
+            <li>Submit करने पर जो <b>Client ID</b> मिले, उसे यहाँ पेस्ट करें।</li>
+          </ol>
+        </div>
+
+        <!-- Connection Test Status -->
+        <div id="imgur-test-status" class="hidden p-2 rounded-xl text-[10px] font-bold"></div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex gap-2 pt-1">
+        <button 
+          type="button" 
+          onclick="testImgurApiConnection()" 
+          id="btn-test-imgur-connection"
+          class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1"
+        >
+          <i class="fa-solid fa-satellite-dish text-[11px]"></i>
+          <span>Test API</span>
+        </button>
+        <button 
+          type="button" 
+          onclick="saveImgurSettings()" 
+          class="flex-1 py-2.5 bg-brand-navy hover:bg-slate-900 text-white font-bold rounded-xl text-xs shadow transition flex items-center justify-center gap-1"
+        >
+          <i class="fa-solid fa-floppy-disk text-[11px]"></i>
+          <span>Save Settings</span>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -3394,6 +3744,11 @@
       } else if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('data:image/')) {
         url = 'https://' + url;
       }
+      // Auto-convert standard Imgur page links (e.g. imgur.com/xyz) to direct image link (i.imgur.com/xyz.jpg)
+      const imgurMatch = url.match(/^https?:\/\/(?:www\.)?imgur\.com\/([a-zA-Z0-9]{5,8})$/i);
+      if (imgurMatch && imgurMatch[1] && imgurMatch[1].toLowerCase() !== 'gallery') {
+        url = `https://i.imgur.com/${imgurMatch[1]}.jpg`;
+      }
       return url;
     }
 
@@ -3420,89 +3775,651 @@
     }
 
     /* =========================================================
-       ADD PRODUCT FORM - MULTI-IMAGE & VIDEO GALLERY CONTROLLER
+       BUYERO ADVANCED IMAGE MANAGEMENT SYSTEM (OPTION A & OPTION B)
+       Supports Direct URL, Live Preview, Imgur Upload, Reordering, 
+       Primary Cover Selection, and Animated Branded Placeholders.
        ========================================================= */
-    function onAddPrimaryImageChange() {
-      const inp = document.getElementById('inp-prod-image');
-      const thumb = document.getElementById('inp-prod-primary-thumb-preview');
-      const val = cleanImageUrl(inp ? inp.value : '');
-      if (thumb) {
-        if (val) {
-          thumb.innerHTML = `<img src="${val}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100';">`;
-        } else {
-          thumb.innerHTML = `<i class="fa-solid fa-image text-slate-400 text-xs"></i>`;
-        }
-      }
-      renderAddProductGalleryLive();
+    const DEFAULT_IMGUR_CLIENT_ID = '9f8b46ce59c1c4e';
+    let adminAddProductImages = [];
+    let adminEditProductImages = [];
+
+    function getImgurClientId() {
+      const stored = (localStorage.getItem('buyero_admin_imgur_client_id') || '').trim();
+      return stored || DEFAULT_IMGUR_CLIENT_ID;
     }
 
-    function addExtraImageInput(initialUrl = '') {
-      const container = document.getElementById('extra-images-container');
-      if (!container) return;
-      const rowId = 'add-extra-img-row-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7);
-      const cleanInit = cleanImageUrl(initialUrl);
-      const div = document.createElement('div');
-      div.id = rowId;
-      div.className = "flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200 transition hover:border-slate-300 shadow-2xs";
-      div.innerHTML = `
-        <div class="w-10 h-10 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 flex-shrink-0 flex items-center justify-center extra-img-thumb shadow-2xs">
-          ${cleanInit ? `<img src="${cleanInit}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100';">` : `<i class="fa-solid fa-image text-slate-300 text-xs"></i>`}
+    // Helper for rendering images with animated branded Buyero placeholder
+    function renderBuyeroImage(url, alt = '', className = '', imgAttrs = '') {
+      const clean = cleanImageUrl(url || '');
+      const safeAlt = (alt || 'Product Image').replace(/"/g, '&quot;');
+      if (!clean) {
+        return `
+          <div class="buyero-brand-placeholder">
+            <div class="w-8 h-8 rounded-xl bg-white/90 shadow-sm border border-orange-200 flex items-center justify-center text-brand-orange buyero-brand-icon-anim mb-1">
+              <i class="fa-solid fa-bag-shopping text-xs"></i>
+            </div>
+            <span class="font-poppins font-black text-[9px] tracking-wider text-slate-800 uppercase">BUYERO</span>
+            <span class="text-[7px] text-slate-400 font-medium">Quality Assured</span>
+          </div>
+        `;
+      }
+      return `
+        <div class="relative w-full h-full overflow-hidden bg-slate-50 flex items-center justify-center select-none buyero-img-container">
+          <div class="buyero-brand-placeholder">
+            <div class="w-8 h-8 rounded-xl bg-white/90 shadow-sm border border-orange-200 flex items-center justify-center text-brand-orange buyero-brand-icon-anim mb-1">
+              <i class="fa-solid fa-bag-shopping text-xs"></i>
+            </div>
+            <span class="font-poppins font-black text-[9px] tracking-wider text-slate-800 uppercase">BUYERO</span>
+            <span class="text-[7px] text-slate-400 font-medium">Verified Quality</span>
+          </div>
+          <img 
+            src="${clean}" 
+            alt="${safeAlt}" 
+            class="${className} relative z-10 transition-opacity duration-300 opacity-0" 
+            loading="lazy"
+            onload="this.classList.remove('opacity-0'); this.previousElementSibling?.classList.add('loaded');" 
+            onerror="this.style.display='none'; this.previousElementSibling?.classList.remove('loaded');"
+            ${imgAttrs}
+          />
         </div>
-        <input 
-          type="text" 
-          inputmode="url"
-          placeholder="Paste extra image link (e.g. https://...)" 
-          value="${cleanInit ? cleanInit.replace(/"/g, '&quot;') : ''}"
-          oninput="updateAddExtraImageThumbnail(this)"
-          onchange="updateAddExtraImageThumbnail(this)"
-          class="add-extra-img-input flex-1 px-3 py-1.5 text-xs border border-slate-200 rounded-lg outline-none focus:border-brand-navy bg-slate-50/50"
-        />
-        <button 
-          type="button" 
-          onclick="pasteFromClipboardToInput(this)" 
-          class="px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold flex items-center gap-1 transition active:scale-95 flex-shrink-0"
-          title="Paste from clipboard"
-        >
-          <i class="fa-regular fa-clipboard"></i>
-          <span class="hidden sm:inline">Paste</span>
-        </button>
-        <button 
-          type="button" 
-          onclick="removeAddExtraImage('${rowId}')" 
-          class="w-8 h-8 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 flex items-center justify-center transition active:scale-90 flex-shrink-0"
-          title="Delete this image"
-        >
-          <i class="fa-solid fa-trash text-xs"></i>
-        </button>
       `;
-      container.appendChild(div);
-      renderAddProductGalleryLive();
     }
 
-    async function removeAddExtraImage(rowId) {
-      const ok = await confirmAdminAction("क्या आप इस फोटो लिंक को हटाना चाहते हैं?\nAre you sure you want to remove this image?", "Confirm Remove Image");
-      if (!ok) return;
-      const el = document.getElementById(rowId);
-      if (el) {
-        el.remove();
-        renderAddProductGalleryLive();
+    // Switch between Option A (Direct URL) and Option B (Imgur Upload)
+    function switchImageSourceTab(mode, formType = 'add') {
+      const btnUrl = document.getElementById(`btn-tab-${formType}-img-url`);
+      const btnImgur = document.getElementById(`btn-tab-${formType}-img-imgur`);
+      const panelUrl = document.getElementById(`panel-${formType}-img-url`);
+      const panelImgur = document.getElementById(`panel-${formType}-img-imgur`);
+
+      if (mode === 'url') {
+        btnUrl?.classList.add('shadow-xs', 'bg-white', 'text-slate-900', 'border', 'border-slate-200/80');
+        btnUrl?.classList.remove('text-slate-600');
+        btnImgur?.classList.remove('shadow-xs', 'bg-white', 'text-slate-900', 'border', 'border-slate-200/80');
+        btnImgur?.classList.add('text-slate-600');
+
+        panelUrl?.classList.remove('hidden');
+        panelImgur?.classList.add('hidden');
+      } else {
+        btnImgur?.classList.add('shadow-xs', 'bg-white', 'text-slate-900', 'border', 'border-slate-200/80');
+        btnImgur?.classList.remove('text-slate-600');
+        btnUrl?.classList.remove('shadow-xs', 'bg-white', 'text-slate-900', 'border', 'border-slate-200/80');
+        btnUrl?.classList.add('text-slate-600');
+
+        panelImgur?.classList.remove('hidden');
+        panelUrl?.classList.add('hidden');
       }
     }
 
-    function updateAddExtraImageThumbnail(inputEl) {
-      const cleaned = cleanImageUrl(inputEl.value);
-      const row = inputEl.closest('.flex');
-      if (row) {
-        const thumb = row.querySelector('.extra-img-thumb');
-        if (thumb) {
-          if (cleaned) {
-            thumb.innerHTML = `<img src="${cleaned}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100';">`;
+    // Option A: Real-time Direct URL Validation & Preview
+    function onDirectUrlInputChange(formType = 'add') {
+      const input = document.getElementById(`inp-${formType}-direct-url`);
+      const previewBox = document.getElementById(`preview-box-${formType}-url`);
+      const previewThumb = document.getElementById(`preview-thumb-${formType}-url`);
+      const placeholder = document.getElementById(`preview-placeholder-${formType}-url`);
+      const statusText = document.getElementById(`preview-status-${formType}-url`);
+      const confirmBtn = document.getElementById(`btn-confirm-${formType}-url`);
+
+      const rawVal = (input ? input.value : '').trim();
+      const cleanVal = cleanImageUrl(rawVal);
+
+      if (!rawVal) {
+        previewBox?.classList.add('hidden');
+        return;
+      }
+
+      previewBox?.classList.remove('hidden');
+      if (placeholder) placeholder.style.display = 'flex';
+      if (previewThumb) {
+        previewThumb.classList.add('hidden');
+        previewThumb.src = '';
+      }
+      if (statusText) {
+        statusText.className = 'text-[11px] font-bold text-slate-600 truncate';
+        statusText.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-brand-orange mr-1"></i> Checking image link...';
+      }
+      if (confirmBtn) confirmBtn.disabled = true;
+
+      // Validate URL protocol
+      if (!/^https?:\/\//i.test(cleanVal)) {
+        if (statusText) {
+          statusText.className = 'text-[11px] font-bold text-rose-600 truncate';
+          statusText.innerHTML = '<i class="fa-solid fa-circle-xmark mr-1"></i> Invalid URL (Must start with http:// or https://)';
+        }
+        if (placeholder) placeholder.innerHTML = '<i class="fa-solid fa-circle-exclamation text-rose-400"></i>';
+        return;
+      }
+
+      // Test image loading
+      const img = new Image();
+      img.onload = function() {
+        if (placeholder) placeholder.style.display = 'none';
+        if (previewThumb) {
+          previewThumb.src = cleanVal;
+          previewThumb.classList.remove('hidden');
+        }
+        if (statusText) {
+          statusText.className = 'text-[11px] font-bold text-emerald-600 truncate';
+          statusText.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> Valid image (${img.naturalWidth}x${img.naturalHeight})`;
+        }
+        if (confirmBtn) confirmBtn.disabled = false;
+      };
+      img.onerror = function() {
+        if (placeholder) {
+          placeholder.style.display = 'flex';
+          placeholder.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-amber-500"></i>';
+        }
+        if (statusText) {
+          statusText.className = 'text-[11px] font-bold text-amber-600 truncate';
+          statusText.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1"></i> Unable to load image (Link might be invalid or restricted)';
+        }
+        // Still allow adding if user insists it is valid
+        if (confirmBtn) confirmBtn.disabled = false;
+      };
+      img.src = cleanVal;
+    }
+
+    // Option A: Paste from Clipboard
+    async function pasteToDirectUrlInput(formType = 'add') {
+      try {
+        const text = await navigator.clipboard.readText();
+        const input = document.getElementById(`inp-${formType}-direct-url`);
+        if (input && text) {
+          input.value = text.trim();
+          onDirectUrlInputChange(formType);
+        }
+      } catch (err) {
+        showToastNotification("Clipboard access denied. Please paste manually.", "warning");
+      }
+    }
+
+    // Option A: Confirm Adding Direct URL to Product
+    function confirmAddDirectUrlImage(formType = 'add') {
+      const input = document.getElementById(`inp-${formType}-direct-url`);
+      const cleanVal = cleanImageUrl((input ? input.value : '').trim());
+      if (!cleanVal || !/^https?:\/\//i.test(cleanVal)) {
+        showToastNotification("कृपया एक मान्य इमेज URL दर्ज करें (Please enter a valid Image URL).", "error");
+        return;
+      }
+
+      const list = formType === 'add' ? adminAddProductImages : adminEditProductImages;
+      list.push(cleanVal);
+
+      // Reset URL input and preview
+      if (input) input.value = '';
+      const previewBox = document.getElementById(`preview-box-${formType}-url`);
+      previewBox?.classList.add('hidden');
+
+      renderProductImagesGrid(formType);
+      showToastNotification("इमेज सफलतापूर्वक जोड़ दी गई! (Image added)", "success");
+    }
+
+    // Option B: Trigger Imgur File Input
+    function triggerImgurFileInput(formType = 'add') {
+      const fileInput = document.getElementById(`inp-file-${formType}-imgur`);
+      fileInput?.click();
+    }
+
+    // Option B: Handle Imgur File Upload
+    async function handleImgurFileSelected(event, formType = 'add') {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+
+      const progressBox = document.getElementById(`imgur-progress-box-${formType}`);
+      const progressBar = document.getElementById(`imgur-progress-bar-${formType}`);
+      const filenameLabel = document.getElementById(`imgur-filename-${formType}`);
+      const pctLabel = document.getElementById(`imgur-pct-${formType}`);
+      const statusMessage = document.getElementById(`imgur-status-message-${formType}`);
+      const errorBox = document.getElementById(`imgur-error-box-${formType}`);
+      const errorText = document.getElementById(`imgur-error-text-${formType}`);
+
+      errorBox?.classList.add('hidden');
+
+      // Validation 1: File Type
+      const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      if (!validTypes.includes(file.type) && !/\.(jpe?g|png|webp|gif)$/i.test(file.name)) {
+        if (errorBox && errorText) {
+          errorText.textContent = "अमान्य फ़ाइल प्रकार! केवल JPG, PNG, WEBP, और GIF इमेज की अनुमति है। (Invalid file type. Only JPG, PNG, WEBP, and GIF allowed)";
+          errorBox.classList.remove('hidden');
+        }
+        event.target.value = '';
+        return;
+      }
+
+      // Validation 2: File Size (Max 10MB)
+      const maxSizeBytes = 10 * 1024 * 1024;
+      if (file.size > maxSizeBytes) {
+        if (errorBox && errorText) {
+          const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+          errorText.textContent = `फ़ाइल का साइज़ बहुत बड़ा है (${sizeMB}MB)! अधिकतम 10MB की अनुमति है। (File size exceeds 10MB limit)`;
+          errorBox.classList.remove('hidden');
+        }
+        event.target.value = '';
+        return;
+      }
+
+      // Show progress state
+      progressBox?.classList.remove('hidden');
+      if (filenameLabel) {
+        const sizeKB = Math.round(file.size / 1024);
+        filenameLabel.textContent = `${file.name} (${sizeKB > 1024 ? (sizeKB/1024).toFixed(1) + ' MB' : sizeKB + ' KB'})`;
+      }
+      if (progressBar) progressBar.style.width = '15%';
+      if (pctLabel) pctLabel.textContent = '15%';
+      if (statusMessage) {
+        statusMessage.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-brand-orange"></i> Preparing and reading photo...';
+      }
+
+      const clientId = getImgurClientId();
+
+      // Read file and perform upload
+      try {
+        const formData = new FormData();
+        formData.append('image', file);
+        formData.append('type', 'file');
+        formData.append('name', file.name);
+        formData.append('title', 'Buyero Product Image');
+
+        // Use XMLHttpRequest for real-time upload progress tracking
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', 'https://api.imgur.com/3/image', true);
+        xhr.setRequestHeader('Authorization', `Client-ID ${clientId}`);
+
+        xhr.upload.onprogress = function(e) {
+          if (e.lengthComputable) {
+            const percent = Math.min(92, Math.round((e.loaded / e.total) * 90) + 10);
+            if (progressBar) progressBar.style.width = percent + '%';
+            if (pctLabel) pctLabel.textContent = percent + '%';
+            if (statusMessage) {
+              statusMessage.innerHTML = `<i class="fa-solid fa-cloud-arrow-up text-brand-orange"></i> Uploading to Imgur... (${percent}%)`;
+            }
+          }
+        };
+
+        xhr.onload = function() {
+          let responseData = null;
+          try {
+            responseData = JSON.parse(xhr.responseText);
+          } catch(e) {}
+
+          if (xhr.status === 200 && responseData && responseData.success && responseData.data && responseData.data.link) {
+            if (progressBar) progressBar.style.width = '100%';
+            if (pctLabel) pctLabel.textContent = '100%';
+            if (statusMessage) {
+              statusMessage.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-500"></i> Upload complete! Adding to product gallery...';
+            }
+
+            const imgurDirectUrl = responseData.data.link;
+            const list = formType === 'add' ? adminAddProductImages : adminEditProductImages;
+            list.push(imgurDirectUrl);
+
+            setTimeout(() => {
+              progressBox?.classList.add('hidden');
+              renderProductImagesGrid(formType);
+              showToastNotification("इमेज सफलतापूर्वक Imgur पर अपलोड हो गई! (Uploaded to Imgur)", "success");
+            }, 600);
           } else {
-            thumb.innerHTML = `<i class="fa-solid fa-image text-slate-300 text-xs"></i>`;
+            progressBox?.classList.add('hidden');
+            let friendlyError = "Imgur upload failed. Please try again or use Direct URL.";
+            if (xhr.status === 429) {
+              friendlyError = "Imgur Free Tier की सीमा समाप्त हो गई है (429 Rate Limit)। कृपया थोड़ी देर प्रतीक्षा करें या Direct Image URL (विकल्प A) का उपयोग करें।";
+            } else if (xhr.status === 403 || xhr.status === 401) {
+              friendlyError = "अमान्य Imgur Client ID! कृपया API Settings (⚙️) में अपना Client ID जांचें। (Invalid Client ID)";
+            } else if (responseData && responseData.data && responseData.data.error) {
+              friendlyError = responseData.data.error;
+            }
+
+            if (errorBox && errorText) {
+              errorText.textContent = friendlyError;
+              errorBox.classList.remove('hidden');
+            }
+            showToastNotification(friendlyError, "error");
+          }
+          event.target.value = '';
+        };
+
+        xhr.onerror = function() {
+          progressBox?.classList.add('hidden');
+          const errorMsg = "नेटवर्क त्रुटि: Imgur से कनेक्ट नहीं हो सका। कृपया इंटरनेट कनेक्शन जांचें या Direct URL का उपयोग करें।";
+          if (errorBox && errorText) {
+            errorText.textContent = errorMsg;
+            errorBox.classList.remove('hidden');
+          }
+          showToastNotification(errorMsg, "error");
+          event.target.value = '';
+        };
+
+        xhr.send(formData);
+      } catch (err) {
+        progressBox?.classList.add('hidden');
+        if (errorBox && errorText) {
+          errorText.textContent = err.message || "Upload failed.";
+          errorBox.classList.remove('hidden');
+        }
+        event.target.value = '';
+      }
+    }
+
+    // Render Managed Product Images Grid & Reorder List
+    function renderProductImagesGrid(formType = 'add') {
+      const container = document.getElementById(`product-images-grid-${formType}`);
+      const countEl = document.getElementById(`prod-images-count-${formType}`);
+      const hiddenPrimaryInput = document.getElementById(formType === 'add' ? 'inp-prod-image' : 'edit-prod-image');
+      const list = formType === 'add' ? adminAddProductImages : adminEditProductImages;
+
+      if (countEl) countEl.textContent = list.length;
+
+      // Synchronize hidden primary input for existing validations
+      if (hiddenPrimaryInput) {
+        hiddenPrimaryInput.value = list[0] || '';
+      }
+
+      if (!container) return;
+
+      if (list.length === 0) {
+        container.innerHTML = `
+          <div class="p-4 bg-white rounded-2xl border border-dashed border-slate-200 text-center text-slate-400 text-xs select-none">
+            <i class="fa-solid fa-images text-2xl text-slate-300 mb-1.5 block"></i>
+            <span>कोई फोटो नहीं जोड़ी गई है। (No images added yet)</span>
+            <p class="text-[10px] text-slate-400 mt-0.5">ऊपर Direct URL (विकल्प A) या Imgur Upload (विकल्प B) से फोटो जोड़ें।</p>
+          </div>
+        `;
+        renderGalleryStripSync(formType);
+        return;
+      }
+
+      container.innerHTML = list.map((url, idx) => {
+        const isCover = idx === 0;
+        const cleanUrl = cleanImageUrl(url);
+        return `
+          <div class="flex items-center gap-2.5 p-2 rounded-2xl transition border ${isCover ? 'bg-orange-50/50 border-brand-orange shadow-2xs' : 'bg-white border-slate-200 hover:border-slate-300'}">
+            <!-- Thumbnail Box with Buyero Brand Shimmer -->
+            <div class="w-12 h-12 rounded-xl overflow-hidden border ${isCover ? 'border-brand-orange' : 'border-slate-200'} bg-white flex-shrink-0 relative">
+              ${renderBuyeroImage(cleanUrl, `Product Image ${idx + 1}`, 'w-full h-full object-cover')}
+            </div>
+
+            <!-- Details -->
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                ${isCover ? `
+                  <span class="px-1.5 py-0.5 bg-brand-orange text-white rounded text-[8px] font-black uppercase tracking-wider flex items-center gap-0.5">
+                    <i class="fa-solid fa-star text-[7px]"></i> PRIMARY COVER
+                  </span>
+                ` : `
+                  <span class="px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] font-bold">
+                    #${idx + 1} Gallery
+                  </span>
+                `}
+              </div>
+              <p class="text-[10px] font-mono text-slate-500 truncate mt-0.5" title="${cleanUrl}">${cleanUrl}</p>
+            </div>
+
+            <!-- Action Controls -->
+            <div class="flex items-center gap-1 flex-shrink-0">
+              ${!isCover ? `
+                <button 
+                  type="button" 
+                  onclick="setProductImagePrimary(${idx}, '${formType}')" 
+                  class="px-2 py-1 bg-orange-100 hover:bg-orange-200 text-brand-orange text-[10px] font-bold rounded-lg transition active:scale-95 flex items-center gap-1"
+                  title="Make this Primary Cover"
+                >
+                  <i class="fa-solid fa-star text-[8px]"></i>
+                  <span class="hidden sm:inline">Cover</span>
+                </button>
+              ` : ''}
+
+              ${idx > 0 ? `
+                <button 
+                  type="button" 
+                  onclick="moveProductImage(${idx}, -1, '${formType}')" 
+                  class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition active:scale-90"
+                  title="Move Up"
+                >
+                  <i class="fa-solid fa-arrow-up text-[10px]"></i>
+                </button>
+              ` : ''}
+
+              ${idx < list.length - 1 ? `
+                <button 
+                  type="button" 
+                  onclick="moveProductImage(${idx}, 1, '${formType}')" 
+                  class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition active:scale-90"
+                  title="Move Down"
+                >
+                  <i class="fa-solid fa-arrow-down text-[10px]"></i>
+                </button>
+              ` : ''}
+
+              <button 
+                type="button" 
+                onclick="copyProductImageUrl('${cleanUrl.replace(/'/g, "\\'")}')" 
+                class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition active:scale-90"
+                title="Copy URL"
+              >
+                <i class="fa-regular fa-copy text-[10px]"></i>
+              </button>
+
+              <button 
+                type="button" 
+                onclick="removeProductImage(${idx}, '${formType}')" 
+                class="w-7 h-7 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 flex items-center justify-center transition active:scale-90"
+                title="Delete image"
+              >
+                <i class="fa-solid fa-trash text-[10px]"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      renderGalleryStripSync(formType);
+    }
+
+    // Synchronize preview strip with current image list
+    function renderGalleryStripSync(formType = 'add') {
+      const strip = document.getElementById(formType === 'add' ? 'add-media-gallery-strip' : 'edit-media-gallery-strip');
+      const countBadge = document.getElementById(formType === 'add' ? 'add-media-count-badge' : 'edit-media-count-badge');
+      const list = formType === 'add' ? adminAddProductImages : adminEditProductImages;
+      const videoInp = document.getElementById(formType === 'add' ? 'inp-prod-video' : 'edit-prod-video');
+      const videoUrl = (videoInp ? videoInp.value : '').trim();
+
+      if (countBadge) {
+        countBadge.textContent = `${list.length} photo${list.length === 1 ? '' : 's'}${videoUrl ? ' + 1 video' : ''}`;
+      }
+
+      if (!strip) return;
+
+      if (list.length === 0 && !videoUrl) {
+        strip.innerHTML = `<span class="text-slate-400 text-[11px] italic px-1">No images or video loaded yet</span>`;
+        return;
+      }
+
+      let html = '';
+      list.forEach((url, idx) => {
+        const isCover = idx === 0;
+        html += `
+          <div class="relative w-12 h-12 rounded-lg border-2 ${isCover ? 'border-brand-orange shadow-xs' : 'border-slate-200'} overflow-hidden flex-shrink-0 group">
+            <img src="${cleanImageUrl(url)}" alt="Preview" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100';">
+            ${isCover ? `<span class="absolute top-0 left-0 bg-brand-orange text-white text-[7px] font-extrabold px-1 rounded-br">MAIN</span>` : `<span class="absolute bottom-0 right-0 bg-slate-800/80 text-white text-[7px] font-bold px-1 rounded-tl">#${idx+1}</span>`}
+          </div>
+        `;
+      });
+
+      if (videoUrl) {
+        const vid = parseVideoSource(videoUrl);
+        const thumb = (vid && vid.thumbUrl) ? vid.thumbUrl : (list[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100');
+        html += `
+          <div class="relative w-12 h-12 rounded-lg border-2 border-rose-500 overflow-hidden flex-shrink-0 group shadow-xs bg-black flex items-center justify-center cursor-pointer" onclick="testAdminPlayVideo('${formType === 'add' ? 'inp-prod-video' : 'edit-prod-video'}')" title="Preview Product Video">
+            <img src="${thumb}" alt="Video" class="w-full h-full object-cover opacity-75">
+            <div class="absolute inset-0 flex items-center justify-center">
+              <div class="w-5 h-5 rounded-full bg-rose-600 text-white flex items-center justify-center text-[8px] shadow">
+                <i class="fa-solid fa-play"></i>
+              </div>
+            </div>
+            <span class="absolute bottom-0 inset-x-0 bg-rose-600 text-white text-[6.5px] font-extrabold text-center uppercase tracking-wider">Video</span>
+          </div>
+        `;
+      }
+      strip.innerHTML = html;
+    }
+
+    // Set Image as Primary (Cover)
+    function setProductImagePrimary(index, formType = 'add') {
+      const list = formType === 'add' ? adminAddProductImages : adminEditProductImages;
+      if (index <= 0 || index >= list.length) return;
+      const [item] = list.splice(index, 1);
+      list.unshift(item);
+      renderProductImagesGrid(formType);
+      showToastNotification("मुख्य कवर फोटो अपडेट हो गई! (Set as Primary Cover)", "success");
+    }
+
+    // Move Image Up / Down in Order
+    function moveProductImage(index, direction, formType = 'add') {
+      const list = formType === 'add' ? adminAddProductImages : adminEditProductImages;
+      const targetIndex = index + direction;
+      if (targetIndex < 0 || targetIndex >= list.length) return;
+      const temp = list[index];
+      list[index] = list[targetIndex];
+      list[targetIndex] = temp;
+      renderProductImagesGrid(formType);
+    }
+
+    // Remove Image with Confirmation
+    async function removeProductImage(index, formType = 'add') {
+      const ok = await confirmAdminAction("क्या आप इस फोटो को प्रोडक्ट से हटाना चाहते हैं?\nAre you sure you want to remove this image?", "Remove Image");
+      if (!ok) return;
+      const list = formType === 'add' ? adminAddProductImages : adminEditProductImages;
+      list.splice(index, 1);
+      renderProductImagesGrid(formType);
+      showToastNotification("फोटो हटा दी गई। (Image removed)", "info");
+    }
+
+    // Copy URL to Clipboard
+    async function copyProductImageUrl(url) {
+      try {
+        await navigator.clipboard.writeText(url);
+        showToastNotification("इमेज लिंक कॉपी हो गया! (Image URL copied)", "success");
+      } catch(e) {
+        showToastNotification("URL: " + url, "info");
+      }
+    }
+
+    // Imgur API Settings Modal Controls
+    function openImgurSettingsModal() {
+      const input = document.getElementById('inp-settings-imgur-client-id');
+      const statusBox = document.getElementById('imgur-test-status');
+      if (input) {
+        input.value = localStorage.getItem('buyero_admin_imgur_client_id') || DEFAULT_IMGUR_CLIENT_ID;
+      }
+      if (statusBox) statusBox.classList.add('hidden');
+      const modal = document.getElementById('modal-imgur-settings');
+      modal?.classList.remove('hidden');
+    }
+
+    function closeImgurSettingsModal() {
+      const modal = document.getElementById('modal-imgur-settings');
+      modal?.classList.add('hidden');
+    }
+
+    function saveImgurSettings() {
+      const input = document.getElementById('inp-settings-imgur-client-id');
+      const val = (input ? input.value : '').trim();
+      if (!val) {
+        showToastNotification("कृपया Client ID दर्ज करें। (Please enter Client ID)", "error");
+        return;
+      }
+      localStorage.setItem('buyero_admin_imgur_client_id', val);
+
+      // Also persist to Firestore if online
+      if (window.db) {
+        window.db.collection('admin_settings').doc('imgur').set({
+          clientId: val,
+          updatedAt: new Date().toISOString()
+        }, { merge: true }).catch(() => {});
+      }
+
+      showToastNotification("Imgur API सेटिंग्स सफलतापूर्वक सहेजी गईं! (Settings saved)", "success");
+      closeImgurSettingsModal();
+    }
+
+    async function testImgurApiConnection() {
+      const input = document.getElementById('inp-settings-imgur-client-id');
+      const statusBox = document.getElementById('imgur-test-status');
+      const testBtn = document.getElementById('btn-test-imgur-connection');
+      const clientId = (input ? input.value : '').trim() || getImgurClientId();
+
+      if (!clientId) {
+        if (statusBox) {
+          statusBox.className = 'p-2 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-[10px] font-bold';
+          statusBox.innerHTML = '<i class="fa-solid fa-circle-xmark mr-1"></i> Client ID is required to test connection.';
+          statusBox.classList.remove('hidden');
+        }
+        return;
+      }
+
+      if (testBtn) {
+        testBtn.disabled = true;
+        testBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Testing...';
+      }
+
+      try {
+        const res = await fetch('https://api.imgur.com/3/credits', {
+          headers: { 'Authorization': `Client-ID ${clientId}` }
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          const rem = data.data ? data.data.ClientRemaining : 'OK';
+          if (statusBox) {
+            statusBox.className = 'p-2.5 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-[10px] font-bold flex items-center gap-1.5';
+            statusBox.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600"></i> Connection Successful! API Client ID is active (Remaining: ${rem}).`;
+            statusBox.classList.remove('hidden');
+          }
+        } else {
+          if (statusBox) {
+            statusBox.className = 'p-2.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-[10px] font-bold';
+            statusBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> Imgur rejected connection (${res.status}): ${data.data?.error || 'Invalid Client ID'}`;
+            statusBox.classList.remove('hidden');
           }
         }
+      } catch (err) {
+        if (statusBox) {
+          statusBox.className = 'p-2.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-[10px] font-bold';
+          statusBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> Network error testing Imgur: ${err.message}`;
+          statusBox.classList.remove('hidden');
+        }
+      } finally {
+        if (testBtn) {
+          testBtn.disabled = false;
+          testBtn.innerHTML = '<i class="fa-solid fa-satellite-dish text-[11px] mr-1"></i> Test API';
+        }
       }
-      renderAddProductGalleryLive();
+    }
+
+    // Legacy compatibility handlers
+    function onAddPrimaryImageChange() {
+      const inp = document.getElementById('inp-prod-image');
+      const val = cleanImageUrl(inp ? inp.value : '');
+      if (val && !adminAddProductImages.includes(val)) {
+        adminAddProductImages.unshift(val);
+      }
+      renderProductImagesGrid('add');
+    }
+
+    function onEditPrimaryImageChange() {
+      const inp = document.getElementById('edit-prod-image');
+      const val = cleanImageUrl(inp ? inp.value : '');
+      if (val && !adminEditProductImages.includes(val)) {
+        adminEditProductImages.unshift(val);
+      }
+      renderProductImagesGrid('edit');
+    }
+
+    function renderAddProductGalleryLive() {
+      renderGalleryStripSync('add');
+    }
+
+    function renderEditProductGalleryLive() {
+      renderGalleryStripSync('edit');
     }
 
     function onAddVideoUrlChange() {
@@ -3511,7 +4428,7 @@
       const clearBtn = document.getElementById('btn-clear-add-video');
       if (clearBtn) clearBtn.classList.toggle('hidden', !val);
       updateAdminVideoPreview('inp-prod-video', 'inp-prod-video-preview');
-      renderAddProductGalleryLive();
+      renderGalleryStripSync('add');
     }
 
     async function clearAddProductVideo() {
@@ -3522,157 +4439,13 @@
       onAddVideoUrlChange();
     }
 
-    function renderAddProductGalleryLive() {
-      const strip = document.getElementById('add-media-gallery-strip');
-      const countBadge = document.getElementById('add-media-count-badge');
-      if (!strip) return;
-
-      const mainImg = cleanImageUrl(document.getElementById('inp-prod-image')?.value || '');
-      const extraInputs = Array.from(document.querySelectorAll('#extra-images-container .add-extra-img-input, #extra-images-container .inp-prod-extra-img'));
-      const extraImgs = [];
-      extraInputs.forEach(i => {
-        const c = cleanImageUrl(i.value);
-        if (c) extraImgs.push(c);
-      });
-      const videoUrl = (document.getElementById('inp-prod-video')?.value || '').trim();
-
-      const allImages = [];
-      if (mainImg) allImages.push({ url: mainImg, isMain: true });
-      extraImgs.forEach((u, i) => {
-        allImages.push({ url: u, isMain: false, index: i });
-      });
-
-      if (countBadge) {
-        countBadge.textContent = `${allImages.length} photo${allImages.length === 1 ? '' : 's'}${videoUrl ? ' + 1 video' : ''}`;
-      }
-
-      if (allImages.length === 0 && !videoUrl) {
-        strip.innerHTML = `<span class="text-slate-400 text-[11px] italic px-1">No images or video loaded yet</span>`;
-        return;
-      }
-
-      let html = '';
-      allImages.forEach((item, idx) => {
-        html += `
-          <div class="relative w-12 h-12 rounded-lg border-2 ${item.isMain ? 'border-brand-orange shadow-xs' : 'border-slate-200'} overflow-hidden flex-shrink-0 group">
-            <img src="${item.url}" alt="Preview" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100';">
-            ${item.isMain ? `<span class="absolute top-0 left-0 bg-brand-orange text-white text-[7px] font-extrabold px-1 rounded-br">MAIN</span>` : `<span class="absolute bottom-0 right-0 bg-slate-800/80 text-white text-[7px] font-bold px-1 rounded-tl">#${idx+1}</span>`}
-          </div>
-        `;
-      });
-
-      if (videoUrl) {
-        const vid = parseVideoSource(videoUrl);
-        const thumb = (vid && vid.thumbUrl) ? vid.thumbUrl : (allImages[0]?.url || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100');
-        html += `
-          <div class="relative w-12 h-12 rounded-lg border-2 border-rose-500 overflow-hidden flex-shrink-0 group shadow-xs bg-black flex items-center justify-center cursor-pointer" onclick="testAdminPlayVideo('inp-prod-video')" title="Preview Product Video">
-            <img src="${thumb}" alt="Video" class="w-full h-full object-cover opacity-75">
-            <div class="absolute inset-0 flex items-center justify-center">
-              <div class="w-5 h-5 rounded-full bg-rose-600 text-white flex items-center justify-center text-[8px] shadow">
-                <i class="fa-solid fa-play"></i>
-              </div>
-            </div>
-            <span class="absolute bottom-0 inset-x-0 bg-rose-600 text-white text-[6.5px] font-extrabold text-center uppercase tracking-wider">Video</span>
-          </div>
-        `;
-      }
-
-      strip.innerHTML = html;
-    }
-
-    /* =========================================================
-       PRODUCT EDIT MODAL - MULTI-IMAGE & VIDEO GALLERY CONTROLLER
-       ========================================================= */
-    function onEditPrimaryImageChange() {
-      const inp = document.getElementById('edit-prod-image');
-      const thumb = document.getElementById('edit-prod-primary-thumb-preview');
-      const val = cleanImageUrl(inp ? inp.value : '');
-      if (thumb) {
-        if (val) {
-          thumb.innerHTML = `<img src="${val}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100';">`;
-        } else {
-          thumb.innerHTML = `<i class="fa-solid fa-image text-slate-400 text-xs"></i>`;
-        }
-      }
-      renderEditProductGalleryLive();
-    }
-
-    function addEditExtraImageInput(initialUrl = '') {
-      const container = document.getElementById('edit-extra-images-container');
-      if (!container) return;
-      const rowId = 'extra-img-row-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7);
-      const cleanInit = cleanImageUrl(initialUrl);
-      const div = document.createElement('div');
-      div.id = rowId;
-      div.className = "flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200 transition hover:border-slate-300 shadow-2xs";
-      div.innerHTML = `
-        <div class="w-10 h-10 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 flex-shrink-0 flex items-center justify-center extra-img-thumb shadow-2xs">
-          ${cleanInit ? `<img src="${cleanInit}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100';">` : `<i class="fa-solid fa-image text-slate-300 text-xs"></i>`}
-        </div>
-        <input 
-          type="text" 
-          inputmode="url"
-          placeholder="Paste extra image link (e.g. https://...)" 
-          value="${cleanInit ? cleanInit.replace(/"/g, '&quot;') : ''}"
-          oninput="updateEditExtraImageThumbnail(this)"
-          onchange="updateEditExtraImageThumbnail(this)"
-          class="edit-extra-img-input flex-1 px-3 py-1.5 text-xs border border-slate-200 rounded-lg outline-none focus:border-brand-navy bg-slate-50/50"
-        />
-        <button 
-          type="button" 
-          onclick="pasteFromClipboardToInput(this)" 
-          class="px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold flex items-center gap-1 transition active:scale-95 flex-shrink-0"
-          title="Paste from clipboard"
-        >
-          <i class="fa-regular fa-clipboard"></i>
-          <span class="hidden sm:inline">Paste</span>
-        </button>
-        <button 
-          type="button" 
-          onclick="removeEditExtraImage('${rowId}')" 
-          class="w-8 h-8 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 flex items-center justify-center transition active:scale-90 flex-shrink-0"
-          title="Delete this image"
-        >
-          <i class="fa-solid fa-trash text-xs"></i>
-        </button>
-      `;
-      container.appendChild(div);
-      renderEditProductGalleryLive();
-    }
-
-    async function removeEditExtraImage(rowId) {
-      const ok = await confirmAdminAction("क्या आप इस फोटो लिंक को हटाना चाहते हैं?\nAre you sure you want to remove this image?", "Confirm Remove Image");
-      if (!ok) return;
-      const el = document.getElementById(rowId);
-      if (el) {
-        el.remove();
-        renderEditProductGalleryLive();
-      }
-    }
-
-    function updateEditExtraImageThumbnail(inputEl) {
-      const cleaned = cleanImageUrl(inputEl.value);
-      const row = inputEl.closest('.flex');
-      if (row) {
-        const thumb = row.querySelector('.extra-img-thumb');
-        if (thumb) {
-          if (cleaned) {
-            thumb.innerHTML = `<img src="${cleaned}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100';">`;
-          } else {
-            thumb.innerHTML = `<i class="fa-solid fa-image text-slate-300 text-xs"></i>`;
-          }
-        }
-      }
-      renderEditProductGalleryLive();
-    }
-
     function onEditVideoUrlChange() {
       const inp = document.getElementById('edit-prod-video');
       const val = (inp ? inp.value : '').trim();
       const clearBtn = document.getElementById('btn-clear-edit-video');
       if (clearBtn) clearBtn.classList.toggle('hidden', !val);
       updateAdminVideoPreview('edit-prod-video', 'edit-prod-video-preview');
-      renderEditProductGalleryLive();
+      renderGalleryStripSync('edit');
     }
 
     async function clearEditProductVideo() {
@@ -3681,64 +4454,6 @@
       const inp = document.getElementById('edit-prod-video');
       if (inp) inp.value = '';
       onEditVideoUrlChange();
-    }
-
-    function renderEditProductGalleryLive() {
-      const strip = document.getElementById('edit-media-gallery-strip');
-      const countBadge = document.getElementById('edit-media-count-badge');
-      if (!strip) return;
-
-      const mainImg = cleanImageUrl(document.getElementById('edit-prod-image')?.value || '');
-      const extraInputs = Array.from(document.querySelectorAll('#edit-extra-images-container .edit-extra-img-input'));
-      const extraImgs = [];
-      extraInputs.forEach(i => {
-        const c = cleanImageUrl(i.value);
-        if (c) extraImgs.push(c);
-      });
-      const videoUrl = (document.getElementById('edit-prod-video')?.value || '').trim();
-
-      const allImages = [];
-      if (mainImg) allImages.push({ url: mainImg, isMain: true });
-      extraImgs.forEach((u, i) => {
-        allImages.push({ url: u, isMain: false, index: i });
-      });
-
-      if (countBadge) {
-        countBadge.textContent = `${allImages.length} photo${allImages.length === 1 ? '' : 's'}${videoUrl ? ' + 1 video' : ''}`;
-      }
-
-      if (allImages.length === 0 && !videoUrl) {
-        strip.innerHTML = `<span class="text-slate-400 text-[11px] italic px-1">No images or video loaded yet</span>`;
-        return;
-      }
-
-      let html = '';
-      allImages.forEach((item, idx) => {
-        html += `
-          <div class="relative w-12 h-12 rounded-lg border-2 ${item.isMain ? 'border-brand-orange shadow-xs' : 'border-slate-200'} overflow-hidden flex-shrink-0 group">
-            <img src="${item.url}" alt="Preview" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100';">
-            ${item.isMain ? `<span class="absolute top-0 left-0 bg-brand-orange text-white text-[7px] font-extrabold px-1 rounded-br">MAIN</span>` : `<span class="absolute bottom-0 right-0 bg-slate-800/80 text-white text-[7px] font-bold px-1 rounded-tl">#${idx+1}</span>`}
-          </div>
-        `;
-      });
-
-      if (videoUrl) {
-        const vid = parseVideoSource(videoUrl);
-        const thumb = (vid && vid.thumbUrl) ? vid.thumbUrl : (allImages[0]?.url || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100');
-        html += `
-          <div class="relative w-12 h-12 rounded-lg border-2 border-rose-500 overflow-hidden flex-shrink-0 group shadow-xs bg-black flex items-center justify-center cursor-pointer" onclick="testAdminPlayVideo('edit-prod-video')" title="Preview Product Video">
-            <img src="${thumb}" alt="Video" class="w-full h-full object-cover opacity-75">
-            <div class="absolute inset-0 flex items-center justify-center">
-              <div class="w-5 h-5 rounded-full bg-rose-600 text-white flex items-center justify-center text-[8px] shadow">
-                <i class="fa-solid fa-play"></i>
-              </div>
-            </div>
-            <span class="absolute bottom-0 inset-x-0 bg-rose-600 text-white text-[6.5px] font-extrabold text-center uppercase tracking-wider">Video</span>
-          </div>
-        `;
-      }
-
-      strip.innerHTML = html;
     }
 
     function ensureCatalogSeeded() {
@@ -4914,25 +5629,27 @@
       const adminNotes = (document.getElementById('inp-prod-admin-notes') ? document.getElementById('inp-prod-admin-notes').value : '').trim();
 
       const variants = (document.getElementById('inp-prod-variants') ? document.getElementById('inp-prod-variants').value : '').trim() || 'Standard';
-      const mainImage = (document.getElementById('inp-prod-image') ? document.getElementById('inp-prod-image').value : '').trim();
       const videoUrl = (document.getElementById('inp-prod-video') ? document.getElementById('inp-prod-video').value : '').trim();
       const desc = (document.getElementById('inp-prod-desc') ? document.getElementById('inp-prod-desc').value : '').trim();
 
-      // Collect all extra images
-      const extraImageInputs = Array.from(document.querySelectorAll('#extra-images-container .add-extra-img-input, #extra-images-container .inp-prod-extra-img'));
-      const extraImages = [];
-      const mainImageClean = cleanImageUrl(mainImage);
-      extraImageInputs.forEach(inp => {
-        const c = cleanImageUrl(inp.value);
-        if (c) {
-          extraImages.push(c);
-        }
-      });
-      const allImages = mainImageClean ? [mainImageClean, ...extraImages] : [...extraImages];
+      // Collect all images from Buyero Image Management System
+      const rawMainImg = (document.getElementById('inp-prod-image') ? document.getElementById('inp-prod-image').value : '').trim();
+      let allImages = (adminAddProductImages && adminAddProductImages.length > 0)
+        ? adminAddProductImages.map(u => cleanImageUrl(u)).filter(Boolean)
+        : (rawMainImg ? [cleanImageUrl(rawMainImg)].filter(Boolean) : []);
+
+      // If user typed into direct URL input without clicking 'Add', safely include it
+      const pendingDirectUrl = cleanImageUrl((document.getElementById('inp-add-direct-url')?.value || '').trim());
+      if (pendingDirectUrl && !allImages.includes(pendingDirectUrl)) {
+        allImages.push(pendingDirectUrl);
+      }
+
+      const mainImageClean = allImages[0] || '';
+      const extraImages = allImages.slice(1);
 
       // Validations
       if (!title || !mainImageClean || !desc) {
-        alert("Please fill all required fields (Title, Home Image, and Description).");
+        alert("कृपया टाइटल, फोटो (कम से कम 1 इमेज URL या अपलोड), और डिस्क्रिप्शन भरें। (Title, at least 1 image, and description are required).");
         return;
       }
       if (price <= 0 || mrp <= 0) {
@@ -5044,14 +5761,14 @@
         // Reset form & media state
         const form = document.getElementById('form-add-product');
         if (form) form.reset();
-        const extraContainer = document.getElementById('extra-images-container');
-        if (extraContainer) {
-          extraContainer.innerHTML = '';
-          addExtraImageInput('');
-        }
-        renderAddProductGalleryLive();
-        const thumbPrev = document.getElementById('inp-prod-primary-thumb-preview');
-        if (thumbPrev) thumbPrev.innerHTML = `<i class="fa-solid fa-image text-slate-400 text-xs"></i>`;
+        adminAddProductImages = [];
+        renderProductImagesGrid('add');
+        const addDirectUrlInp = document.getElementById('inp-add-direct-url');
+        if (addDirectUrlInp) addDirectUrlInp.value = '';
+        document.getElementById('preview-box-add-url')?.classList.add('hidden');
+        document.getElementById('imgur-progress-box-add')?.classList.add('hidden');
+        document.getElementById('imgur-error-box-add')?.classList.add('hidden');
+        switchImageSourceTab('url', 'add');
         const vidPrev = document.getElementById('inp-prod-video-preview');
         if (vidPrev) { vidPrev.innerHTML = ''; vidPrev.classList.add('hidden'); }
         const idField = document.getElementById('inp-prod-id');
@@ -5265,60 +5982,46 @@
       document.getElementById('edit-prod-admin-notes').value = p.adminNotes || '';
 
       document.getElementById('edit-prod-variants').value = p.variants || '';
+      
+      // Initialize Buyero Image Management System for Edit Form
+      adminEditProductImages = [];
       const mainImgClean = cleanImageUrl(p.image || '');
-      document.getElementById('edit-prod-image').value = mainImgClean;
-      onEditPrimaryImageChange();
+      if (mainImgClean) adminEditProductImages.push(mainImgClean);
 
-      // Populate Extra Images dynamically
-      const extraContainer = document.getElementById('edit-extra-images-container');
-      if (extraContainer) {
-        extraContainer.innerHTML = '';
-        const extraList = [];
-
-        // 1. First check dedicated extraImages
-        if (Array.isArray(p.extraImages) && p.extraImages.length > 0) {
-          p.extraImages.forEach(u => {
-            const clean = cleanImageUrl(u);
-            if (clean) extraList.push(clean);
-          });
-        } else if (typeof p.extraImages === 'string' && p.extraImages.trim()) {
-          try {
-            const parsed = JSON.parse(p.extraImages);
-            if (Array.isArray(parsed)) {
-              parsed.forEach(u => {
-                const clean = cleanImageUrl(u);
-                if (clean) extraList.push(clean);
-              });
-            }
-          } catch(e) {}
-        }
-
-        // 2. If extraImages was empty, check p.images (take elements after index 0)
-        if (extraList.length === 0) {
-          let allImgList = [];
-          if (Array.isArray(p.images)) {
-            allImgList = p.images;
-          } else if (typeof p.images === 'string' && p.images.trim()) {
-            try {
-              const parsed = JSON.parse(p.images);
-              if (Array.isArray(parsed)) allImgList = parsed;
-            } catch(e) {}
-          }
-          if (allImgList.length > 1) {
-            allImgList.slice(1).forEach(u => {
-              const clean = cleanImageUrl(u);
-              if (clean) extraList.push(clean);
-            });
-          }
-        }
-
-        if (extraList.length > 0) {
-          extraList.forEach(url => addEditExtraImageInput(url));
-        } else {
-          // Add 1 empty row for convenience
-          addEditExtraImageInput('');
-        }
+      // Collect all extra images from p.images or p.extraImages
+      let allProductImgs = [];
+      if (Array.isArray(p.images) && p.images.length > 0) {
+        allProductImgs = p.images;
+      } else if (typeof p.images === 'string' && p.images.trim()) {
+        try {
+          const parsed = JSON.parse(p.images);
+          if (Array.isArray(parsed)) allProductImgs = parsed;
+        } catch(e) {}
       }
+
+      if (Array.isArray(p.extraImages) && p.extraImages.length > 0) {
+        allProductImgs = allProductImgs.concat(p.extraImages);
+      } else if (typeof p.extraImages === 'string' && p.extraImages.trim()) {
+        try {
+          const parsed = JSON.parse(p.extraImages);
+          if (Array.isArray(parsed)) allProductImgs = allProductImgs.concat(parsed);
+        } catch(e) {}
+      }
+
+      allProductImgs.forEach(u => {
+        const clean = cleanImageUrl(u);
+        if (clean && !adminEditProductImages.includes(clean)) {
+          adminEditProductImages.push(clean);
+        }
+      });
+
+      renderProductImagesGrid('edit');
+      switchImageSourceTab('url', 'edit');
+
+      // Clear input fields
+      const editDirectUrlInput = document.getElementById('inp-edit-direct-url');
+      if (editDirectUrlInput) editDirectUrlInput.value = '';
+      document.getElementById('preview-box-edit-url')?.classList.add('hidden');
 
       document.getElementById('edit-prod-video').value = p.videoUrl || '';
       onEditVideoUrlChange();
@@ -5326,7 +6029,6 @@
       document.getElementById('edit-prod-desc').value = p.description || '';
 
       calculateEditProductMarginLive();
-      renderEditProductGalleryLive();
 
       const modal = document.getElementById('modal-edit-product');
       if (modal) modal.classList.remove('hidden');
@@ -5374,24 +6076,27 @@
       const adminNotes = (document.getElementById('edit-prod-admin-notes').value || '').trim();
 
       const variants = (document.getElementById('edit-prod-variants').value || '').trim() || 'Standard';
-      const mainImage = cleanImageUrl(document.getElementById('edit-prod-image').value || '');
       const videoUrl = (document.getElementById('edit-prod-video').value || '').trim();
       const desc = (document.getElementById('edit-prod-desc').value || '').trim();
 
-      // Collect all dynamic extra images
-      const extraInputs = Array.from(document.querySelectorAll('#edit-extra-images-container .edit-extra-img-input'));
-      const extraImages = [];
-      extraInputs.forEach(i => {
-        const c = cleanImageUrl(i.value);
-        if (c) {
-          extraImages.push(c);
-        }
-      });
-      const allImages = mainImage ? [mainImage, ...extraImages] : [...extraImages];
+      // Collect all images from Buyero Image Management System
+      const rawEditMainImg = (document.getElementById('edit-prod-image') ? document.getElementById('edit-prod-image').value : '').trim();
+      let allImages = (adminEditProductImages && adminEditProductImages.length > 0)
+        ? adminEditProductImages.map(u => cleanImageUrl(u)).filter(Boolean)
+        : (rawEditMainImg ? [cleanImageUrl(rawEditMainImg)].filter(Boolean) : []);
+
+      // If user typed into direct URL input without clicking 'Add', safely include it
+      const pendingEditDirectUrl = cleanImageUrl((document.getElementById('inp-edit-direct-url')?.value || '').trim());
+      if (pendingEditDirectUrl && !allImages.includes(pendingEditDirectUrl)) {
+        allImages.push(pendingEditDirectUrl);
+      }
+
+      const mainImage = allImages[0] || '';
+      const extraImages = allImages.slice(1);
 
       // Validations
       if (!title || !mainImage || !desc) {
-        alert("Please fill all required fields (Title, Image URL, and Description).");
+        alert("कृपया टाइटल, फोटो (कम से कम 1 इमेज URL या अपलोड), और डिस्क्रिप्शन भरें। (Title, at least 1 image, and description are required).");
         if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = 'Save Changes'; }
         return;
       }

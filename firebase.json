@@ -30,6 +30,14 @@
         "destination": "/firebase-messaging-sw.js"
       },
       {
+        "source": "/googleb48babe13928bae5.html",
+        "destination": "/googleb48babe13928bae5.html"
+      },
+      {
+        "source": "/sitemap.xml",
+        "destination": "/sitemap.xml"
+      },
+      {
         "source": "/admin/**",
         "destination": "/admin/index.html"
       },

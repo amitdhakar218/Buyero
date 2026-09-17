@@ -2,16 +2,21 @@ package com.example
 
 import android.annotation.SuppressLint
 import android.app.AlertDialog
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.webkit.JsResult
+import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -96,6 +101,16 @@ fun BuyeroHostScreen() {
   var pageProgress by remember { mutableFloatStateOf(0f) }
   var isLoading by remember { mutableStateOf(true) }
   var showInfoDialog by remember { mutableStateOf(false) }
+
+  // File Chooser for Imgur / Native Photo Upload
+  var uploadMessageCallback by remember { mutableStateOf<ValueCallback<Array<Uri>>?>(null) }
+  val fileChooserLauncher = rememberLauncherForActivityResult(
+    contract = ActivityResultContracts.StartActivityForResult()
+  ) { result ->
+    val results: Array<Uri>? = WebChromeClient.FileChooserParams.parseResult(result.resultCode, result.data)
+    uploadMessageCallback?.onReceiveValue(results)
+    uploadMessageCallback = null
+  }
 
   // Handle system back navigation inside WebView
   BackHandler(enabled = webViewInstance?.canGoBack() == true) {
@@ -373,6 +388,27 @@ fun BuyeroHostScreen() {
                   if (confirmed) result?.confirm() else result?.cancel()
                 }
                 return true
+              }
+
+              override fun onShowFileChooser(
+                webView: WebView?,
+                filePathCallback: ValueCallback<Array<Uri>>?,
+                fileChooserParams: FileChooserParams?
+              ): Boolean {
+                uploadMessageCallback?.onReceiveValue(null)
+                uploadMessageCallback = filePathCallback
+                return try {
+                  val intent = fileChooserParams?.createIntent() ?: Intent(Intent.ACTION_GET_CONTENT).apply {
+                    type = "image/*"
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                  }
+                  fileChooserLauncher.launch(intent)
+                  true
+                } catch (_: Exception) {
+                  uploadMessageCallback?.onReceiveValue(null)
+                  uploadMessageCallback = null
+                  false
+                }
               }
             }
 

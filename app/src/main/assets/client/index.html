@@ -3259,6 +3259,28 @@
       });
     }
 
+    /* =========================================================
+       BUYERO IMAGE FALLBACK / ANIMATED BRAND PLACEHOLDER
+       ========================================================= */
+    function handleBuyeroImageError(imgEl) {
+      if (!imgEl || imgEl.dataset.errorHandled) return;
+      imgEl.dataset.errorHandled = "true";
+      const parent = imgEl.parentElement;
+      if (parent) {
+        imgEl.style.display = 'none';
+        const fallback = document.createElement('div');
+        fallback.className = 'w-full h-full min-h-[140px] flex flex-col items-center justify-center bg-gradient-to-br from-orange-50 via-slate-50 to-indigo-50 text-center p-3 select-none';
+        fallback.innerHTML = `
+          <div class="relative flex items-center justify-center w-11 h-11 rounded-2xl bg-white shadow-xs mb-1.5 border border-orange-100">
+            <i class="fa-solid fa-bag-shopping text-lg text-orange-500 animate-pulse"></i>
+          </div>
+          <span class="font-black text-xs tracking-wider uppercase text-slate-800 animate-pulse">Buyero</span>
+          <span class="text-[9px] text-slate-400">Photo Unavailable</span>
+        `;
+        parent.appendChild(fallback);
+      }
+    }
+
     function showBuyeroAlert(message, title = 'Notice', type = 'info') {
       return showBuyeroModal({ title, message, type, confirmText: 'OK', showCancel: false });
     }
@@ -5305,7 +5327,7 @@
                 src="${product.image}" 
                 alt="${product.title}" 
                 class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80'"
+                onerror="handleBuyeroImageError(this)"
               />
 
               <!-- Reel / Video Quick Play Badge -->
@@ -5819,7 +5841,7 @@
           if (activeDetailImages.length > 0) {
             track.innerHTML = activeDetailImages.map((src, idx) => `
               <div class="w-full h-full flex-shrink-0 relative overflow-hidden bg-slate-100 flex items-center justify-center select-none">
-                <img src="${src}" alt="Product Image ${idx + 1}" class="w-full h-full object-cover select-none pointer-events-none" ${idx === 0 ? 'id="pdetail-main-img"' : ''} loading="${idx === 0 ? 'eager' : 'lazy'}">
+                <img src="${src}" alt="Product Image ${idx + 1}" class="w-full h-full object-cover select-none pointer-events-none" ${idx === 0 ? 'id="pdetail-main-img"' : ''} loading="${idx === 0 ? 'eager' : 'lazy'}" onerror="handleBuyeroImageError(this)">
               </div>
             `).join('');
           } else {

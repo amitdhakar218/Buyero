@@ -887,3 +887,108 @@ exports.onOfferBroadcastCreated = functions.firestore
     return null;
   });
 
+/**
+ * SECURE IMGUR IMAGE UPLOAD PROXY
+ * Cloud Function to safely upload product images to Imgur API v3
+ * Keeps API credentials confidential on server side
+ */
+exports.uploadImgurImage = functions.https.onRequest(async (req, res) => {
+  // Setup permissive CORS for Admin Panel WebView
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+
+  if (req.method !== 'POST') {
+    res.status(405).json({ success: false, error: 'Method Not Allowed. Send POST request.' });
+    return;
+  }
+
+  try {
+    const { imageBase64, clientId: clientProvidedId, name, title } = req.body || {};
+    if (!imageBase64) {
+      res.status(400).json({ success: false, error: 'Missing imageBase64 in request body.' });
+      return;
+    }
+
+    // Clean data URL prefix if present (e.g. data:image/jpeg;base64,)
+    const cleanBase64 = imageBase64.replace(/^data:image\/[a-zA-Z+]+;base64,/, '').trim();
+
+    // Priority: environment secret -> functions config -> client-provided admin ID
+    const effectiveClientId = process.env.IMGUR_CLIENT_ID ||
+      (functions.config().imgur && functions.config().imgur.client_id) ||
+      clientProvidedId;
+
+    if (!effectiveClientId) {
+      res.status(400).json({
+        success: false,
+        error: 'Imgur Client ID is not configured. Please configure it in Admin Settings or set IMGUR_CLIENT_ID environment variable.'
+      });
+      return;
+    }
+
+    // Call Imgur API v3
+    const imgurResponse = await fetch('https://api.imgur.com/3/image', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Client-ID ${effectiveClientId.trim()}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        image: cleanBase64,
+        type: 'base64',
+        name: name || 'buyero_product',
+        title: title || 'Buyero Product Image'
+      })
+    });
+
+    const data = await imgurResponse.json();
+
+    if (!imgurResponse.ok || !data.success) {
+      const status = imgurResponse.status;
+      let userFriendlyError = (data.data && data.data.error) || 'Imgur upload failed.';
+
+      // Check quota limits
+      if (status === 429) {
+        userFriendlyError = 'Imgur Free Tier quota limit has been reached. Please wait or use Direct Image URL.';
+      } else if (status === 403 || status === 401) {
+        userFriendlyError = 'Invalid Imgur Client ID. Please verify your credentials in Admin Settings.';
+      }
+
+      console.warn('[uploadImgurImage] Imgur rejected upload:', { status, error: userFriendlyError });
+      res.status(status).json({
+        success: false,
+        status: status,
+        error: userFriendlyError
+      });
+      return;
+    }
+
+    // Imgur success: direct URL is in data.data.link
+    const directUrl = data.data.link;
+    console.log('[uploadImgurImage] Successfully uploaded to Imgur:', directUrl);
+
+    res.json({
+      success: true,
+      link: directUrl,
+      id: data.data.id,
+      deletehash: data.data.deletehash,
+      type: data.data.type,
+      width: data.data.width,
+      height: data.data.height,
+      size: data.data.size
+    });
+  } catch (err) {
+    console.error('[uploadImgurImage Error]', err);
+    res.status(500).json({
+      success: false,
+      error: 'Network error or internal server exception: ' + (err.message || 'Unknown error')
+    });
+  }
+});
+
+
