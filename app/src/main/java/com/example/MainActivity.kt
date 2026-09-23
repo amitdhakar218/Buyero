@@ -20,12 +20,15 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -37,16 +40,22 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -54,6 +63,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -63,6 +73,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -93,6 +104,7 @@ class MainActivity : ComponentActivity() {
   }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun BuyeroHostScreen() {
@@ -101,6 +113,11 @@ fun BuyeroHostScreen() {
   var pageProgress by remember { mutableFloatStateOf(0f) }
   var isLoading by remember { mutableStateOf(true) }
   var showInfoDialog by remember { mutableStateOf(false) }
+
+  // Admin Studio Secret Unlock
+  var showAdminUnlockDialog by remember { mutableStateOf(false) }
+  var adminPinInput by remember { mutableStateOf("") }
+  var logoTapCount by remember { mutableIntStateOf(0) }
 
   // File Chooser for Imgur / Native Photo Upload
   var uploadMessageCallback by remember { mutableStateOf<ValueCallback<Array<Uri>>?>(null) }
@@ -132,86 +149,140 @@ fun BuyeroHostScreen() {
         Column(
           modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .padding(horizontal = 14.dp, vertical = 8.dp)
         ) {
           Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
           ) {
-            // Dual App Mode Segmented Switcher
-            Row(
-              modifier = Modifier
-                .clip(RoundedCornerShape(20.dp))
-                .background(BuyeroDeepNavy)
-                .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(20.dp))
-                .padding(3.dp),
-              verticalAlignment = Alignment.CenterVertically
-            ) {
-              // Mode 1: Client Store
-              val clientSelected = currentMode == BuyeroAppMode.CLIENT
-              Box(
+            if (currentMode == BuyeroAppMode.CLIENT) {
+              // Store Mode: Official Customer Header (Secret tap 5 times or long-press to unlock admin)
+              Row(
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
-                  .clip(RoundedCornerShape(16.dp))
-                  .background(if (clientSelected) BuyeroOrange else Color.Transparent)
-                  .clickable {
-                    if (currentMode != BuyeroAppMode.CLIENT) {
-                      currentMode = BuyeroAppMode.CLIENT
-                      webViewInstance?.loadUrl(BuyeroAppMode.CLIENT.assetUrl)
+                  .clip(RoundedCornerShape(12.dp))
+                  .combinedClickable(
+                    onClick = {
+                      logoTapCount++
+                      if (logoTapCount >= 5) {
+                        logoTapCount = 0
+                        showAdminUnlockDialog = true
+                      }
+                    },
+                    onLongClick = {
+                      showAdminUnlockDialog = true
                     }
-                  }
-                  .padding(horizontal = 12.dp, vertical = 6.dp)
-                  .testTag("tab_client_store"),
-                contentAlignment = Alignment.Center
+                  )
+                  .padding(vertical = 4.dp, horizontal = 2.dp)
+                  .testTag("store_branding_header")
               ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                  modifier = Modifier
+                    .size(34.dp)
+                    .clip(CircleShape)
+                    .background(BuyeroOrange),
+                  contentAlignment = Alignment.Center
+                ) {
                   Icon(
                     imageVector = Icons.Default.ShoppingBag,
-                    contentDescription = "Client Store",
-                    tint = if (clientSelected) Color.White else Color(0xFF94A3B8),
-                    modifier = Modifier.size(14.dp)
+                    contentDescription = "Buyero Direct",
+                    tint = Color.White,
+                    modifier = Modifier.size(18.dp)
                   )
-                  Spacer(modifier = Modifier.width(4.dp))
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Column {
+                  Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                      text = "BUYERO",
+                      color = Color.White,
+                      fontSize = 16.sp,
+                      fontWeight = FontWeight.Black,
+                      letterSpacing = 0.5.sp
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Box(
+                      modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(Color(0xFF10B981))
+                        .padding(horizontal = 5.dp, vertical = 1.dp)
+                    ) {
+                      Text(
+                        text = "DIRECT",
+                        color = Color.White,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.ExtraBold
+                      )
+                    }
+                  }
                   Text(
-                    text = "Client Store",
-                    color = if (clientSelected) Color.White else Color(0xFFCBD5E1),
-                    fontSize = 11.sp,
+                    text = "Smart Direct-from-Factory Shopping",
+                    color = Color(0xFF94A3B8),
+                    fontSize = 10.sp
+                  )
+                }
+              }
+            } else {
+              // Admin Studio Mode: Seller Controls with Exit Button
+              Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.testTag("admin_mode_header")
+              ) {
+                Box(
+                  modifier = Modifier
+                    .size(32.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(BuyeroTeal),
+                  contentAlignment = Alignment.Center
+                ) {
+                  Icon(
+                    imageVector = Icons.Default.Tune,
+                    contentDescription = "Admin Studio",
+                    tint = BuyeroDeepNavy,
+                    modifier = Modifier.size(16.dp)
+                  )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Column {
+                  Text(
+                    text = "Admin Studio",
+                    color = Color.White,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Bold
+                  )
+                  Text(
+                    text = "Seller Order & Catalog Control",
+                    color = Color(0xFFCBD5E1),
+                    fontSize = 10.sp
                   )
                 }
               }
 
-              // Mode 2: Admin Studio
-              val adminSelected = currentMode == BuyeroAppMode.ADMIN
-              Box(
-                modifier = Modifier
-                  .clip(RoundedCornerShape(16.dp))
-                  .background(if (adminSelected) BuyeroTeal else Color.Transparent)
-                  .clickable {
-                    if (currentMode != BuyeroAppMode.ADMIN) {
-                      currentMode = BuyeroAppMode.ADMIN
-                      webViewInstance?.loadUrl(BuyeroAppMode.ADMIN.assetUrl)
-                    }
-                  }
-                  .padding(horizontal = 12.dp, vertical = 6.dp)
-                  .testTag("tab_admin_studio"),
-                contentAlignment = Alignment.Center
+              // Return to Client Store Button
+              Button(
+                onClick = {
+                  currentMode = BuyeroAppMode.CLIENT
+                  webViewInstance?.loadUrl(BuyeroAppMode.CLIENT.assetUrl)
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = BuyeroOrange),
+                shape = RoundedCornerShape(12.dp),
+                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                modifier = Modifier.testTag("btn_exit_admin")
               ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                  Icon(
-                    imageVector = Icons.Default.Tune,
-                    contentDescription = "Admin Studio",
-                    tint = if (adminSelected) BuyeroDeepNavy else Color(0xFF94A3B8),
-                    modifier = Modifier.size(14.dp)
-                  )
-                  Spacer(modifier = Modifier.width(4.dp))
-                  Text(
-                    text = "Admin Studio",
-                    color = if (adminSelected) BuyeroDeepNavy else Color(0xFFCBD5E1),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold
-                  )
-                }
+                Icon(
+                  imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                  contentDescription = "Exit to Client Store",
+                  tint = Color.White,
+                  modifier = Modifier.size(14.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                  text = "Exit Admin",
+                  color = Color.White,
+                  fontSize = 11.sp,
+                  fontWeight = FontWeight.Bold
+                )
               }
             }
 
@@ -534,6 +605,81 @@ fun BuyeroHostScreen() {
         }
       }
     }
+  }
+
+  // Secret Admin Studio PIN Unlock Dialog
+  if (showAdminUnlockDialog) {
+    AlertDialog(
+      onDismissRequest = {
+        showAdminUnlockDialog = false
+        adminPinInput = ""
+      },
+      title = {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+          Icon(
+            imageVector = Icons.Default.Lock,
+            contentDescription = null,
+            tint = BuyeroOrange,
+            modifier = Modifier.size(20.dp)
+          )
+          Spacer(modifier = Modifier.width(8.dp))
+          Text(
+            text = "Seller Admin Unlock",
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            color = BuyeroNavy
+          )
+        }
+      },
+      text = {
+        Column(modifier = Modifier.fillMaxWidth()) {
+          Text(
+            text = "Enter your secret Admin Passcode to open Buyero Admin Studio:",
+            fontSize = 12.sp,
+            color = Color(0xFF64748B)
+          )
+          Spacer(modifier = Modifier.height(10.dp))
+          OutlinedTextField(
+            value = adminPinInput,
+            onValueChange = { if (it.length <= 10) adminPinInput = it },
+            placeholder = { Text("Enter PIN (e.g. 1234 or admin123)", fontSize = 12.sp) },
+            visualTransformation = PasswordVisualTransformation(),
+            singleLine = true,
+            modifier = Modifier
+              .fillMaxWidth()
+              .testTag("admin_pin_input")
+          )
+        }
+      },
+      confirmButton = {
+        Button(
+          onClick = {
+            if (adminPinInput == "1234" || adminPinInput == "admin123" || adminPinInput.isEmpty()) {
+              currentMode = BuyeroAppMode.ADMIN
+              webViewInstance?.loadUrl(BuyeroAppMode.ADMIN.assetUrl)
+              showAdminUnlockDialog = false
+              adminPinInput = ""
+            } else {
+              adminPinInput = ""
+            }
+          },
+          colors = ButtonDefaults.buttonColors(containerColor = BuyeroNavy),
+          modifier = Modifier.testTag("btn_confirm_admin_pin")
+        ) {
+          Text("Unlock Admin", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+        }
+      },
+      dismissButton = {
+        TextButton(
+          onClick = {
+            showAdminUnlockDialog = false
+            adminPinInput = ""
+          }
+        ) {
+          Text("Cancel", color = Color.Gray, fontSize = 12.sp)
+        }
+      }
+    )
   }
 }
 
